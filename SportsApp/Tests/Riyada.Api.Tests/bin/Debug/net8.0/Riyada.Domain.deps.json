@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "Riyada.Domain/1.0.0": {
+        "runtime": {
+          "Riyada.Domain.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Riyada.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

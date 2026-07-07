@@ -1,0 +1,35 @@
+# Google Play — Firebase Android config template
+# 1. Firebase Console → Project Settings → Your apps → Android (iq.riyada.riyada)
+# 2. Download google-services.json
+# 3. Copy to: mobile/android/app/google-services.json
+# OR run: flutterfire configure
+
+{
+  "project_info": {
+    "project_number": "YOUR_SENDER_ID",
+    "project_id": "your-firebase-project-id",
+    "storage_bucket": "your-firebase-project-id.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:YOUR_SENDER_ID:android:YOUR_APP_ID",
+        "android_client_info": {
+          "package_name": "iq.riyada.riyada"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "YOUR_ANDROID_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

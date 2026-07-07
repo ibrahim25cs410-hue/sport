@@ -1,0 +1,21 @@
+[Unit]
+Description=Riyada ASP.NET Core API
+After=network.target
+
+[Service]
+Type=notify
+User=riyada
+Group=riyada
+WorkingDirectory=/var/www/riyada/publish
+ExecStart=/usr/bin/dotnet /var/www/riyada/publish/Riyada.Api.dll
+EnvironmentFile=/etc/riyada/riyada.env
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+SyslogIdentifier=riyada
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

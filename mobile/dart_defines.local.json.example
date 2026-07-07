@@ -1,0 +1,5 @@
+{
+  "API_BASE_URL": "http://192.168.1.10:61082/api",
+  "API_PORT": "61082",
+  "API_SCHEME": "http"
+}

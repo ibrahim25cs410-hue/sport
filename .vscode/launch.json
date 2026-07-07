@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "رياضة — تشغيل التطبيق",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/mobile",
+      "args": ["-d", "chrome"],
+      "preLaunchTask": "try-start-api"
+    },
+    {
+      "name": "رياضة — Windows (تطبيق سطح المكتب)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "powershell -ExecutionPolicy Bypass -File \"${workspaceFolder}/scripts/run-windows.ps1\"",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "رياضة — Flutter (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/mobile",
+      "args": ["-d", "chrome"]
+    },
+    {
+      "name": "رياضة — Swagger",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:61082/swagger",
+      "webRoot": "${workspaceFolder}"
+    }
+  ]
+}

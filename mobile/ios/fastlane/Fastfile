@@ -1,0 +1,17 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build IPA for App Store"
+  lane :build do
+    sh("cd .. && flutter pub get")
+    sh("cd .. && dart run flutter_launcher_icons")
+    sh("cd .. && dart run flutter_native_splash:create")
+    sh("cd .. && flutter build ipa --release --obfuscate --split-debug-info=build/ios/symbols --dart-define-from-file=config/env.prod.json --export-options-plist=ios/ExportOptions.plist")
+  end
+
+  desc "Upload to TestFlight"
+  lane :beta do
+    build
+    upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
+end

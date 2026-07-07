@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design Tokens — Riyada */
+@layer base {
+  :root {
+    --color-primary: 13 79 28;
+    --color-primary-light: 27 122 50;
+    --color-primary-dark: 8 52 20;
+    --color-secondary: 0 105 92;
+    --color-accent: 255 179 0;
+    --color-background: 244 247 245;
+    --color-surface: 255 255 255;
+    --color-surface-variant: 232 239 234;
+    --color-on-surface: 8 52 20;
+    --color-on-surface-variant: 74 86 80;
+    --color-outline: 213 222 216;
+    --color-error: 198 40 40;
+    --color-success: 46 125 50;
+    --color-warning: 191 54 12;
+    --color-on-primary: 255 255 255;
+    --color-on-inverse-muted: 208 220 212;
+  }
+
+  .dark {
+    --color-background: 15 20 17;
+    --color-surface: 26 35 28;
+    --color-surface-variant: 36 48 40;
+    --color-on-surface: 232 237 233;
+    --color-on-surface-variant: 176 189 178;
+    --color-outline: 61 74 66;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply text-[rgb(var(--color-on-surface))] bg-[rgb(var(--color-background))];
+    overscroll-behavior: none;
+  }
+
+  input, textarea, select {
+    @apply outline-none;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply mx-auto min-h-screen max-w-md shadow-2xl relative
+           bg-[rgb(var(--color-background))];
+  }
+
+  .glass {
+    @apply bg-[rgb(var(--color-surface))]/80 backdrop-blur-lg;
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, rgb(var(--color-primary-dark)) 0%, rgb(var(--color-primary)) 50%, rgb(var(--color-primary-light)) 100%);
+  }
+
+  .btn-primary {
+    @apply w-full py-3.5 px-6 rounded-2xl font-bold text-base text-white
+           bg-[rgb(var(--color-primary))] shadow-lg
+           active:scale-[0.98] transition-all duration-200
+           hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply w-full py-3.5 px-6 rounded-2xl border-2 font-bold
+           border-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))]
+           active:scale-[0.98] transition-all duration-200
+           hover:bg-[rgb(var(--color-surface-variant))];
+  }
+
+  .btn-danger {
+    @apply w-full py-3 px-6 rounded-2xl font-bold
+           bg-[rgb(var(--color-error))] text-[rgb(var(--color-on-primary))]
+           active:scale-[0.98] transition-all shadow-lg;
+  }
+
+  .input-field {
+    @apply w-full py-3.5 px-4 rounded-2xl border text-right transition-all
+           border-[rgb(var(--color-outline))]
+           bg-[rgb(var(--color-surface))]
+           text-[rgb(var(--color-on-surface))]
+           focus:border-[rgb(var(--color-primary-light))]
+           focus:ring-2 focus:ring-[rgb(var(--color-primary-light))]/20
+           placeholder:text-[rgb(var(--color-on-surface-variant))];
+  }
+
+  .card {
+    @apply rounded-2xl p-4 border
+           bg-[rgb(var(--color-surface))]
+           border-[rgb(var(--color-outline))]/60
+           shadow-[0_4px_20px_rgba(0,0,0,0.06)];
+  }
+
+  .dark .card {
+    @apply shadow-[0_4px_24px_rgba(0,0,0,0.35)];
+  }
+
+  .tab-active {
+    @apply font-bold border-b-2 border-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))];
+  }
+
+  .tab-inactive {
+    @apply text-[rgb(var(--color-on-surface-variant))] border-b-2 border-transparent;
+  }
+
+  .slot-available {
+    @apply px-3 py-2 rounded-xl border-2 text-sm font-medium cursor-pointer
+           active:scale-95 transition-all
+           border-[rgb(var(--color-primary-light))]/30
+           bg-[rgb(var(--color-surface-variant))]
+           text-[rgb(var(--color-primary))];
+  }
+
+  .slot-selected {
+    @apply px-3 py-2 rounded-xl border-2 text-sm font-bold shadow-md text-white
+           border-[rgb(var(--color-primary))] bg-[rgb(var(--color-primary))];
+  }
+
+  .slot-booked {
+    @apply px-3 py-2 rounded-xl border text-sm line-through cursor-not-allowed
+           border-[rgb(var(--color-outline))] bg-[rgb(var(--color-surface-variant))]
+           text-[rgb(var(--color-on-surface-variant))];
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}

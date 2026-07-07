@@ -1,0 +1,3 @@
+// تم نقل الكود المطوّر إلى المجلد: SportsApp/
+// شغّل الخادم: cd SportsApp && dotnet run
+// تطبيق الهاتف: cd mobile && npm install && npx expo start

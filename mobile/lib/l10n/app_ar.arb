@@ -1,0 +1,525 @@
+{
+  "@@locale": "ar",
+  "appTitle": "رياضة",
+  "appTagline": "احجز ملعبك في نينوى",
+  "welcome": "مرحباً",
+  "login": "تسجيل الدخول",
+  "register": "إنشاء حساب",
+  "registerUser": "تسجيل مستخدم",
+  "registerOwner": "تسجيل صاحب ملعب",
+  "logout": "تسجيل الخروج",
+  "settings": "الإعدادات",
+  "profile": "الملف الشخصي",
+  "darkMode": "الوضع الليلي",
+  "darkModeOn": "مُفعّل",
+  "darkModeOff": "غير مُفعّل",
+  "lightMode": "الوضع النهاري",
+  "language": "اللغة",
+  "languageAr": "العربية",
+  "languageEn": "English",
+  "aboutApp": "عن التطبيق",
+  "aboutAppSubtitle": "رياضة — حجز الملاعب في نينوى\nالإصدار 1.0.0",
+  "devMode": "وضع المطوّر",
+  "devModeSubtitle": "إعدادات الخادم (للمطورين)",
+  "apiHostLabel": "عنوان IP للكمبيوتر",
+  "apiHostHint": "192.168.1.10",
+  "apiHostEmpty": "اتركه فارغاً للإعداد التلقائي",
+  "save": "حفظ",
+  "cancel": "إلغاء",
+  "yes": "نعم",
+  "no": "لا",
+  "confirm": "تأكيد",
+  "loading": "جاري التحميل…",
+  "loadingData": "جاري تحميل البيانات…",
+  "loadingDashboard": "جاري تحميل لوحة التحكم…",
+  "retry": "إعادة المحاولة",
+  "email": "البريد الإلكتروني",
+  "password": "كلمة المرور",
+  "name": "الاسم الكامل",
+  "phone": "رقم الهاتف",
+  "province": "المحافظة",
+  "provinceNineveh": "نينوى",
+  "welcomeBack": "مرحباً بعودتك",
+  "loginSubtitle": "سجّل دخولك للمتابعة",
+  "demoAccounts": "حسابات تجريبية",
+  "demoOwner": "صاحب ملعب",
+  "demoUser": "مستخدم",
+  "createAccountLogin": "إنشاء حساب والدخول",
+  "addProfilePhoto": "إضافة صورة شخصية (اختياري)",
+  "createOwnerAccount": "إنشاء حساب الملعب",
+  "fields": "الملاعب",
+  "myBookings": "حجوزاتي",
+  "notifications": "إشعارات",
+  "searchFields": "ابحث عن ملعب…",
+  "noFields": "لا توجد ملاعب",
+  "noFieldsHint": "جرّب تغيير كلمات البحث",
+  "noBookings": "لا توجد حجوزات",
+  "noBookingsHint": "احجز ملعبك الأول من تبويب الملاعب",
+  "noNotifications": "لا توجد إشعارات",
+  "markAllRead": "تعليم الكل كمقروء",
+  "upcoming": "قادمة",
+  "pending": "بانتظار",
+  "newLabel": "جديدة",
+  "sortDefault": "الافتراضي",
+  "sortPriceAsc": "السعر ↑",
+  "sortPriceDesc": "السعر ↓",
+  "sortName": "الاسم",
+  "cancelBooking": "إلغاء الحجز",
+  "cancelBookingConfirm": "هل أنت متأكد من إلغاء هذا الحجز؟",
+  "cancelWindowError": "لا يمكن الإلغاء بعد بدء الموعد أو للحجوزات غير النشطة",
+  "cancelWindowHint": "إلغاء مجاني قبل الموعد بيوم أو أكثر",
+  "cancelLatePenaltyHint": "إلغاء خلال 12 ساعة من الموعد يُخصم 5,000 د.ع",
+  "cancelLatePenaltyConfirm": "سيتم خصم 5,000 د.ع: 2,500 لمالك الملعب و2,500 لإدارة التطبيق. هل تريد المتابعة؟",
+  "cancelSuccessWithPenalty": "تم الإلغاء — خُصم 5,000 د.ع",
+  "accountRestrictedError": "تم تقييد الحساب بسبب الإلغاءات المتكررة",
+  "bookingInvalidHours": "مدة الحجز يجب أن تكون بين ساعة وساعتين",
+  "bookingOutsideHours": "أوقات العمل من 9:00 ص حتى 12:00 م",
+  "bookingPastTime": "لا يمكن الحجز في وقت ماضٍ",
+  "yesCancel": "نعم، إلغاء",
+  "rejectBooking": "رفض الحجز",
+  "rejectBookingConfirm": "هل أنت متأكد من رفض هذا الحجز؟",
+  "yesReject": "نعم، رفض",
+  "approve": "موافقة",
+  "reject": "رفض",
+  "bookings": "الحجوزات",
+  "all": "الكل",
+  "approved": "مؤكدة",
+  "noOwnerBookings": "لا توجد حجوزات",
+  "noOwnerBookingsHint": "ستظهر طلبات الحجز هنا",
+  "connectionLost": "انقطع الاتصال — تحقق من الإنترنت وحاول مجدداً",
+  "insufficientWalletBalance": "رصيد المحفظة غير كافٍ لتغطية العمولة. يرجى الشحن.",
+  "confirmBooking": "تأكيد الحجز",
+  "confirmAndSend": "تأكيد وإرسال",
+  "total": "المجموع",
+  "hours": "{count, plural, =1{ساعة واحدة} other{{count} ساعة}}",
+  "commissionNote": "سيتم خصم عمولة 10% من (سعر الساعة × عدد الساعات) عند تأكيد المالك",
+  "platformCommissionRate": "10% من سعر الساعة لكل ساعة محجوزة",
+  "bookingSent": "تم إرسال طلب الحجز بنجاح",
+  "bookingSentRef": "تم الإرسال — الرقم المرجعي: {code}",
+  "selectTime": "اختر وقت الحجز",
+  "week": "أسبوع",
+  "noSlots": "لا توجد أوقات متاحة",
+  "noSlotsHint": "جرّب لاحقاً أو اسحب للتحديث",
+  "tapToCall": "اضغط للاتصال",
+  "perHour": "/ساعة",
+  "edit": "تعديل",
+  "saveChanges": "حفظ التغييرات",
+  "newPasswordOptional": "كلمة مرور جديدة (اختياري)",
+  "yourField": "ملعبك",
+  "saveField": "حفظ الملعب",
+  "fieldUpdated": "تم تحديث بيانات الملعب",
+  "profileUpdated": "تم تحديث الملف الشخصي",
+  "passwordStrength": "قوة كلمة المرور: {level}",
+  "strengthWeak": "ضعيفة",
+  "strengthFair": "مقبولة",
+  "strengthGood": "جيدة",
+  "strengthStrong": "قوية",
+  "showPassword": "إظهار",
+  "hidePassword": "إخفاء",
+  "copyReference": "نسخ الرقم المرجعي",
+  "referenceCopied": "تم نسخ الرقم المرجعي",
+  "sortBy": "ترتيب",
+  "netRevenue": "صافي الإيرادات",
+  "financialSummary": "الملخص المالي",
+  "totalBookings": "إجمالي الحجوزات",
+  "waiting": "بانتظار",
+  "hello": "مرحباً، {name}",
+  "taglineLong": "احجز ملعبك في نينوى بسهولة",
+  "startNow": "ابدأ الآن",
+  "chooseAccountType": "اختر نوع حسابك للمتابعة",
+  "registerUserCta": "مستخدم — احجز ملعب",
+  "registerOwnerCta": "صاحب ملعب — أدر حجوزاتك",
+  "alreadyHaveAccount": "لدي حساب بالفعل — تسجيل الدخول",
+  "featureInstant": "حجز فوري",
+  "featureNotify": "إشعارات",
+  "featureTrusted": "موثوق",
+  "onboardSkip": "تخطي",
+  "onboardNext": "التالي",
+  "onboardStart": "ابدأ الاستخدام",
+  "onboardTitle1": "اكتشف أفضل الملاعب",
+  "onboardBody1": "تصفّح ملاعب نينوى بأسعار واضحة وصور وتفاصيل كاملة لكل ملعب.",
+  "onboardTitle2": "احجز بثوانٍ",
+  "onboardBody2": "اختر الوقت المناسب، احجز ساعة أو ساعتين، وأرسل طلبك فوراً لصاحب الملعب.",
+  "onboardTitle3": "تابع كل شيء لحظياً",
+  "onboardBody3": "إشعارات فورية عند الموافقة أو الرفض، وتتبع حجوزاتك من مكان واحد.",
+  "browseFields": "تصفح الملاعب",
+  "subtotal": "المجموع الفرعي",
+  "pricePerHourLine": "سعر الساعة",
+  "payAtField": "الدفع في الملعب",
+  "bookingSummary": "ملخص الحجز",
+  "devModeEnabled": "تم تفعيل وضع المطوّر",
+  "serverSaved": "تم حفظ إعدادات الخادم",
+  "stopDevMode": "إيقاف وضع المطوّر",
+  "statusPendingApproval": "بانتظار الموافقة",
+  "statusRejected": "مرفوض",
+  "statusCancelled": "ملغي",
+  "labelField": "الملعب",
+  "labelDateTime": "الموعد",
+  "labelDuration": "المدة",
+  "labelAmount": "المبلغ",
+  "grandTotal": "الإجمالي",
+  "appCommission": "عمولة التطبيق",
+  "markAllReadCount": "تعليم الكل كمقروء ({count})",
+  "toggleLanguage": "تبديل اللغة",
+  "languageSwitched": "تم التبديل إلى {language}",
+  "rtTitleNewBooking": "طلب حجز جديد",
+  "rtMsgNewBooking": "حجز من {userName} — {dateTime} — {referenceCode}",
+  "rtTitleBookingPending": "طلبك قيد المراجعة",
+  "rtMsgBookingPending": "تم إرسال طلب الحجز — {referenceCode}",
+  "rtTitleBookingApproved": "تم قبول الحجز",
+  "rtMsgBookingApproved": "تمت الموافقة — {fieldName} — {referenceCode}",
+  "rtTitleBookingRejected": "تم رفض الحجز",
+  "rtMsgBookingRejected": "رفض حجز — {fieldName}",
+  "rtTitleBookingCancelled": "إلغاء حجز",
+  "rtMsgBookingCancelled": "إلغاء {dateTime} — {fieldName}",
+  "rtSignalRConnected": "متصل بالتحديثات اللحظية",
+  "rtSignalRReconnecting": "إعادة الاتصال…",
+  "slotUnderSelection": "يتم الحجز الآن…",
+  "slotJustBooked": "عذراً، هذا الوقت تم حجزه للتو من قبل مستخدم آخر",
+  "slotLockExpired": "انتهت مهلة الاختيار، اختر وقتاً آخر",
+  "ownerDashboard": "لوحة التحكم",
+  "bookingApprovedSnack": "تمت الموافقة على الحجز",
+  "bookingRejectedSnack": "تم رفض الحجز",
+  "pendingBookingsAlert": "لديك {count} حجز بانتظار الموافقة",
+  "yourInfo": "معلوماتك",
+  "fieldInfo": "معلومات الملعب",
+  "fieldNameLabel": "اسم الملعب",
+  "addressLabel": "العنوان",
+  "fieldPhoneLabel": "هاتف الملعب",
+  "pricePerHourLabel": "سعر الساعة (دينار)",
+  "addFieldPhoto": "إضافة صورة الملعب",
+  "nameShort": "الاسم",
+  "fieldRequired": "مطلوب",
+  "invalidPrice": "أدخل سعراً صحيحاً",
+  "saveFailed": "فشل الحفظ",
+  "registerError": "خطأ في التسجيل",
+  "pricePerHourDisplay": "{price} د.ع/ساعة",
+  "relativeNow": "الآن",
+  "relativeMinutes": "منذ {count} دقيقة",
+  "relativeHours": "منذ {count} ساعة",
+  "relativeYesterday": "أمس",
+  "relativeDays": "منذ {count} أيام",
+  "relativeWeeks": "منذ {count} أسابيع",
+  "relativeMonths": "منذ {count} شهر",
+  "relativeYears": "منذ {count} سنة",
+  "passwordMinChars": "6 أحرف على الأقل",
+  "completeAllFields": "يرجى إكمال جميع الحقول بشكل صحيح",
+  "@markAllReadCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@languageSwitched": {
+    "placeholders": {
+      "language": {"type": "String"}
+    }
+  },
+  "@rtMsgNewBooking": {
+    "placeholders": {
+      "userName": {"type": "String"},
+      "dateTime": {"type": "String"},
+      "referenceCode": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingPending": {
+    "placeholders": {
+      "referenceCode": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingApproved": {
+    "placeholders": {
+      "fieldName": {"type": "String"},
+      "referenceCode": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingRejected": {
+    "placeholders": {
+      "fieldName": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingCancelled": {
+    "placeholders": {
+      "dateTime": {"type": "String"},
+      "fieldName": {"type": "String"}
+    }
+  },
+  "@pendingBookingsAlert": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@pricePerHourDisplay": {
+    "placeholders": {
+      "price": {"type": "int"}
+    }
+  },
+  "@relativeMinutes": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeHours": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeDays": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeWeeks": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeMonths": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeYears": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "bookingHistory": "سجل الحجوزات",
+  "totalHoursBooked": "إجمالي الساعات التي حجزتها",
+  "totalHoursValue": "{hours} ساعة",
+  "@totalHoursValue": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "statusCompleted": "مكتمل",
+  "rateField": "قيّم الملعب",
+  "submitReview": "إرسال التقييم",
+  "reviewSubmitted": "شكراً لتقييمك!",
+  "reviewOnlyAfterBooking": "التقييم متاح بعد موافقة المالك على حجزك",
+  "alreadyReviewed": "لقد قيّمت هذا الملعب",
+  "yourRating": "تقييمك",
+  "reviewsCount": "{count} تقييم",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "penaltyShootout": "ركلات جزاء",
+  "penaltyChooseMode": "اختر نمط اللعب",
+  "penaltyVsAi": "ضد الروبوت",
+  "penaltyVsAiHint": "سجّل أهدافاً وتصدّ للروبوت — يزداد صعوبة كل 3 أهداف!",
+  "penaltyTwoPlayers": "لاعبان على نفس الهاتف",
+  "penaltyTwoPlayersHint": "مرّر الهاتف بين المسدّد والحارس",
+  "penaltyYou": "أنت",
+  "penaltyRobot": "الروبوت",
+  "penaltyPlayer1": "اللاعب 1",
+  "penaltyPlayer2": "اللاعب 2",
+  "penaltyRound": "الجولة {round}",
+  "@penaltyRound": {
+    "placeholders": {
+      "round": {"type": "int"}
+    }
+  },
+  "penaltySuddenDeath": "الموت المفاجئ",
+  "penaltyYourTurnShoot": "{player} — اختر زاوية التسديد",
+  "@penaltyYourTurnShoot": {
+    "placeholders": {
+      "player": {"type": "String"}
+    }
+  },
+  "penaltyYourTurnSave": "اختر اتجاه القفز",
+  "penaltyKeeperTurn": "{player} — حان دورك في الحراسة",
+  "@penaltyKeeperTurn": {
+    "placeholders": {
+      "player": {"type": "String"}
+    }
+  },
+  "penaltyAiSaving": "الروبوت يستعد للتصدي…",
+  "penaltyPassPhone": "مرّر الهاتف للحارس",
+  "penaltyGoal": "هدف!",
+  "penaltySaved": "تصدي!",
+  "penaltyPost": "عارضة!",
+  "penaltyTapContinue": "اضغط للمتابعة",
+  "penaltyGameOver": "انتهت المباراة",
+  "penaltyWinner": "الفائز: {name}",
+  "@penaltyWinner": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "penaltyDraw": "تعادل!",
+  "penaltyPlayAgain": "لعب مرة أخرى",
+  "penaltyAiLevel": "صعوبة {level}",
+  "@penaltyAiLevel": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "bookNow": "احجز الآن",
+  "availableNow": "متاح الآن",
+  "popularFields": "الملاعب الشائعة",
+  "filter": "فلتر",
+  "homeTab": "الرئيسية",
+  "favoritesTab": "المفضلة",
+  "moreTab": "المزيد",
+  "profileTab": "حسابي",
+  "heroSlide1Title": "احجز ملعبك في نينوى",
+  "heroSlide1Subtitle": "أفضل الملاعب بأسعار منافسة",
+  "heroSlide2Title": "ركلات جزاء مع الأصدقاء",
+  "heroSlide2Subtitle": "جرّب لعبتنا المحلية أثناء انتظار موعدك",
+  "quickSupport": "الدعم",
+  "quickCertified": "ملعب معتمد",
+  "quickSoon": "قريباً",
+  "quickOffers": "العروض",
+  "trustSecure": "دفع آمن",
+  "trustBookings": "حجز مكتمل",
+  "trustFields": "ملعب متاح",
+  "trustUsers": "عميل سعيد",
+  "noFavorites": "لا توجد مفضلة",
+  "noFavoritesHint": "اضغط القلب على ملعب لإضافته للمفضلة",
+  "moreMenuTitle": "المزيد",
+  "sortAndFilter": "الترتيب والفلترة",
+  "searchFieldsExtended": "ابحث عن ملعب، حي أو مدينة...",
+  "heroBookSeconds": "احجز ملعبك في ثواني",
+  "featureSupport": "الدعم والمساعدة",
+  "amenityParking": "مواقف",
+  "amenityLighting": "إضاءة",
+  "amenityShowers": "دش",
+  "amenityCafeteria": "كافتيريا",
+  "promoTitle": "عروض حصرية هذا الأسبوع",
+  "promoSubtitle": "احجز 3 ساعات واحصل على ساعة مجاناً",
+  "promoCta": "اكتشف",
+  "exploreTab": "استكشاف",
+  "category5v5": "5 ضد 5",
+  "category7v7": "7 ضد 7",
+  "category11v11": "11 ضد 11",
+  "categoryIndoor": "داخلي",
+  "categoryOutdoor": "خارجي",
+  "exploreFilters": "الفلاتر",
+  "filterPrice": "السعر",
+  "filterRating": "التقييم",
+  "applyFilters": "تطبيق",
+  "mapPlaceholder": "لا توجد ملاعب على الخريطة حالياً",
+  "bookingsUpcoming": "القادمة",
+  "bookingsCompleted": "المكتملة",
+  "bookingsCancelled": "الملغاة",
+  "changePassword": "تغيير كلمة المرور",
+  "paymentMethods": "طرق الدفع",
+  "paymentMethodsHint": "تُستخدم بوابة الدفع الافتراضية عند دفع الحجوزات.",
+  "paymentMethodSaved": "تم حفظ طريقة الدفع",
+  "paymentPendingHint": "الدفع مطلوب — أكمل الدفع ليتمكن المالك من الموافقة على حجزك.",
+  "fieldLoadFailed": "تعذّر تحميل تفاصيل الملعب",
+  "darkMode": "الوضع الداكن",
+  "chooseDate": "اختر التاريخ",
+  "chooseTime": "اختر الوقت",
+  "confirmBooking": "تأكيد الحجز",
+  "payment": "الدفع",
+  "bookingSuccess": "تم الحجز بنجاح",
+  "selectDuration": "مدة اللعب",
+  "startTime": "وقت البداية",
+  "paymentSummary": "ملخص الدفع",
+  "fieldLabel": "الملعب",
+  "dateLabel": "التاريخ",
+  "hoursLabel": "الساعات",
+  "discountLabel": "الخصم",
+  "totalLabel": "الإجمالي",
+  "payNow": "ادفع الآن",
+  "payVisa": "فيزا",
+  "payMastercard": "ماستركارد",
+  "payApplePay": "Apple Pay",
+  "payGooglePay": "Google Pay",
+  "payCash": "نقداً",
+  "payOnline": "دفع إلكتروني",
+  "paymentMethod": "طريقة الدفع",
+  "paymentMethodHint": "كيف تريد دفع قيمة هذا الحجز؟",
+  "payOnlineHint": "ادفع الآن عبر زين كاش أو البطاقة",
+  "payCashHint": "الدفع نقداً في الملعب",
+  "walletTab": "المحفظة",
+  "walletBalance": "الرصيد الحالي",
+  "recentTransactions": "آخر المعاملات",
+  "topUpWallet": "شحن المحفظة",
+  "walletBlocked": "المحفظة موقوفة — تواصل مع إدارة المنصة لشحن الرصيد",
+  "walletBlockedHint": "شحن محفظة العمولة يتم يدوياً من قبل المدير فقط بعد الدفع النقدي.",
+  "walletFilterAll": "الكل",
+  "walletFilterCredits": "إيداع",
+  "walletFilterDebits": "خصم",
+  "transactionDetails": "تفاصيل المعاملة",
+  "transactionType": "النوع",
+  "transactionAmount": "المبلغ",
+  "transactionDate": "التاريخ",
+  "transactionReason": "السبب",
+  "transactionBookingId": "رقم الحجز",
+  "transactionBookingRef": "مرجع الحجز",
+  "topUpAmount": "مبلغ الشحن (د.ع)",
+  "walletTopUpSuccess": "تم شحن المحفظة بنجاح",
+  "adminTopUpWallet": "شحن محفظة المالك",
+  "adminTopUpWalletHint": "إضافة رصيد لمحفظة المالك بعد دفع نقدي مباشر",
+  "adminTopUpNote": "ملاحظة (اختياري)",
+  "qrTicketHint": "اعرض هذا الرمز عند الوصول للملعب",
+  "backToHome": "العودة للرئيسية",
+  "ownerDashboard": "لوحة المالك",
+  "adminDashboard": "لوحة الإدارة",
+  "totalRevenue": "إجمالي الإيرادات",
+  "monthlyRevenue": "إيرادات الشهر",
+  "activeBookings": "حجوزات نشطة",
+  "fieldOccupancy": "نسبة الإشغال",
+  "revenueChart": "مخطط الإيرادات",
+  "totalUsers": "المستخدمون",
+  "totalOwners": "الملاك",
+  "totalFields": "الملاعب",
+  "totalBookings": "الحجوزات",
+  "platformRevenue": "إيرادات المنصة",
+  "ownerCommissionCheckout": "دفع عمولة المنصة",
+  "outstandingCommission": "العمولة المستحقة",
+  "outstandingInvoices": "الفواتير المستحقة",
+  "noOutstandingInvoices": "لا توجد فواتير مستحقة",
+  "noOutstandingInvoicesHint": "تم تسوية جميع عمولات المنصة",
+  "paidInvoices": "فواتير مدفوعة",
+  "paymentHistory": "سجل الدفعات",
+  "selectPaymentMethod": "اختر طريقة الدفع",
+  "payZainCash": "زين كاش",
+  "payZainCashHint": "الدفع عبر تطبيق زين كاش — لا نخزّن بيانات البطاقة",
+  "payCard": "فيزا / ماستركارد",
+  "payCardHint": "صفحة دفع آمنة خارج التطبيق — لا تُخزَّن بيانات البطاقة",
+  "payCommission": "دفع العمولة",
+  "payCommissionAmount": "دفع عمولة {amount}",
+  "@payCommissionAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "outstandingHours": "{hours, plural, =1{ساعة حجز واحدة} other{{hours} ساعة حجز}}",
+  "@outstandingHours": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "invoiceHoursBookings": "{hours} ساعة · {count} حجز",
+  "@invoiceHoursBookings": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "count": {"type": "int"}
+    }
+  },
+  "verifyPayment": "تحقق من الدفع",
+  "verifyPaymentHint": "أكمل الدفع في بوابة الدفع الخارجية ثم اضغط تحقق. نستخدم رموز المعاملة فقط — بدون تخزين بيانات البطاقة.",
+  "completePaymentThenVerify": "أكمل الدفع خارجياً ثم اضغط تحقق من الدفع",
+  "paymentLaunchFailed": "تعذّر فتح بوابة الدفع",
+  "paymentVerifyFailed": "فشل التحقق — حاول بعد إتمام الدفع",
+  "paymentSuccess": "تم الدفع بنجاح — تم تحديث الحساب",
+  "newBookingTab": "حجز جديد",
+  "ownerRequestsTab": "طلبات الحجز",
+  "accountsTab": "الحسابات",
+  "pickFieldFirst": "اختر ملعباً أولاً",
+  "pickFieldFirstHint": "من تبويب الرئيسية اختر الملعب ثم أكمل الحجز هنا",
+  "changeField": "تغيير الملعب",
+  "accountsSummary": "ملخص الحساب",
+  "activeBookingsCount": "{count, plural, =1{حجز نشط واحد} other{{count} حجوزات نشطة}}",
+  "@activeBookingsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "back": "رجوع",
+  "next": "التالي"
+}

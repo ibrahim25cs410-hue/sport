@@ -1,0 +1,16 @@
+{
+  "appTitle": "Riyada",
+  "appTagline": "Book your field in Nineveh",
+  "login": "Log in",
+  "register": "Sign up",
+  "fields": "Fields",
+  "myBookings": "My bookings",
+  "notifications": "Notifications",
+  "settings": "Settings",
+  "darkMode": "Dark mode",
+  "language": "Language",
+  "loading": "Loading…",
+  "noFields": "No fields available",
+  "noBookings": "No bookings",
+  "connectionLost": "No server connection"
+}

@@ -1,0 +1,15 @@
+D:\رياضة\SportsApp\Application\bin\Release\net8.0\Riyada.Application.deps.json
+D:\رياضة\SportsApp\Application\bin\Release\net8.0\Riyada.Application.dll
+D:\رياضة\SportsApp\Application\bin\Release\net8.0\Riyada.Application.pdb
+D:\رياضة\SportsApp\Application\bin\Release\net8.0\Riyada.Domain.dll
+D:\رياضة\SportsApp\Application\bin\Release\net8.0\Riyada.Domain.pdb
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.Application.csproj.AssemblyReference.cache
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.Application.AssemblyInfoInputs.cache
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.Application.AssemblyInfo.cs
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.Application.csproj.CoreCompileInputs.cache
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.A.8673B7E7.Up2Date
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.Application.dll
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\refint\Riyada.Application.dll
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\Riyada.Application.pdb
+D:\رياضة\SportsApp\Application\obj\Release\net8.0\ref\Riyada.Application.dll

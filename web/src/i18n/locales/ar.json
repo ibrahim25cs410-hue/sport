@@ -1,0 +1,16 @@
+{
+  "appTitle": "رياضة",
+  "appTagline": "احجز ملعبك في نينوى",
+  "login": "تسجيل الدخول",
+  "register": "تسجيل",
+  "fields": "الملاعب",
+  "myBookings": "حجوزاتي",
+  "notifications": "إشعارات",
+  "settings": "الإعدادات",
+  "darkMode": "الوضع الليلي",
+  "language": "اللغة",
+  "loading": "جاري التحميل…",
+  "noFields": "لا توجد ملاعب",
+  "noBookings": "لا توجد حجوزات",
+  "connectionLost": "لا يوجد اتصال بالخادم"
+}

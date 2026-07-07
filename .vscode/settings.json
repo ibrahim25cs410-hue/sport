@@ -1,0 +1,8 @@
+{
+  "dart.flutterRunAdditionalArgs": ["-d", "chrome"],
+  "dart.flutterTestAdditionalArgs": [
+    "-d",
+    "chrome"
+  ],
+  "cmake.sourceDirectory": "D:/sport/mobile/windows"
+}

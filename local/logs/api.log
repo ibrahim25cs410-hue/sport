@@ -1,0 +1,2051 @@
+warn: Riyada.Api[0]
+      FCM credentials not configured — push notifications disabled
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      UPDATE __EFMigrationsHistory SET MigrationId = '20260624022800_AddOwnerPayments'
+      WHERE MigrationId = '20260622120000_AddOwnerPayments'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      UPDATE __EFMigrationsHistory SET MigrationId = '20260624022810_AddPaymentGatewayTransactionId'
+      WHERE MigrationId = '20260622140000_AddPaymentGatewayTransactionId'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Program[0]
+      Database schema is up to date.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s")
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN ReferenceCode TEXT NULL
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN EndTime TEXT NOT NULL DEFAULT '0001-01-01 00:00:00'
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Stadiums ADD COLUMN Latitude REAL NULL
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Stadiums ADD COLUMN Longitude REAL NULL
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN PaymentStatus TEXT NOT NULL DEFAULT 'unpaid'
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN PaymentMethod TEXT NOT NULL DEFAULT 'online'
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN IsCommissionPaid INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE WalletTransactions ADD COLUMN AdminNote TEXT NULL
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN CancellationPenaltyIqd INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN CancellationOwnerShareIqd INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN CancellationPlatformShareIqd INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Users ADD COLUMN OutstandingPenaltyIqd INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Users ADD COLUMN AccountStatus TEXT NOT NULL DEFAULT 'active'
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN CancelledAt TEXT NULL
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Users ADD COLUMN FcmToken TEXT NULL
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Users ADD COLUMN LoyaltyPoints INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Stadiums ADD COLUMN BasePrice INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN DiscountAmount INTEGER NOT NULL DEFAULT 0
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      ALTER TABLE Bookings ADD COLUMN IsDiscountApplied INTEGER NOT NULL DEFAULT 0
+info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[63]
+      User profile is available. Using 'C:\Users\user\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://0.0.0.0:61082
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\sport\SportsApp\Api
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://127.0.0.1:61082/api/health - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (873ms) [920e284a]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://127.0.0.1:61082/api/health - 200 - application/json;+charset=utf-8 928.9328ms
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/login - application/json 65
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/login'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__email_0='?' (Size = 26)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."AccountStatus", "u"."Email", "u"."FcmToken", "u"."Image", "u"."LoyaltyPoints", "u"."Name", "u"."OutstandingPenaltyIqd", "u"."PasswordHash", "u"."Phone", "u"."Province", "u"."Role"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @__email_0
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 401.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/login'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/login => 401 (26ms) [a84e1e23]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/login - 401 - application/json;+charset=utf-8 29.0494ms
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/register-user - application/json 127
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/register-user'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__email_0='?' (Size = 26)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Users" AS "u"
+          WHERE "u"."Email" = @__email_0)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 6), @p1='?' (Size = 26), @p2='?', @p3='?', @p4='?' (DbType = Int32), @p5='?' (Size = 3), @p6='?' (DbType = Int32), @p7='?' (Size = 84), @p8='?' (Size = 11), @p9='?' (Size = 5), @p10='?' (Size = 4)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Users" ("AccountStatus", "Email", "FcmToken", "Image", "LoyaltyPoints", "Name", "OutstandingPenaltyIqd", "PasswordHash", "Phone", "Province", "Role")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10)
+      RETURNING "Id";
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType4`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/register-user'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/register-user => 200 (201ms) [ba0aed0d]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/register-user - 200 - application/json;+charset=utf-8 201.7159ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint '/hubs/booking'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (42ms) [aa887460]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 42.3671ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/10 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "n"."Id", "n"."CreatedAt", "n"."IsRead", "n"."Message", "n"."Title", "n"."UserId"
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0
+      ORDER BY "n"."CreatedAt" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/notifications/10 => 200 (14ms) [25d68601]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/10 - 200 - application/json;+charset=utf-8 15.9158ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (8ms) [88ab2854]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 8.8811ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields/1/review-eligibility - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields/{fieldId:int}/review-eligibility'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32), @__fieldId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Bookings" AS "b"
+          WHERE "b"."UserId" = @__userId_0 AND "b"."StadiumId" = @__fieldId_1 AND "b"."Status" = 'approved')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32), @__uid_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "r"."Rating"
+      FROM "Reviews" AS "r"
+      WHERE "r"."FieldId" = @__fieldId_0 AND "r"."UserId" = @__uid_1
+      LIMIT 1
+warn: Microsoft.EntityFrameworkCore.Query[10103]
+      The query uses the 'First'/'FirstOrDefault' operator without 'OrderBy' and filter operators. This may lead to unpredictable results.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT AVG(CAST("t"."Rating" AS REAL)) AS "Avg", COUNT(*) AS "Count"
+      FROM (
+          SELECT "r"."Rating", 1 AS "Key"
+          FROM "Reviews" AS "r"
+          WHERE "r"."FieldId" = @__fieldId_0
+      ) AS "t"
+      GROUP BY "t"."Key"
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'FieldReviewEligibilityDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields/{fieldId:int}/review-eligibility'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields/1/review-eligibility => 200 (37ms) [b53d2a62]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields/1/review-eligibility - 200 - application/json;+charset=utf-8 38.2235ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields/1/schedule - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields/{id:int}/schedule => FieldSchedule'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT AVG(CAST("t"."Rating" AS REAL)) AS "Avg", COUNT(*) AS "Count"
+      FROM (
+          SELECT "r"."Rating", 1 AS "Key"
+          FROM "Reviews" AS "r"
+          WHERE "r"."FieldId" = @__fieldId_0
+      ) AS "t"
+      GROUP BY "t"."Key"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__id_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType8`10' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields/{id:int}/schedule => FieldSchedule'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields/1/schedule => 200 (17ms) [73f6881a]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields/1/schedule - 200 - application/json;+charset=utf-8 18.8981ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (2ms) [05cbf6a4]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 2.6002ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint '/hubs/booking'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /hubs/booking => 101 (69106ms) [8477f4db]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - 101 - - 69107.0042ms
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/login - application/json 54
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/login'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__email_0='?' (Size = 17)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."AccountStatus", "u"."Email", "u"."FcmToken", "u"."Image", "u"."LoyaltyPoints", "u"."Name", "u"."OutstandingPenaltyIqd", "u"."PasswordHash", "u"."Phone", "u"."Province", "u"."Role"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @__email_0
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType4`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/login'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/login => 200 (114ms) [a88a0e6f]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/login - 200 - application/json;+charset=utf-8 114.6441ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint '/hubs/booking'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (2ms) [9a23dadf]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 2.2174ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "n"."Id", "n"."CreatedAt", "n"."IsRead", "n"."Message", "n"."Title", "n"."UserId"
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0
+      ORDER BY "n"."CreatedAt" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/notifications/4 => 200 (3ms) [e758e421]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - 200 - application/json;+charset=utf-8 3.2688ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (1ms) [962c91c0]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 1.4418ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/bookings/user/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected'
+      ORDER BY "b"."StartTime"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'SelectListIterator`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/bookings/user/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/bookings/user/4 => 200 (40ms) [03d53504]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4 - 200 - application/json;+charset=utf-8 40.3418ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4/history - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/bookings/user/{userId:int}/history'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."UserId" = @__userId_0
+      ORDER BY "b"."StartTime" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'SelectListIterator`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/bookings/user/{userId:int}/history'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/bookings/user/4/history => 200 (10ms) [d6f8083a]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4/history - 200 - application/json;+charset=utf-8 11.7179ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/stats/user/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/stats/user/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32), @__now_1='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Bookings" AS "b"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" = 'approved' AND "b"."StartTime" > @__now_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Bookings" AS "b"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" = 'pending'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0 AND NOT ("n"."IsRead")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(SUM("b"."Hours"), 0)
+      FROM "Bookings" AS "b"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'UserStatsDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/stats/user/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/stats/user/4 => 200 (20ms) [9de17219]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/stats/user/4 - 200 - application/json;+charset=utf-8 20.5993ms
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/me - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/me'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__uid_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."AccountStatus", "u"."Email", "u"."FcmToken", "u"."Image", "u"."LoyaltyPoints", "u"."Name", "u"."OutstandingPenaltyIqd", "u"."PasswordHash", "u"."Phone", "u"."Province", "u"."Role"
+      FROM "Users" AS "u"
+      WHERE "u"."Id" = @__uid_0
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType7`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/me'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/me => 200 (5ms) [e6230ae2]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/me - 200 - application/json;+charset=utf-8 5.9801ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint '/hubs/booking'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (1ms) [112cb4ae]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 1.4255ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/10 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "n"."Id", "n"."CreatedAt", "n"."IsRead", "n"."Message", "n"."Title", "n"."UserId"
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0
+      ORDER BY "n"."CreatedAt" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/notifications/10 => 200 (1ms) [7729fc60]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/10 - 200 - application/json;+charset=utf-8 1.6334ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (1ms) [4147bc0d]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 1.2811ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint '/hubs/booking'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /hubs/booking => 101 (8025ms) [42fd3e93]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - 101 - - 8025.3367ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (0ms) [543ff877]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 1.0359ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint '/hubs/booking'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /hubs/booking => 101 (89898ms) [73a5a635]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - 101 - - 89898.9569ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/login - application/json 52
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/login'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__email_0='?' (Size = 17)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."AccountStatus", "u"."Email", "u"."FcmToken", "u"."Image", "u"."LoyaltyPoints", "u"."Name", "u"."OutstandingPenaltyIqd", "u"."PasswordHash", "u"."Phone", "u"."Province", "u"."Role"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @__email_0
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 401.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/login'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/login => 401 (52ms) [d225af1d]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/login - 401 - application/json;+charset=utf-8 52.8150ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/login - application/json 52
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/login'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__email_0='?' (Size = 17)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."AccountStatus", "u"."Email", "u"."FcmToken", "u"."Image", "u"."LoyaltyPoints", "u"."Name", "u"."OutstandingPenaltyIqd", "u"."PasswordHash", "u"."Phone", "u"."Province", "u"."Role"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @__email_0
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 401.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/login'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/login => 401 (54ms) [07207bb5]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/login - 401 - application/json;+charset=utf-8 54.7771ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/login - application/json 54
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/login'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__email_0='?' (Size = 17)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."AccountStatus", "u"."Email", "u"."FcmToken", "u"."Image", "u"."LoyaltyPoints", "u"."Name", "u"."OutstandingPenaltyIqd", "u"."PasswordHash", "u"."Phone", "u"."Province", "u"."Role"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @__email_0
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType4`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/login'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/login => 200 (52ms) [c7fadc7b]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/login - 200 - application/json;+charset=utf-8 53.0342ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint '/hubs/booking'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (2ms) [60a3b7d5]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 2.5997ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "n"."Id", "n"."CreatedAt", "n"."IsRead", "n"."Message", "n"."Title", "n"."UserId"
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0
+      ORDER BY "n"."CreatedAt" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/notifications/4 => 200 (1ms) [df14f55f]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - 200 - application/json;+charset=utf-8 2.1063ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (0ms) [b6bc896c]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 1.1276ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (2ms) [88171efa]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 2.4487ms
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/bookings/user/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected'
+      ORDER BY "b"."StartTime"
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'SelectListIterator`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/bookings/user/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/bookings/user/4 => 200 (1ms) [42b0d348]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4 - 200 - application/json;+charset=utf-8 1.8341ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/1/pay/initiate - application/json 22
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__bookingId_0='?' (DbType = Int32), @__userId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."Id" = @__bookingId_0 AND "b"."UserId" = @__userId_1
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/bookings/1/pay/initiate => 400 (43ms) [4f63992a]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/1/pay/initiate - 400 - application/json;+charset=utf-8 43.3435ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/1/pay/initiate - application/json 18
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__bookingId_0='?' (DbType = Int32), @__userId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."Id" = @__bookingId_0 AND "b"."UserId" = @__userId_1
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/bookings/1/pay/initiate => 400 (3ms) [cf77feb3]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/1/pay/initiate - 400 - application/json;+charset=utf-8 3.6167ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/2/pay/initiate - application/json 22
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__bookingId_0='?' (DbType = Int32), @__userId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."Id" = @__bookingId_0 AND "b"."UserId" = @__userId_1
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/bookings/2/pay/initiate => 400 (1ms) [24816c67]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/2/pay/initiate - 400 - application/json;+charset=utf-8 2.1046ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/2/pay/initiate - application/json 18
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__bookingId_0='?' (DbType = Int32), @__userId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."Id" = @__bookingId_0 AND "b"."UserId" = @__userId_1
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/bookings/2/pay/initiate => 400 (1ms) [f5a960c1]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/2/pay/initiate - 400 - application/json;+charset=utf-8 1.4218ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/1/pay/initiate - application/json 22
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__bookingId_0='?' (DbType = Int32), @__userId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."Id" = @__bookingId_0 AND "b"."UserId" = @__userId_1
+      LIMIT 1
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[1]
+      Setting HTTP status code 400.
+info: Microsoft.AspNetCore.Http.Result.BadRequestObjectResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/bookings/{bookingId:int}/pay/initiate'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/bookings/1/pay/initiate => 400 (2ms) [cf2b5d2d]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/bookings/1/pay/initiate - 400 - application/json;+charset=utf-8 2.8827ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4/history - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/bookings/user/{userId:int}/history'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId", "s"."Id", "s"."Address", "s"."BasePrice", "s"."CreatedAt", "s"."Image", "s"."IsActive", "s"."Latitude", "s"."Longitude", "s"."Name", "s"."OwnerId", "s"."Phone", "s"."PricePerHour"
+      FROM "Bookings" AS "b"
+      INNER JOIN "Stadiums" AS "s" ON "b"."StadiumId" = "s"."Id"
+      WHERE "b"."UserId" = @__userId_0
+      ORDER BY "b"."StartTime" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'SelectListIterator`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/bookings/user/{userId:int}/history'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/bookings/user/4/history => 200 (3ms) [3ac0c732]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/bookings/user/4/history - 200 - application/json;+charset=utf-8 3.3017ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/stats/user/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/stats/user/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32), @__now_1='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Bookings" AS "b"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" = 'approved' AND "b"."StartTime" > @__now_1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Bookings" AS "b"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" = 'pending'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0 AND NOT ("n"."IsRead")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(SUM("b"."Hours"), 0)
+      FROM "Bookings" AS "b"
+      WHERE "b"."UserId" = @__userId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'UserStatsDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/stats/user/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/stats/user/4 => 200 (3ms) [982139c6]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/stats/user/4 - 200 - application/json;+charset=utf-8 3.4740ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (2ms) [bafb89bb]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 2.3087ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (2ms) [8719ae05]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 2.4646ms
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/health - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/health'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'ApiInfoDto' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/health'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/health => 200 (3ms) [f7769573]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/health - 200 - application/json;+charset=utf-8 3.4341ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/notifications/10/read - application/json 0
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/notifications/{id:int}/read'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "n"."Id", "n"."CreatedAt", "n"."IsRead", "n"."Message", "n"."Title", "n"."UserId"
+      FROM "Notifications" AS "n"
+      WHERE "n"."Id" = @__p_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Notifications" SET "IsRead" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'Notification' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/notifications/{id:int}/read'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/notifications/10/read => 200 (25ms) [52eb45de]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/notifications/10/read - 200 - application/json;+charset=utf-8 25.2267ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "n"."Id", "n"."CreatedAt", "n"."IsRead", "n"."Message", "n"."Title", "n"."UserId"
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0
+      ORDER BY "n"."CreatedAt" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/notifications/4 => 200 (1ms) [c3a54554]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - 200 - application/json;+charset=utf-8 1.1989ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://192.168.10.20:61082/api/notifications/user/4/read-all - application/json 0
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/notifications/user/{userId:int}/read-all'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Notifications" AS "n"
+      SET "IsRead" = 1
+      WHERE "n"."UserId" = @__userId_0 AND NOT ("n"."IsRead")
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType3`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/notifications/user/{userId:int}/read-all'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      POST /api/notifications/user/4/read-all => 200 (10ms) [b39f99ec]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://192.168.10.20:61082/api/notifications/user/4/read-all - 200 - application/json;+charset=utf-8 10.2731ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "n"."Id", "n"."CreatedAt", "n"."IsRead", "n"."Message", "n"."Title", "n"."UserId"
+      FROM "Notifications" AS "n"
+      WHERE "n"."UserId" = @__userId_0
+      ORDER BY "n"."CreatedAt" DESC
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/notifications/{userId:int}'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/notifications/4 => 200 (0ms) [2c970896]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/notifications/4 - 200 - application/json;+charset=utf-8 0.9842ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (2ms) [2b37aa83]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 3.2135ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (2ms) [cf7bce50]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 2.9787ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (2ms) [f969ab8f]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 2.8651ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://192.168.10.20:61082/api/fields - application/json -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/fields => ListFields'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."Name", "s"."Address", "s"."Phone", "s"."Image", "s"."PricePerHour", "s"."OwnerId", CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM "Reviews" AS "r"
+              WHERE "s"."Id" = "r"."FieldId") THEN (
+              SELECT AVG(CAST("r0"."Rating" AS REAL))
+              FROM "Reviews" AS "r0"
+              WHERE "s"."Id" = "r0"."FieldId")
+          ELSE 0.0
+      END, (
+          SELECT COUNT(*)
+          FROM "Reviews" AS "r1"
+          WHERE "s"."Id" = "r1"."FieldId"), "s"."Latitude", "s"."Longitude"
+      FROM "Stadiums" AS "s"
+      WHERE "s"."IsActive" AND EXISTS (
+          SELECT 1
+          FROM "Wallets" AS "w"
+          WHERE "w"."OwnerId" = "s"."OwnerId" AND ef_compare("w"."Balance", '0.0') > 0)
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'List`1' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/fields => ListFields'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /api/fields => 200 (2ms) [0e19a209]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/api/fields - 200 - application/json;+charset=utf-8 3.0391ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint '/hubs/booking'
+info: Riyada.Api.Middleware.RequestLoggingMiddleware[0]
+      GET /hubs/booking => 101 (216230ms) [216cbdc2]
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://192.168.10.20:61082/hubs/booking - 101 - - 216230.3858ms
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__now_0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."Status" = 'approved' AND CASE
+          WHEN "b"."EndTime" <> '0001-01-01 00:00:00' THEN "b"."EndTime"
+          ELSE rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', "b"."StartTime", CAST(CAST("b"."Hours" AS REAL) AS TEXT) || ' hours'), '0'), '.')
+      END < @__now_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stadiums" AS "s"
+          WHERE "s"."Id" = @__fieldId_0 AND "s"."IsActive")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__fieldId_0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."CancellationOwnerShareIqd", "b"."CancellationPenaltyIqd", "b"."CancellationPlatformShareIqd", "b"."CancelledAt", "b"."CreatedAt", "b"."DiscountAmount", "b"."EndTime", "b"."StadiumId", "b"."Hours", "b"."IsCommissionPaid", "b"."IsDiscountApplied", "b"."PaymentMethod", "b"."PaymentStatus", "b"."ReferenceCode", "b"."StartTime", "b"."Status", "b"."TotalPrice", "b"."UserId"
+      FROM "Bookings" AS "b"
+      WHERE "b"."StadiumId" = @__fieldId_0 AND "b"."Status" <> 'cancelled' AND "b"."Status" <> 'rejected' AND "b"."StartTime" >= rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day'), '0'), '.') AND "b"."StartTime" < rtrim(rtrim(strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime', 'start of day', CAST(7.0 AS TEXT) || ' days'), '0'), '.')

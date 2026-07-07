@@ -1,0 +1,545 @@
+{
+  "@@locale": "en",
+  "appTitle": "Riyada",
+  "appTagline": "Book your field in Nineveh",
+  "welcome": "Welcome",
+  "login": "Log in",
+  "register": "Sign up",
+  "registerUser": "User registration",
+  "registerOwner": "Field owner registration",
+  "logout": "Log out",
+  "settings": "Settings",
+  "profile": "Profile",
+  "darkMode": "Dark mode",
+  "darkModeOn": "On",
+  "darkModeOff": "Off",
+  "lightMode": "Light mode",
+  "language": "Language",
+  "languageAr": "العربية",
+  "languageEn": "English",
+  "aboutApp": "About",
+  "aboutAppSubtitle": "Riyada — field booking in Nineveh\nVersion 1.0.0",
+  "devMode": "Developer mode",
+  "devModeSubtitle": "Server settings (developers)",
+  "apiHostLabel": "Computer IP address",
+  "apiHostHint": "192.168.1.10",
+  "apiHostEmpty": "Leave empty for automatic setup",
+  "save": "Save",
+  "cancel": "Cancel",
+  "yes": "Yes",
+  "no": "No",
+  "confirm": "Confirm",
+  "loading": "Loading…",
+  "loadingData": "Loading data…",
+  "loadingDashboard": "Loading dashboard…",
+  "retry": "Retry",
+  "email": "Email",
+  "password": "Password",
+  "name": "Full name",
+  "phone": "Phone number",
+  "province": "Province",
+  "provinceNineveh": "Nineveh",
+  "welcomeBack": "Welcome back",
+  "loginSubtitle": "Sign in to continue",
+  "demoAccounts": "Demo accounts",
+  "demoOwner": "Field owner",
+  "demoUser": "User",
+  "createAccountLogin": "Create account & sign in",
+  "addProfilePhoto": "Add profile photo (optional)",
+  "createOwnerAccount": "Create field account",
+  "fields": "Fields",
+  "myBookings": "My bookings",
+  "notifications": "Notifications",
+  "searchFields": "Search for a field…",
+  "noFields": "No fields found",
+  "noFieldsHint": "Try changing your search terms",
+  "noBookings": "No bookings",
+  "noBookingsHint": "Book your first field from the Fields tab",
+  "noNotifications": "No notifications",
+  "markAllRead": "Mark all as read",
+  "upcoming": "Upcoming",
+  "pending": "Pending",
+  "newLabel": "New",
+  "sortDefault": "Default",
+  "sortPriceAsc": "Price ↑",
+  "sortPriceDesc": "Price ↓",
+  "sortName": "Name",
+  "cancelBooking": "Cancel booking",
+  "cancelBookingConfirm": "Are you sure you want to cancel this booking?",
+  "cancelWindowError": "Cannot cancel after the booking time or for inactive bookings",
+  "cancelWindowHint": "Free cancellation if more than 24 hours remain",
+  "cancelLatePenaltyHint": "Cancelling within 12 hours incurs a 5,000 IQD fee",
+  "cancelLatePenaltyConfirm": "A 5,000 IQD fee will apply: 2,500 to the field owner and 2,500 to the platform. Continue?",
+  "cancelSuccessWithPenalty": "Cancelled — 5,000 IQD fee applied",
+  "accountRestrictedError": "Account restricted due to excessive cancellations.",
+  "bookingInvalidHours": "Booking duration must be between 1 and 2 hours",
+  "bookingOutsideHours": "Operating hours: 9:00 AM – 12:00 AM",
+  "bookingPastTime": "Cannot book a time in the past",
+  "yesCancel": "Yes, cancel",
+  "rejectBooking": "Reject booking",
+  "rejectBookingConfirm": "Are you sure you want to reject this booking?",
+  "yesReject": "Yes, reject",
+  "approve": "Approve",
+  "reject": "Reject",
+  "bookings": "Bookings",
+  "all": "All",
+  "approved": "Confirmed",
+  "noOwnerBookings": "No bookings",
+  "noOwnerBookingsHint": "Booking requests will appear here",
+  "connectionLost": "Connection lost. Please check your internet and try again.",
+  "insufficientWalletBalance": "Insufficient balance to cover commission. Please top up.",
+  "confirmBooking": "Confirm booking",
+  "confirmAndSend": "Confirm & send",
+  "total": "Total",
+  "hours": "{count, plural, =1{1 hour} other{{count} hours}}",
+  "@hours": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "commissionNote": "A 10% platform commission on (price per hour × hours booked) applies when the owner confirms",
+  "platformCommissionRate": "10% of field price per booked hour",
+  "bookingSent": "Booking request sent successfully",
+  "bookingSentRef": "Sent — reference: {code}",
+  "@bookingSentRef": {
+    "placeholders": {
+      "code": {"type": "String"}
+    }
+  },
+  "selectTime": "Choose booking time",
+  "week": "Week",
+  "noSlots": "No available times",
+  "noSlotsHint": "Try later or pull to refresh",
+  "tapToCall": "Tap to call",
+  "perHour": "/hour",
+  "edit": "Edit",
+  "saveChanges": "Save changes",
+  "newPasswordOptional": "New password (optional)",
+  "yourField": "Your field",
+  "saveField": "Save field",
+  "fieldUpdated": "Field updated",
+  "profileUpdated": "Profile updated",
+  "passwordStrength": "Password strength: {level}",
+  "@passwordStrength": {
+    "placeholders": {
+      "level": {"type": "String"}
+    }
+  },
+  "strengthWeak": "Weak",
+  "strengthFair": "Fair",
+  "strengthGood": "Good",
+  "strengthStrong": "Strong",
+  "showPassword": "Show",
+  "hidePassword": "Hide",
+  "copyReference": "Copy reference",
+  "referenceCopied": "Reference copied",
+  "sortBy": "Sort",
+  "netRevenue": "Net revenue",
+  "financialSummary": "Financial summary",
+  "totalBookings": "Total bookings",
+  "waiting": "Waiting",
+  "hello": "Hello, {name}",
+  "@hello": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "taglineLong": "Book your field in Nineveh with ease",
+  "startNow": "Get started",
+  "chooseAccountType": "Choose your account type to continue",
+  "registerUserCta": "User — book a field",
+  "registerOwnerCta": "Field owner — manage bookings",
+  "alreadyHaveAccount": "I already have an account — log in",
+  "featureInstant": "Instant booking",
+  "featureNotify": "Notifications",
+  "featureTrusted": "Trusted",
+  "onboardSkip": "Skip",
+  "onboardNext": "Next",
+  "onboardStart": "Get started",
+  "onboardTitle1": "Discover the best fields",
+  "onboardBody1": "Browse Nineveh fields with clear prices, photos, and full details for every venue.",
+  "onboardTitle2": "Book in seconds",
+  "onboardBody2": "Pick your time, book 1–2 hours, and send your request instantly to the field owner.",
+  "onboardTitle3": "Stay updated in real time",
+  "onboardBody3": "Instant notifications on approval or rejection, and track all bookings in one place.",
+  "browseFields": "Browse fields",
+  "subtotal": "Subtotal",
+  "pricePerHourLine": "Price per hour",
+  "payAtField": "Pay at the field",
+  "bookingSummary": "Booking summary",
+  "devModeEnabled": "Developer mode enabled",
+  "serverSaved": "Server settings saved",
+  "stopDevMode": "Disable developer mode",
+  "statusPendingApproval": "Pending approval",
+  "statusRejected": "Rejected",
+  "statusCancelled": "Cancelled",
+  "labelField": "Field",
+  "labelDateTime": "Date & time",
+  "labelDuration": "Duration",
+  "labelAmount": "Amount",
+  "grandTotal": "Grand total",
+  "appCommission": "App commission",
+  "markAllReadCount": "Mark all as read ({count})",
+  "toggleLanguage": "Switch language",
+  "languageSwitched": "Switched to {language}",
+  "rtTitleNewBooking": "New booking request",
+  "rtMsgNewBooking": "Booking from {userName} — {dateTime} — {referenceCode}",
+  "rtTitleBookingPending": "Your request is pending",
+  "rtMsgBookingPending": "Booking request sent — {referenceCode}",
+  "rtTitleBookingApproved": "Booking approved",
+  "rtMsgBookingApproved": "Approved — {fieldName} — {referenceCode}",
+  "rtTitleBookingRejected": "Booking rejected",
+  "rtMsgBookingRejected": "Rejected — {fieldName}",
+  "rtTitleBookingCancelled": "Booking cancelled",
+  "rtMsgBookingCancelled": "Cancelled {dateTime} — {fieldName}",
+  "rtSignalRConnected": "Connected to live updates",
+  "rtSignalRReconnecting": "Reconnecting…",
+  "slotUnderSelection": "Being booked now…",
+  "slotJustBooked": "Sorry, this slot was just booked by another user",
+  "slotLockExpired": "Selection expired — please choose another time",
+  "ownerDashboard": "Dashboard",
+  "bookingApprovedSnack": "Booking approved",
+  "bookingRejectedSnack": "Booking rejected",
+  "pendingBookingsAlert": "You have {count} bookings awaiting approval",
+  "yourInfo": "Your information",
+  "fieldInfo": "Field information",
+  "fieldNameLabel": "Field name",
+  "addressLabel": "Address",
+  "fieldPhoneLabel": "Field phone",
+  "pricePerHourLabel": "Price per hour (IQD)",
+  "addFieldPhoto": "Add field photo",
+  "nameShort": "Name",
+  "fieldRequired": "Required",
+  "invalidPrice": "Enter a valid price",
+  "saveFailed": "Save failed",
+  "registerError": "Registration error",
+  "pricePerHourDisplay": "{price} IQD/hour",
+  "relativeNow": "Just now",
+  "relativeMinutes": "{count} min ago",
+  "relativeHours": "{count} h ago",
+  "relativeYesterday": "Yesterday",
+  "relativeDays": "{count} days ago",
+  "relativeWeeks": "{count} weeks ago",
+  "relativeMonths": "{count} months ago",
+  "relativeYears": "{count} years ago",
+  "passwordMinChars": "At least 6 characters",
+  "completeAllFields": "Please complete all fields correctly",
+  "@markAllReadCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@languageSwitched": {
+    "placeholders": {
+      "language": {"type": "String"}
+    }
+  },
+  "@rtMsgNewBooking": {
+    "placeholders": {
+      "userName": {"type": "String"},
+      "dateTime": {"type": "String"},
+      "referenceCode": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingPending": {
+    "placeholders": {
+      "referenceCode": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingApproved": {
+    "placeholders": {
+      "fieldName": {"type": "String"},
+      "referenceCode": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingRejected": {
+    "placeholders": {
+      "fieldName": {"type": "String"}
+    }
+  },
+  "@rtMsgBookingCancelled": {
+    "placeholders": {
+      "dateTime": {"type": "String"},
+      "fieldName": {"type": "String"}
+    }
+  },
+  "@pendingBookingsAlert": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@pricePerHourDisplay": {
+    "placeholders": {
+      "price": {"type": "int"}
+    }
+  },
+  "@relativeMinutes": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeHours": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeDays": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeWeeks": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeMonths": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "@relativeYears": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "bookingHistory": "Booking history",
+  "totalHoursBooked": "Total hours you've booked",
+  "totalHoursValue": "{hours} hours",
+  "@totalHoursValue": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "statusCompleted": "Completed",
+  "rateField": "Rate this field",
+  "submitReview": "Submit review",
+  "reviewSubmitted": "Thanks for your review!",
+  "reviewOnlyAfterBooking": "You can rate after the owner approves your booking",
+  "alreadyReviewed": "You already reviewed this field",
+  "yourRating": "Your rating",
+  "reviewsCount": "{count} reviews",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "penaltyShootout": "Penalty shootout",
+  "penaltyChooseMode": "Choose game mode",
+  "penaltyVsAi": "Vs AI",
+  "penaltyVsAiHint": "Score goals and save shots — AI gets harder every 3 goals!",
+  "penaltyTwoPlayers": "2 players, one phone",
+  "penaltyTwoPlayersHint": "Pass the phone between shooter and keeper",
+  "penaltyYou": "You",
+  "penaltyRobot": "Robot",
+  "penaltyPlayer1": "Player 1",
+  "penaltyPlayer2": "Player 2",
+  "penaltyRound": "Round {round}",
+  "@penaltyRound": {
+    "placeholders": {
+      "round": {"type": "int"}
+    }
+  },
+  "penaltySuddenDeath": "Sudden death",
+  "penaltyYourTurnShoot": "{player} — pick your shot",
+  "@penaltyYourTurnShoot": {
+    "placeholders": {
+      "player": {"type": "String"}
+    }
+  },
+  "penaltyYourTurnSave": "Pick dive direction",
+  "penaltyKeeperTurn": "{player} — your turn to keep",
+  "@penaltyKeeperTurn": {
+    "placeholders": {
+      "player": {"type": "String"}
+    }
+  },
+  "penaltyAiSaving": "AI is preparing to save…",
+  "penaltyPassPhone": "Pass the phone to the keeper",
+  "penaltyGoal": "Goal!",
+  "penaltySaved": "Saved!",
+  "penaltyPost": "Hit the post!",
+  "penaltyTapContinue": "Tap to continue",
+  "penaltyGameOver": "Game over",
+  "penaltyWinner": "Winner: {name}",
+  "@penaltyWinner": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "penaltyDraw": "Draw!",
+  "penaltyPlayAgain": "Play again",
+  "penaltyAiLevel": "Level {level}",
+  "@penaltyAiLevel": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "bookNow": "Book now",
+  "availableNow": "Available now",
+  "popularFields": "Popular fields",
+  "filter": "Filter",
+  "homeTab": "Home",
+  "favoritesTab": "Favorites",
+  "moreTab": "More",
+  "profileTab": "My account",
+  "heroSlide1Title": "Book your field in Nineveh",
+  "heroSlide1Subtitle": "Top fields at competitive prices",
+  "heroSlide2Title": "Penalty shootout mini-game",
+  "heroSlide2Subtitle": "Play locally while you wait for your slot",
+  "quickSupport": "Support",
+  "quickCertified": "Certified",
+  "quickSoon": "Coming soon",
+  "quickOffers": "Offers",
+  "trustSecure": "Secure pay",
+  "trustBookings": "Bookings done",
+  "trustFields": "Fields live",
+  "trustUsers": "Happy users",
+  "noFavorites": "No favorites",
+  "noFavoritesHint": "Tap the heart on a field to save it here",
+  "moreMenuTitle": "More",
+  "sortAndFilter": "Sort & filter",
+  "searchFieldsExtended": "Search for a field, district or city…",
+  "heroBookSeconds": "Book your field in seconds",
+  "featureSupport": "Support & help",
+  "amenityParking": "Parking",
+  "amenityLighting": "Lighting",
+  "amenityShowers": "Showers",
+  "amenityCafeteria": "Cafeteria",
+  "promoTitle": "Exclusive offers this week",
+  "promoSubtitle": "Book 3 hours and get 1 hour free",
+  "promoCta": "Explore",
+  "exploreTab": "Explore",
+  "category5v5": "5v5",
+  "category7v7": "7v7",
+  "category11v11": "11v11",
+  "categoryIndoor": "Indoor",
+  "categoryOutdoor": "Outdoor",
+  "exploreFilters": "Filters",
+  "filterPrice": "Price",
+  "filterRating": "Rating",
+  "applyFilters": "Apply",
+  "mapPlaceholder": "No fields on the map yet",
+  "bookingsUpcoming": "Upcoming",
+  "bookingsCompleted": "Completed",
+  "bookingsCancelled": "Cancelled",
+  "changePassword": "Change password",
+  "paymentMethods": "Payment methods",
+  "paymentMethodsHint": "Your default gateway is used when paying for bookings.",
+  "paymentMethodSaved": "Payment method saved",
+  "paymentPendingHint": "Payment required — complete checkout so the owner can approve your booking.",
+  "fieldLoadFailed": "Could not load field details",
+  "darkMode": "Dark mode",
+  "chooseDate": "Choose date",
+  "chooseTime": "Choose time",
+  "confirmBooking": "Confirm booking",
+  "payment": "Payment",
+  "bookingSuccess": "Booking confirmed",
+  "selectDuration": "Duration",
+  "startTime": "Start time",
+  "paymentSummary": "Payment summary",
+  "fieldLabel": "Field",
+  "dateLabel": "Date",
+  "hoursLabel": "Hours",
+  "discountLabel": "Discount",
+  "totalLabel": "Total",
+  "payNow": "Pay now",
+  "payVisa": "Visa",
+  "payMastercard": "Mastercard",
+  "payApplePay": "Apple Pay",
+  "payGooglePay": "Google Pay",
+  "payCash": "Cash",
+  "payOnline": "Pay online",
+  "paymentMethod": "Payment method",
+  "paymentMethodHint": "How would you like to pay for this booking?",
+  "payOnlineHint": "Pay now via Zain Cash or card",
+  "payCashHint": "Pay at the venue in cash",
+  "walletTab": "Wallet",
+  "walletBalance": "Current balance",
+  "recentTransactions": "Recent transactions",
+  "topUpWallet": "Top up wallet",
+  "walletBlocked": "Wallet blocked — contact platform admin to add balance",
+  "walletBlockedHint": "Only an administrator can top up your commission wallet after in-person payment.",
+  "walletFilterAll": "All",
+  "walletFilterCredits": "Credits",
+  "walletFilterDebits": "Debits",
+  "transactionDetails": "Transaction details",
+  "transactionType": "Type",
+  "transactionAmount": "Amount",
+  "transactionDate": "Date",
+  "transactionReason": "Reason",
+  "transactionBookingId": "Booking ID",
+  "transactionBookingRef": "Booking reference",
+  "topUpAmount": "Top-up amount (IQD)",
+  "walletTopUpSuccess": "Wallet topped up successfully",
+  "adminTopUpWallet": "Top up owner wallet",
+  "adminTopUpWalletHint": "Credit an owner's wallet after in-person cash payment",
+  "adminTopUpNote": "Note (optional)",
+  "qrTicketHint": "Show this QR code at the field entrance",
+  "backToHome": "Back to home",
+  "ownerDashboard": "Owner dashboard",
+  "adminDashboard": "Admin dashboard",
+  "totalRevenue": "Total revenue",
+  "monthlyRevenue": "Monthly revenue",
+  "activeBookings": "Active bookings",
+  "fieldOccupancy": "Occupancy",
+  "revenueChart": "Revenue chart",
+  "totalUsers": "Users",
+  "totalOwners": "Owners",
+  "totalFields": "Fields",
+  "totalBookings": "Bookings",
+  "platformRevenue": "Platform revenue",
+  "ownerCommissionCheckout": "Pay platform commission",
+  "outstandingCommission": "Outstanding commission",
+  "outstandingInvoices": "Outstanding invoices",
+  "noOutstandingInvoices": "No outstanding invoices",
+  "noOutstandingInvoicesHint": "All platform fees are settled",
+  "paidInvoices": "Paid invoices",
+  "paymentHistory": "Payment history",
+  "selectPaymentMethod": "Select payment method",
+  "payZainCash": "Zain Cash",
+  "payZainCashHint": "Pay via Zain Cash app — no card data stored in Riyada",
+  "payCard": "Visa / Mastercard",
+  "payCardHint": "Secure hosted checkout — card details never stored in the app",
+  "payCommission": "Pay commission",
+  "payCommissionAmount": "Pay {amount} commission",
+  "@payCommissionAmount": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "outstandingHours": "{hours, plural, =1{1 booked hour} other{{hours} booked hours}}",
+  "@outstandingHours": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "invoiceHoursBookings": "{hours} hours · {count} bookings",
+  "@invoiceHoursBookings": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "count": {"type": "int"}
+    }
+  },
+  "verifyPayment": "Verify payment",
+  "verifyPaymentHint": "Complete payment in the external gateway, then verify here. Only transaction tokens are used — no card data is stored.",
+  "completePaymentThenVerify": "Complete payment externally, then tap Verify payment",
+  "paymentLaunchFailed": "Could not open payment gateway",
+  "paymentVerifyFailed": "Payment verification failed — try again after completing payment",
+  "paymentSuccess": "Payment successful — account updated",
+  "newBookingTab": "New booking",
+  "ownerRequestsTab": "Booking requests",
+  "accountsTab": "Accounts",
+  "pickFieldFirst": "Select a field first",
+  "pickFieldFirstHint": "Pick a field from Home, then complete your booking here",
+  "changeField": "Change field",
+  "accountsSummary": "Account summary",
+  "activeBookingsCount": "{count, plural, =1{1 active booking} other{{count} active bookings}}",
+  "@activeBookingsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "back": "Back",
+  "next": "Next"
+}
