@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>رياضة — حجز الملاعب</title>
+  <style>
+    :root {
+      --bg: #0b1e36; --card: #13294b; --line: #24406b;
+      --accent: #84cc16; --accent2: #22d3ee; --text: #e5eefb; --muted: #9fb3d1;
+      --ok: #22c55e; --warn: #f59e0b; --err: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #0b1e36, #13294b);
+      padding: 18px 20px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { font-size: 20px; font-weight: 800; }
+    .brand span { color: var(--accent); }
+    main { max-width: 760px; margin: 0 auto; padding: 20px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 16px; padding: 18px; margin-bottom: 16px;
+    }
+    h2 { margin: 0 0 12px; font-size: 17px; }
+    h3 { margin: 0 0 8px; font-size: 15px; color: var(--muted); }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    input, select {
+      width: 100%; padding: 11px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: #0e2140; color: var(--text); font-size: 14px;
+    }
+    button {
+      cursor: pointer; border: none; border-radius: 10px; padding: 11px 16px;
+      font-size: 14px; font-weight: 700; color: #08131f; background: var(--accent);
+      transition: opacity .15s;
+    }
+    button:hover { opacity: .9; }
+    button.secondary { background: #24406b; color: var(--text); }
+    button.ghost { background: transparent; color: var(--accent2); padding: 6px 10px; }
+    button.danger { background: var(--err); color: #fff; }
+    button.ok { background: var(--ok); color: #06210f; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row > * { flex: 1; min-width: 120px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tabs button { flex: 1; background: #24406b; color: var(--text); }
+    .tabs button.active { background: var(--accent); color: #08131f; }
+    .item {
+      border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+      margin-bottom: 10px; background: #0e2140;
+    }
+    .item .title { font-weight: 700; }
+    .item .meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+    }
+    .badge.pending { background: #3b2f0a; color: var(--warn); }
+    .badge.accepted { background: #0c2e1a; color: var(--ok); }
+    .badge.rejected { background: #34161a; color: var(--err); }
+    .muted { color: var(--muted); font-size: 13px; }
+    .hidden { display: none; }
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #13294b; border: 1px solid var(--line); color: var(--text);
+      padding: 12px 18px; border-radius: 12px; font-size: 14px; z-index: 50;
+      max-width: 90%;
+    }
+    .toast.err { border-color: var(--err); }
+    .toast.ok { border-color: var(--ok); }
+    .empty { text-align: center; color: var(--muted); padding: 20px; font-size: 14px; }
+    .userbar { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">ريا<span>ضة</span></div>
+    <div id="userbar" class="userbar hidden">
+      <span id="whoami"></span>
+      <button class="ghost" onclick="logout()">خروج</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- شاشة الدخول / التسجيل -->
+    <section id="authView" class="card">
+      <div class="tabs">
+        <button id="tabLogin" class="active" onclick="switchAuth('login')">تسجيل الدخول</button>
+        <button id="tabRegister" onclick="switchAuth('register')">حساب جديد</button>
+      </div>
+
+      <div id="registerFields" class="hidden">
+        <label>الاسم</label>
+        <input id="regName" placeholder="اسمك" />
+        <label>النوع</label>
+        <select id="regRole">
+          <option value="user">مستخدم (يحجز ملعب)</option>
+          <option value="owner">صاحب ملعب</option>
+        </select>
+      </div>
+
+      <label>البريد الإلكتروني</label>
+      <input id="email" type="email" placeholder="you@example.com" />
+      <label>كلمة المرور</label>
+      <input id="password" type="password" placeholder="••••••" />
+
+      <div style="margin-top:16px">
+        <button id="authBtn" style="width:100%" onclick="submitAuth()">تسجيل الدخول</button>
+      </div>
+    </section>
+
+    <!-- لوحة صاحب الملعب -->
+    <section id="ownerView" class="hidden">
+      <div class="card">
+        <h2>إضافة ملعب جديد</h2>
+        <div class="row">
+          <div><label>اسم الملعب</label><input id="fName" placeholder="ملعب النخبة" /></div>
+          <div><label>الموقع</label><input id="fLoc" placeholder="الموصل" /></div>
+          <div><label>السعر/ساعة</label><input id="fPrice" type="number" placeholder="25000" /></div>
+        </div>
+        <div style="margin-top:12px"><button onclick="addField()">إضافة الملعب</button></div>
+      </div>
+      <div class="card">
+        <h2>الطلبات الواردة <button class="ghost" onclick="loadIncoming()">تحديث</button></h2>
+        <div id="incomingList"></div>
+      </div>
+    </section>
+
+    <!-- لوحة المستخدم -->
+    <section id="userView" class="hidden">
+      <div class="card">
+        <h2>الملاعب المتاحة <button class="ghost" onclick="loadFields()">تحديث</button></h2>
+        <div id="fieldsList"></div>
+      </div>
+      <div class="card">
+        <h2>حجوزاتي <button class="ghost" onclick="loadMyBookings()">تحديث</button></h2>
+        <div id="myBookings"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // نفس الأصل (same-origin) → يعمل على localhost وعلى Render تلقائياً
+    const API = '/api';
+    let session = JSON.parse(localStorage.getItem('riyada_session') || 'null');
+    let authMode = 'login';
+
+    function toast(msg, kind = '') {
+      const t = document.createElement('div');
+      t.className = 'toast ' + kind;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    async function apiCall(path, { method = 'GET', body, auth = false } = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (auth && session?.token) headers.Authorization = 'Bearer ' + session.token;
+      const res = await fetch(API + path, {
+        method, headers, body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'حدث خطأ');
+      return data;
+    }
+
+    function switchAuth(mode) {
+      authMode = mode;
+      document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+      document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+      document.getElementById('registerFields').classList.toggle('hidden', mode !== 'register');
+      document.getElementById('authBtn').textContent = mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب';
+    }
+
+    async function submitAuth() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) return toast('أدخل البريد وكلمة المرور', 'err');
+      try {
+        let data;
+        if (authMode === 'register') {
+          const name = document.getElementById('regName').value.trim();
+          const role = document.getElementById('regRole').value;
+          if (!name) return toast('أدخل الاسم', 'err');
+          data = await apiCall('/register', { method: 'POST', body: { name, email, password, role } });
+        } else {
+          data = await apiCall('/login', { method: 'POST', body: { email, password } });
+        }
+        session = data;
+        localStorage.setItem('riyada_session', JSON.stringify(session));
+        toast('مرحباً ' + data.user.name, 'ok');
+        render();
+      } catch (e) {
+        toast(e.message, 'err');
+      }
+    }
+
+    function logout() {
+      session = null;
+      localStorage.removeItem('riyada_session');
+      render();
+    }
+
+    function render() {
+      const authed = !!session?.token;
+      document.getElementById('authView').classList.toggle('hidden', authed);
+      document.getElementById('userbar').classList.toggle('hidden', !authed);
+      document.getElementById('ownerView').classList.add('hidden');
+      document.getElementById('userView').classList.add('hidden');
+
+      if (!authed) return;
+      const role = session.user.role;
+      document.getElementById('whoami').textContent = session.user.name + ' (' + (role === 'owner' ? 'صاحب ملعب' : 'مستخدم') + ')';
+
+      if (role === 'owner') {
+        document.getElementById('ownerView').classList.remove('hidden');
+        loadIncoming();
+      } else {
+        document.getElementById('userView').classList.remove('hidden');
+        loadFields();
+        loadMyBookings();
+      }
+    }
+
+    // ===== صاحب الملعب =====
+    async function addField() {
+      const name = document.getElementById('fName').value.trim();
+      const location = document.getElementById('fLoc').value.trim();
+      const pricePerHour = document.getElementById('fPrice').value;
+      if (!name || !location) return toast('أدخل اسم الملعب والموقع', 'err');
+      try {
+        await apiCall('/fields', { method: 'POST', auth: true, body: { name, location, pricePerHour } });
+        toast('تمت إضافة الملعب', 'ok');
+        document.getElementById('fName').value = '';
+        document.getElementById('fLoc').value = '';
+        document.getElementById('fPrice').value = '';
+      } catch (e) { toast(e.message, 'err'); }
+    }
+
+    async function loadIncoming() {
+      const box = document.getElementById('incomingList');
+      box.innerHTML = '<div class="empty">جاري التحميل…</div>';
+      try {
+        const list = await apiCall('/bookings/incoming', { auth: true });
+        if (!list.length) return box.innerHTML = '<div class="empty">لا توجد طلبات بعد</div>';
+        box.innerHTML = list.map(b => `
+          <div class="item">
+            <div class="title">${b.fieldName} <span class="badge ${b.status}">${statusAr(b.status)}</span></div>
+            <div class="meta">${b.date} — ${b.time} — ${b.hours} ساعة</div>
+            ${b.status === 'pending' ? `
+              <div class="row" style="margin-top:10px">
+                <button class="ok" onclick="setStatus('${b.id}','accepted')">موافقة</button>
+                <button class="danger" onclick="setStatus('${b.id}','rejected')">رفض</button>
+              </div>` : ''}
+          </div>`).join('');
+      } catch (e) { box.innerHTML = `<div class="empty">${e.message}</div>`; }
+    }
+
+    async function setStatus(id, status) {
+      try {
+        await apiCall('/bookings/' + id, { method: 'PATCH', auth: true, body: { status } });
+        toast(status === 'accepted' ? 'تمت الموافقة' : 'تم الرفض', 'ok');
+        loadIncoming();
+      } catch (e) { toast(e.message, 'err'); }
+    }
+
+    // ===== المستخدم =====
+    async function loadFields() {
+      const box = document.getElementById('fieldsList');
+      box.innerHTML = '<div class="empty">جاري التحميل…</div>';
+      try {
+        const list = await apiCall('/fields');
+        if (!list.length) return box.innerHTML = '<div class="empty">لا توجد ملاعب بعد</div>';
+        box.innerHTML = list.map(f => `
+          <div class="item">
+            <div class="title">${f.name}</div>
+            <div class="meta">${f.location} — ${Number(f.pricePerHour).toLocaleString()} د.ع/ساعة</div>
+            <div class="row" style="margin-top:10px">
+              <input type="date" id="d_${f.id}" />
+              <input type="time" id="t_${f.id}" />
+              <input type="number" id="h_${f.id}" value="1" min="1" style="max-width:80px" />
+              <button onclick="book('${f.id}')">احجز</button>
+            </div>
+          </div>`).join('');
+      } catch (e) { box.innerHTML = `<div class="empty">${e.message}</div>`; }
+    }
+
+    async function book(fieldId) {
+      const date = document.getElementById('d_' + fieldId).value;
+      const time = document.getElementById('t_' + fieldId).value;
+      const hours = document.getElementById('h_' + fieldId).value || 1;
+      if (!date || !time) return toast('اختر التاريخ والوقت', 'err');
+      try {
+        await apiCall('/bookings', { method: 'POST', auth: true, body: { fieldId, date, time, hours } });
+        toast('تم إرسال الطلب — بانتظار موافقة صاحب الملعب', 'ok');
+        loadMyBookings();
+      } catch (e) { toast(e.message, 'err'); }
+    }
+
+    async function loadMyBookings() {
+      const box = document.getElementById('myBookings');
+      box.innerHTML = '<div class="empty">جاري التحميل…</div>';
+      try {
+        const list = await apiCall('/bookings/me', { auth: true });
+        if (!list.length) return box.innerHTML = '<div class="empty">لا حجوزات بعد</div>';
+        box.innerHTML = list.map(b => `
+          <div class="item">
+            <div class="title">${b.fieldName} <span class="badge ${b.status}">${statusAr(b.status)}</span></div>
+            <div class="meta">${b.date} — ${b.time} — ${b.hours} ساعة</div>
+          </div>`).join('');
+      } catch (e) { box.innerHTML = `<div class="empty">${e.message}</div>`; }
+    }
+
+    function statusAr(s) {
+      return s === 'pending' ? 'قيد الانتظار' : s === 'accepted' ? 'مقبول' : 'مرفوض';
+    }
+
+    render();
+  </script>
+</body>
+</html>
