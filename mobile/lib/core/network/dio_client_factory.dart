@@ -12,8 +12,10 @@ abstract final class DioClientFactory {
     final dio = Dio(
       BaseOptions(
         baseUrl: ApiConfig.baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 12),
+        // مهل طويلة لتحمّل "الإقلاع البارد" (cold start ~50s) لخطة Render المجانية.
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 60),
         headers: const {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

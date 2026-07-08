@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import '../../config/api_config.dart';
 import '../firebase/firebase_app.dart';
 import '../loading/global_loading_provider.dart';
 import '../../data/datasources/remote/fcm_service.dart';
@@ -32,6 +34,9 @@ class AppBootstrapResult {
 abstract final class AppBootstrap {
   static Future<AppBootstrapResult> run() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // إيقاظ خادم Render مبكراً (بدون انتظار) لتقليل تأخير "الإقلاع البارد".
+    _warmUpServer();
 
     await _safe('Firebase', () async => FirebaseAppService.initialize());
     await _safe('FCM', FcmService.initialize);
@@ -69,6 +74,22 @@ abstract final class AppBootstrap {
       themeProvider: themeProvider,
       localeProvider: localeProvider,
     );
+  }
+
+  /// نداء "إيقاظ" غير محجوب — يُطلق طلباً خفيفاً كي يبدأ خادم Render بالإقلاع
+  /// بينما يُكمل التطبيق تهيئته، فتصبح أول عملية للمستخدم أسرع.
+  static void _warmUpServer() {
+    () async {
+      try {
+        final dio = Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
+        ));
+        await dio.get<dynamic>('${ApiConfig.baseUrl}/health');
+      } catch (_) {
+        // متوقع أثناء الإقلاع البارد — الغرض مجرد إيقاظ الخادم.
+      }
+    }();
   }
 
   static Future<void> _safe(String label, Future<void> Function() action) async {
