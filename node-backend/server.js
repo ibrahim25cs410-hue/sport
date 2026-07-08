@@ -21,9 +21,14 @@ const MONGODB_URI = process.env.MONGODB_URI || '';
 const COMMISSION_RATE = 0.10; // عمولة التطبيق
 
 const app = express();
+app.set('trust proxy', 1); // خلف بروكسي Render (لعناوين IP و https الصحيحة)
 app.use(cors());
 app.use(express.json({ limit: '8mb' })); // صور base64
 app.use(express.static(path.join(__dirname, 'public')));
+
+if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-change-me') {
+  console.warn('⚠️  تحذير: JWT_SECRET غير مضبوط! اضبط متغيّر البيئة JWT_SECRET في Render.');
+}
 
 /* ================================================================== */
 /* طبقة التخزين — بدائل CRUD عامة (نفس المنطق للذاكرة و MongoDB)        */
@@ -551,6 +556,24 @@ app.get('/api/owner/wallet/status', auth, (req, res) => {
 });
 app.get('/api/owner/wallet', auth, (req, res) => {
   res.json({ walletId: 1, ownerId: req.user.id, balance: 0, status: 'active', lastUpdated: new Date().toISOString(), transactions: [] });
+});
+
+/* ================================================================== */
+/* معالجة المسارات غير الموجودة والأخطاء (JSON دائماً لمسارات /api)     */
+/* ================================================================== */
+
+app.use('/api', (_req, res) => res.status(404).json({ message: 'المسار غير موجود' }));
+
+// أي طلب آخر غير معروف → الواجهة (SPA fallback) إن وُجدت
+app.use((_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+  if (err) res.status(404).json({ message: 'غير موجود' });
+}));
+
+// معالج أخطاء عام — يضمن استجابة JSON بدل تعطّل الخادم
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  console.error('خطأ غير متوقع:', err);
+  res.status(500).json({ message: 'خطأ في الخادم' });
 });
 
 /* ================================================================== */
