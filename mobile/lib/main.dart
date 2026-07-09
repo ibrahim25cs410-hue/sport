@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart' as legacy;
 
 import 'core/bootstrap/app_bootstrap.dart';
+import 'core/bootstrap/service_bootstrap.dart';
 import 'core/notifications/booking_notification_listener.dart';
 import 'core/utils/session_key_helper.dart';
 import 'core/loading/loading_overlay.dart';
@@ -46,6 +47,7 @@ class RiyadaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(servicesReadyProvider);
     ref.watch(authInterceptorProvider);
     ref.listen(pushNotificationProvider.select((s) => s.generation), (prev, next) {
       if (prev == next) return;

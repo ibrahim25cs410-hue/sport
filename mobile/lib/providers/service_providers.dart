@@ -2,6 +2,8 @@ export '../core/di/service_providers.dart' show
     apiServiceProvider,
     apiClientProvider,
     authServiceProvider,
+    bookingServiceProvider,
+    stadiumServiceProvider,
     tokenStorageProvider,
     socketServiceProvider;
 

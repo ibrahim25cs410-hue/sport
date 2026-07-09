@@ -16,6 +16,7 @@ import '../../services/onboarding_service.dart';
 import '../../services/token_storage.dart';
 import '../../utils/api_logger.dart';
 import 'notification_bootstrap.dart';
+import 'service_bootstrap.dart';
 
 /// Result of cold-start initialization — consumed by [main].
 class AppBootstrapResult {
@@ -67,6 +68,7 @@ abstract final class AppBootstrap {
       auth.isLoggedIn ? 'session active → /home' : 'no session → /login',
     );
 
+    ServiceBootstrap.initialize(container);
     NotificationBootstrap.wire(container);
 
     return AppBootstrapResult(

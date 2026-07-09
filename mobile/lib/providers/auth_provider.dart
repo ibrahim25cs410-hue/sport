@@ -118,7 +118,6 @@ class AuthNotifier extends Notifier<AuthState> {
       state = state.copyWith(user: session.user, ownerField: session.field);
       await SessionStorage.save(session.user, session.field);
       await FcmService.syncTokenWithServer(client);
-      await _socket.connect();
     } on DioException catch (e) {
       if (AuthInterceptor.isStrictUnauthorized(e)) {
         await authService.logout();

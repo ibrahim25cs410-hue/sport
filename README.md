@@ -1,112 +1,249 @@
-# رياضة — تطبيق حجز الملاعب في نينوى
+# Riyada — Sports Field Booking Platform
 
-تطبيق لحجز الملاعب الرياضية في محافظة نينوى. يدعم **مستخدمين** (حجز ملاعب) و**أصحاب ملاعب** (إدارة الحجوزات والمالية).
+Riyada is a sports field booking system for Ninawa (Iraq). It supports **users** (book fields) and **owners** (manage bookings and revenue). Real-time updates use **Socket.io** end to end.
 
-## المنصات
+## Stack
 
-| المنصة | الحالة |
-|--------|--------|
-| Windows (لابتوب) | ✅ |
-| Android | ✅ |
-| iOS | ✅ (يتطلب Mac) |
-| Web | ✅ (تجريبي) |
+| Layer | Technology |
+|-------|------------|
+| Mobile | Flutter (Dart) + Riverpod + Dio |
+| Web | React + Vite + Socket.io client |
+| API | Node.js + Express + Socket.io |
+| Database | MongoDB Atlas (production) or in-memory (development) |
 
-## التقنيات
+## Project layout
 
-- **الواجهة:** Flutter (Dart)
-- **الخادم:** ASP.NET Core 8 Minimal API
-- **قاعدة البيانات:** SQLite + Entity Framework Core
-
-## المتطلبات
-
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-2. [Flutter SDK](https://docs.flutter.dev/get-started/install)
-3. Android Studio (للمحاكي) أو Xcode (لـ iOS على Mac)
-
-## التشغيل السريع
-
-### 1. تشغيل الخادم
-
-```powershell
-cd SportsApp\Api
-dotnet restore
-dotnet run --urls "http://0.0.0.0:61082"
+```
+sport/
+├── node-backend/     # REST API + Socket.io server
+├── mobile/           # Flutter app (Android, iOS, Windows, Web)
+├── web/              # React web client
+└── SportsApp/        # Legacy .NET API (not used by current clients)
 ```
 
-أو:
+---
+
+## Backend (`node-backend`)
+
+### Environment variables
+
+Copy the example file and edit values:
 
 ```powershell
-.\scripts\run-api.ps1
+cd node-backend
+copy .env.example .env
 ```
 
-افتح Swagger: http://localhost:61082/swagger
+| Variable | Required in production | Description |
+|----------|------------------------|-------------|
+| `MONGODB_URI` | Yes | MongoDB Atlas connection string |
+| `JWT_SECRET` | Yes | Long random string (32+ characters) |
+| `NODE_ENV` | Yes | Set to `production` on Render/VPS |
+| `PORT` | No | HTTP port (default `3000`) |
 
-### 2. تشغيل التطبيق
+**Development:** If `MONGODB_URI` is omitted, data is stored in memory and cleared on restart. A dev `JWT_SECRET` is used with a console warning.
+
+**Production:** `validateConfig()` exits if `MONGODB_URI` or `JWT_SECRET` is missing when `NODE_ENV=production`.
+
+### Run locally
+
+```powershell
+cd node-backend
+npm install
+npm run dev
+```
+
+Health check: `http://localhost:3000/api/health`
+
+### Tests
+
+```powershell
+npm run test:sockets
+npm run test:bookings
+npm run test:stadiums
+npm test
+```
+
+### Socket.io events
+
+| Event | Purpose |
+|-------|---------|
+| `notification` | Persisted notification pushed to a user |
+| `bookingUpdated` | Booking status change |
+| `slotSelection` / `slotRelease` | Field slot hold sync |
+
+Connect with JWT: `auth: { token: "<jwt>" }` to the server origin (no `/api` suffix).
+
+---
+
+## Flutter mobile (`mobile`)
+
+### API configuration
+
+Production builds default to `https://api.riyada.iq/api`. Override for local or staging:
 
 ```powershell
 cd mobile
 flutter pub get
-flutter run -d windows    # لابتوب ويندوز
-flutter run -d android    # محاكي أندرويد
-flutter run -d ios        # محاكي iOS (Mac)
+
+# Emulator / local API
+flutter run --dart-define=API_HOST=localhost --dart-define=API_PORT=3000
+
+# Physical device (use your PC LAN IP)
+flutter run --dart-define=API_HOST=192.168.1.10 --dart-define=API_PORT=3000
+
+# Full URL override
+flutter run --dart-define=API_BASE_URL=http://192.168.1.10:3000/api
 ```
 
-### 3. الهاتف الحقيقي
+Socket.io uses the same host as the API (`ApiConfig.socketBaseUrl`).
 
-1. شغّل الخادم على الكمبيوتر (`0.0.0.0:5000`)
-2. اعرف IP الكمبيوتر (مثلاً `192.168.1.10`)
-3. من إعدادات التطبيق → أدخل IP، أو:
+### Service initialization
+
+At cold start, `AppBootstrap` runs in this order:
+
+1. Firebase / FCM / local notifications
+2. Auth session restore (`AuthNotifier.bootstrap`)
+3. `ServiceBootstrap` — wires Api, Booking, Stadium, and Socket services
+4. `NotificationBootstrap` — FCM + Socket.io → local notifications
+
+After login or registration, `AuthNotifier` connects Socket.io automatically.
+
+### Build release APK
 
 ```powershell
-flutter run --dart-define=API_HOST=192.168.1.10
+cd mobile
+flutter build apk --release `
+  --dart-define=API_BASE_URL=https://api.riyada.iq/api
 ```
 
-## حسابات تجريبية
+Output: `mobile/build/app/outputs/flutter-apk/app-release.apk`
 
-| الدور | البريد | كلمة المرور |
-|-------|--------|-------------|
-| صاحب ملعب | owner@test.com | 123456 |
-| مستخدم | user@test.com | 123456 |
-
-## الميزات
-
-### المستخدم
-- تصفح الملاعب في نينوى
-- حجز 1–2 ساعة
-- إشعارات (موافقة / رفض)
-- إلغاء الحجز (قبل 24 ساعة من الموعد)
-
-### صاحب الملعب
-- تسجيل ملعب
-- موافقة / رفض الحجوزات
-- لوحة مالية (إيرادات، عمولة 10% من سعر الساعة، صافي)
-
-## بناء APK
+### Build Windows
 
 ```powershell
-.\scripts\build-apk.ps1
+flutter build windows --release `
+  --dart-define=API_BASE_URL=https://api.riyada.iq/api
 ```
 
-الملف: `mobile/build/app/outputs/flutter-apk/app-release.apk`
+---
 
-## هيكل المشروع
+## Web (`web`)
 
-```
-رياضة/
-├── SportsApp/          # Backend (.NET)
-│   ├── Api/            # نقاط API
-│   ├── Domain/         # الكيانات
-│   ├── Application/    # DTOs والقواعد
-│   └── Infrastructure/ # DB والخدمات
-├── mobile/             # تطبيق Flutter
-└── scripts/            # سكربتات التشغيل والبناء
+### Environment variables
+
+```powershell
+cd web
+copy .env.example .env.local
 ```
 
-## ملاحظات
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_HOST` | API host (default `localhost`) |
+| `VITE_API_PORT` | API port (default `61082` in code; use `3000` for node-backend) |
+| `VITE_API_BASE` | Full API base URL (overrides host/port) |
 
-- إذا ظهرت أخطاء قاعدة البيانات، احذف `SportsApp/Api/sports.db` وأعد تشغيل الخادم
-- مجلد `web/` تطبيق React قديم — غير مستخدم في النسخة النهائية
+### Run and build
 
-## العمولة
+```powershell
+cd web
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # output in web/dist
+```
 
-عمولة المنصة **10%** من (سعر الساعة × عدد الساعات المحجوزة) لكل حجز مؤكد — تُخصم من إيرادات صاحب الملعب.
+Live updates use `useSocket` (Socket.io). Polling remains as a fallback in `useLiveUpdates`.
+
+---
+
+## Quick start (full stack)
+
+**Terminal 1 — API**
+
+```powershell
+cd node-backend
+npm install
+npm run dev
+```
+
+**Terminal 2 — Flutter**
+
+```powershell
+cd mobile
+flutter pub get
+flutter run -d windows --dart-define=API_PORT=3000
+```
+
+**Terminal 3 — Web (optional)**
+
+```powershell
+cd web
+npm install
+npm run dev
+```
+
+---
+
+## Git: fix remote auth and push
+
+If `git push` fails with **Repository not found**, verify the remote URL and authenticate.
+
+### 1. Check remote
+
+```powershell
+cd d:\sport
+git remote -v
+git status
+git log -1 --oneline
+```
+
+### 2. Set the correct GitHub remote
+
+```powershell
+git remote set-url origin https://github.com/YOUR_USER/YOUR_REPO.git
+```
+
+Or with SSH (recommended after adding your SSH key to GitHub):
+
+```powershell
+git remote set-url origin git@github.com:YOUR_USER/YOUR_REPO.git
+```
+
+### 3. Authenticate (HTTPS + Personal Access Token)
+
+1. GitHub → **Settings** → **Developer settings** → **Personal access tokens**
+2. Create a token with `repo` scope
+3. Push and use the token as the password when prompted:
+
+```powershell
+git push -u origin main
+```
+
+### 4. Or install GitHub CLI and login
+
+```powershell
+winget install GitHub.cli
+gh auth login
+git push -u origin main
+```
+
+### 5. Stage and commit new changes (if any)
+
+```powershell
+git add docs/ROADMAP.md `
+  mobile/lib/core/bootstrap/ `
+  mobile/lib/main.dart `
+  mobile/lib/providers/auth_provider.dart `
+  mobile/lib/providers/service_providers.dart `
+  web/.env.example `
+  README.md
+
+git commit -m "Finalize Socket.io bootstrap and project documentation"
+git push -u origin main
+```
+
+---
+
+## Commission
+
+Platform commission is **10%** of (hourly rate × booked hours) per confirmed booking, deducted from owner revenue.

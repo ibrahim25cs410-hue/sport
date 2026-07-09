@@ -7,7 +7,6 @@ import '../../data/datasources/remote/fcm_service.dart';
 import '../../data/datasources/remote/notification_handler.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/push_notification_provider.dart';
-import '../../core/di/service_providers.dart';
 import '../../services/local_notification_service.dart';
 
 /// Wires FCM + local notification callbacks after [ProviderContainer] is ready.
