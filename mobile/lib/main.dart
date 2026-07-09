@@ -58,7 +58,7 @@ class RiyadaApp extends ConsumerWidget {
     final textDirection = context.watch<LocaleProvider>().textDirection;
 
     return MaterialApp.router(
-      title: 'رياضة',
+      title: 'Riyada',
       debugShowCheckedModeBanner: false,
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,

@@ -20,17 +20,24 @@ class RiyadaLogo extends StatelessWidget {
   final double size;
   final bool light;
 
+  static const _pngLogo = 'assets/brand/riyada_logo.png';
+
   String _iconAsset() => switch (variant) {
-        RiyadaLogoVariant.splash => 'assets/logo/riyada_splash.svg',
+        RiyadaLogoVariant.splash => _pngLogo,
         RiyadaLogoVariant.favicon => 'assets/logo/riyada_favicon.svg',
-        _ => 'assets/brand/riyada_icon.svg',
+        RiyadaLogoVariant.full => _pngLogo,
+        RiyadaLogoVariant.compact => _pngLogo,
       };
+
+  bool get _usesPng => variant == RiyadaLogoVariant.splash ||
+      variant == RiyadaLogoVariant.full ||
+      variant == RiyadaLogoVariant.compact;
 
   double get _iconSize => switch (variant) {
         RiyadaLogoVariant.splash => size,
         RiyadaLogoVariant.favicon => size,
         RiyadaLogoVariant.compact => size,
-        RiyadaLogoVariant.full => size * 0.72,
+        RiyadaLogoVariant.full => size,
       };
 
   @override
@@ -41,21 +48,27 @@ class RiyadaLogo extends StatelessWidget {
     final textColor = light ? DesignTokens.textPrimary : c.onSurface;
     final fontFamily = isArabic ? GoogleFonts.cairo : GoogleFonts.inter;
 
-    final icon = Container(
-      decoration: variant == RiyadaLogoVariant.splash
-          ? BoxDecoration(
-              boxShadow: DesignTokens.glowShadow(DesignTokens.limeGreen, elevated: true),
-              borderRadius: BorderRadius.circular(size * 0.28),
-            )
-          : null,
-      child: SvgPicture.asset(
+    final Widget icon;
+    if (_usesPng) {
+      icon = ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.22),
+        child: Image.asset(
+          _iconAsset(),
+          width: _iconSize,
+          height: _iconSize,
+          fit: BoxFit.cover,
+        ),
+      );
+    } else {
+      icon = SvgPicture.asset(
         _iconAsset(),
         width: _iconSize,
         height: _iconSize,
-      ),
-    );
+      );
+    }
 
-    if (variant == RiyadaLogoVariant.compact || variant == RiyadaLogoVariant.favicon) {
+    // الشعار PNG يحتوي النص مسبقاً — لا نكرّره.
+    if (_usesPng || variant == RiyadaLogoVariant.compact || variant == RiyadaLogoVariant.favicon) {
       return icon;
     }
 
@@ -63,18 +76,16 @@ class RiyadaLogo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         icon,
-        if (variant == RiyadaLogoVariant.full || variant == RiyadaLogoVariant.splash) ...[
-          SizedBox(height: size * 0.18),
-          Text(
-            label,
-            style: fontFamily(
-              fontSize: variant == RiyadaLogoVariant.splash ? size * 0.28 : size * 0.24,
-              fontWeight: FontWeight.w800,
-              color: textColor,
-              letterSpacing: isArabic ? 0 : 0.5,
-            ),
+        SizedBox(height: size * 0.18),
+        Text(
+          label,
+          style: fontFamily(
+            fontSize: size * 0.24,
+            fontWeight: FontWeight.w800,
+            color: textColor,
+            letterSpacing: isArabic ? 0 : 0.5,
           ),
-        ],
+        ),
       ],
     );
   }

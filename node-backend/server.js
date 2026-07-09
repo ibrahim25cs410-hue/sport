@@ -12,6 +12,10 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -19,16 +23,46 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const COMMISSION_RATE = 0.10; // عمولة التطبيق
+const IS_PROD = process.env.NODE_ENV === 'production';
+const STARTED_AT = Date.now();
+
+if (IS_PROD && JWT_SECRET === 'dev-secret-change-me') {
+  console.warn('⚠️  تحذير: JWT_SECRET غير مضبوط! اضبط متغيّر البيئة JWT_SECRET في Render.');
+}
 
 const app = express();
 app.set('trust proxy', 1); // خلف بروكسي Render (لعناوين IP و https الصحيحة)
+
+// أمان: ترويسات واقية (نُعطّل CSP لأننا نقدّم واجهة HTML/JS مضمّنة)
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(compression()); // ضغط الاستجابات
 app.use(cors());
 app.use(express.json({ limit: '8mb' })); // صور base64
+app.use(morgan(IS_PROD ? 'combined' : 'dev')); // تسجيل الطلبات
+
+// حدّ عام للطلبات: 300 طلب/دقيقة لكل IP
+app.use('/api', rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'طلبات كثيرة جداً، حاول لاحقاً' },
+}));
+
+// حدّ صارم لمسارات المصادقة: 10 محاولات/دقيقة لكل IP
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'محاولات دخول كثيرة، انتظر قليلاً' },
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-change-me') {
-  console.warn('⚠️  تحذير: JWT_SECRET غير مضبوط! اضبط متغيّر البيئة JWT_SECRET في Render.');
-}
+// أدوات تحقّق بسيطة من المدخلات
+const isEmail = (v) => typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const isStrongEnough = (v) => typeof v === 'string' && v.length >= 6;
 
 /* ================================================================== */
 /* طبقة التخزين — بدائل CRUD عامة (نفس المنطق للذاكرة و MongoDB)        */
@@ -233,30 +267,41 @@ async function notify(userId, title, message) {
 /* المسارات — Auth                                                     */
 /* ================================================================== */
 
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', storage: store.kind }));
+app.get('/api/health', (_req, res) => res.json({
+  status: 'ok',
+  storage: store.kind,
+  uptimeSeconds: Math.floor((Date.now() - STARTED_AT) / 1000),
+  timestamp: new Date().toISOString(),
+}));
 
-app.post('/api/register-user', async (req, res) => {
+app.post('/api/register-user', authLimiter, async (req, res) => {
   try {
     const { name, email, password, phone, province, image } = req.body || {};
     if (!name || !email || !password) return res.status(400).json({ message: 'الاسم والبريد وكلمة المرور مطلوبة' });
-    if (await findUserByEmail(email)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
+    if (!isEmail(email)) return res.status(400).json({ message: 'صيغة البريد غير صحيحة' });
+    if (!isStrongEnough(password)) return res.status(400).json({ message: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' });
+    const normEmail = email.trim().toLowerCase();
+    if (await findUserByEmail(normEmail)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
     const hashed = await bcrypt.hash(password, 10);
     const user = await store.insert('users', {
-      name, email, password: hashed, phone: phone || '', province: province || 'نينوى',
+      name, email: normEmail, password: hashed, phone: phone || '', province: province || 'نينوى',
       image: image || null, role: 'user', loyaltyPoints: 0,
     });
     res.status(201).json({ token: sign(user), user: publicUser(user) });
   } catch (e) { res.status(500).json({ message: 'خطأ في الخادم', error: String(e) }); }
 });
 
-app.post('/api/register-owner', async (req, res) => {
+app.post('/api/register-owner', authLimiter, async (req, res) => {
   try {
     const { name, email, password, phone, stadiumName, stadiumAddress, stadiumPhone, pricePerHour, stadiumImage } = req.body || {};
     if (!name || !email || !password || !stadiumName) return res.status(400).json({ message: 'بيانات ناقصة' });
-    if (await findUserByEmail(email)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
+    if (!isEmail(email)) return res.status(400).json({ message: 'صيغة البريد غير صحيحة' });
+    if (!isStrongEnough(password)) return res.status(400).json({ message: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' });
+    const normEmail = email.trim().toLowerCase();
+    if (await findUserByEmail(normEmail)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
     const hashed = await bcrypt.hash(password, 10);
     const user = await store.insert('users', {
-      name, email, password: hashed, phone: phone || '', province: 'نينوى',
+      name, email: normEmail, password: hashed, phone: phone || '', province: 'نينوى',
       image: null, role: 'owner', loyaltyPoints: 0,
     });
     const field = await store.insert('fields', {
@@ -268,11 +313,11 @@ app.post('/api/register-owner', async (req, res) => {
   } catch (e) { res.status(500).json({ message: 'خطأ في الخادم', error: String(e) }); }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ message: 'البريد وكلمة المرور مطلوبة' });
-    const user = await findUserByEmail(email);
+    const user = await findUserByEmail(String(email).trim().toLowerCase());
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'بيانات الدخول غير صحيحة' });
     }
@@ -583,7 +628,22 @@ app.use((err, _req, res, _next) => {
 async function start() {
   if (MONGODB_URI) { store = await createMongoStore(MONGODB_URI); console.log('التخزين: MongoDB'); }
   else { store = createMemoryStore(); console.log('التخزين: في الذاكرة (in-memory)'); }
-  app.listen(PORT, () => console.log(`الخادم يعمل على المنفذ ${PORT}`));
+
+  const server = app.listen(PORT, () => console.log(`الخادم يعمل على المنفذ ${PORT}`));
+
+  // إيقاف آمن: ننهي الطلبات الجارية ونغلق الاتصالات قبل الخروج
+  const shutdown = (signal) => {
+    console.log(`استلام ${signal}: إيقاف آمن للخادم...`);
+    server.close(() => {
+      console.log('أُغلق الخادم.');
+      process.exit(0);
+    });
+    // مهلة قصوى للإغلاق القسري
+    setTimeout(() => process.exit(1), 10000).unref();
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('unhandledRejection', (reason) => console.error('رفض غير معالَج:', reason));
 }
 
 start().catch((err) => { console.error('فشل بدء الخادم:', err); process.exit(1); });

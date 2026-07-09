@@ -40,7 +40,7 @@ class SplashScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const RiyadaLogo(variant: RiyadaLogoVariant.splash, size: 120, light: true),
+              const RiyadaLogo(variant: RiyadaLogoVariant.splash, size: 180, light: true),
               const SizedBox(height: 12),
               Text(l10n.appTagline, style: TextStyle(color: c.onInverseMuted, fontSize: 15)),
               const SizedBox(height: 24),
