@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../config/signalr_config.dart';
 import '../core/booking/booking_result.dart';
 import '../core/providers/booking_actions_provider.dart';
 import '../core/providers/review_provider.dart';
@@ -18,7 +17,7 @@ import '../models/schedule.dart';
 import '../models/slot_hold.dart';
 import '../providers/auth_provider.dart';
 import '../providers/session_key.dart';
-import '../providers/signalr_provider.dart';
+import '../providers/socket_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
@@ -78,13 +77,10 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
     setState(() {});
 
     try {
-      await ref.read(signalRProvider.notifier).ensureConnected(
-            hubUrl: SignalRConfig.hubUrlFromApiBase(client.baseUrl),
-            getToken: client.getToken,
-          );
-      await ref.read(signalRProvider.notifier).joinField(widget.field.id);
+      await ref.read(socketProvider.notifier).ensureConnected();
+      ref.read(socketProvider.notifier).joinField(widget.field.id);
     } catch (_) {
-      // يعمل الحجز عبر REST حتى بدون SignalR
+      // Booking still works via REST without a live socket.
     }
 
     _holdExpiryTimer = Timer.periodic(const Duration(seconds: 5), (_) => _purgeExpiredHolds());
@@ -106,17 +102,17 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
     }
 
     _slotSub = ref.listenManual<int>(
-      signalRProvider.select((s) => s.slotGeneration),
+      socketProvider.select((s) => s.slotGeneration),
       (prev, next) {
         if (prev == null || next == prev) return;
-        final state = ref.read(signalRProvider);
+        final state = ref.read(socketProvider);
         if (state.lastSlotSelection != null) _applySlotSelection(state.lastSlotSelection!);
         if (state.lastSlotRelease != null) _applySlotRelease(state.lastSlotRelease!);
       },
     );
 
     _bookingSub = ref.listenManual<int>(
-      signalRProvider.select((s) => s.generation),
+      socketProvider.select((s) => s.generation),
       (prev, next) {
         if (prev == null || next == prev || _scheduleKey == null) return;
         unawaited(_reloadSchedule());
@@ -157,7 +153,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
     _slotSub?.close();
     _bookingSub?.close();
     _releaseCurrentSlot(silent: true);
-    ref.read(signalRProvider.notifier).leaveField(widget.field.id);
+    ref.read(socketProvider.notifier).leaveField(widget.field.id);
     super.dispose();
   }
 

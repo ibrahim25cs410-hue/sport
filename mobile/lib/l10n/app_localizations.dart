@@ -1127,17 +1127,17 @@ abstract class AppLocalizations {
   /// **'Cancelled {dateTime} — {fieldName}'**
   String rtMsgBookingCancelled(String dateTime, String fieldName);
 
-  /// No description provided for @rtSignalRConnected.
+  /// No description provided for @rtLiveConnected.
   ///
   /// In en, this message translates to:
   /// **'Connected to live updates'**
-  String get rtSignalRConnected;
+  String get rtLiveConnected;
 
-  /// No description provided for @rtSignalRReconnecting.
+  /// No description provided for @rtLiveReconnecting.
   ///
   /// In en, this message translates to:
   /// **'Reconnecting…'**
-  String get rtSignalRReconnecting;
+  String get rtLiveReconnecting;
 
   /// No description provided for @slotUnderSelection.
   ///

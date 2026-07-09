@@ -7,6 +7,7 @@ import '../../data/datasources/remote/fcm_service.dart';
 import '../../data/datasources/remote/notification_handler.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/push_notification_provider.dart';
+import '../../core/di/service_providers.dart';
 import '../../services/local_notification_service.dart';
 
 /// Wires FCM + local notification callbacks after [ProviderContainer] is ready.
@@ -49,10 +50,19 @@ abstract final class NotificationBootstrap {
     FcmService.onTokenRefresh = (_) async {
       try {
         if (!container.read(authProvider).isLoggedIn) return;
-        await FcmService.syncTokenWithServer(container.read(apiClientProvider));
+        await FcmService.syncTokenWithServer(container.read(apiServiceProvider));
       } catch (e, st) {
         debugPrint('FCM token refresh sync failed: $e\n$st');
       }
     };
+
+    final socket = container.read(socketServiceProvider);
+    socket.notificationStream.listen((notification) {
+      try {
+        container.read(pushNotificationProvider.notifier).handleSocketNotification(notification);
+      } catch (e, st) {
+        debugPrint('Socket notification handler failed: $e\n$st');
+      }
+    });
   }
 }

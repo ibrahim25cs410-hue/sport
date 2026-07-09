@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
-import '../config/signalr_config.dart';
 import '../models/booking.dart';
 import '../models/notification.dart';
 import '../models/realtime_booking_event.dart';
@@ -15,7 +14,7 @@ import '../providers/auth_provider.dart';
 import '../providers/booking_provider.dart';
 import '../providers/connectivity_provider.dart';
 import '../providers/session_key.dart';
-import '../providers/signalr_provider.dart';
+import '../providers/socket_provider.dart';
 import '../widgets/skeleton_loaders.dart';
 import '../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
@@ -60,13 +59,10 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
     setState(() {});
 
     try {
-      await ref.read(signalRProvider.notifier).ensureConnected(
-            hubUrl: SignalRConfig.hubUrlFromApiBase(client.baseUrl),
-            getToken: client.getToken,
-          );
+      await ref.read(socketProvider.notifier).ensureConnected();
       final fieldId = ref.read(authProvider).ownerField?.id;
       if (fieldId != null) {
-        await ref.read(signalRProvider.notifier).joinField(fieldId);
+        ref.read(socketProvider.notifier).joinField(fieldId);
       }
     } catch (_) {}
 
@@ -86,10 +82,7 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
     if (state == AppLifecycleState.resumed) {
       _pollQuiet();
       _startPolling();
-      unawaited(ref.read(signalRProvider.notifier).ensureConnected(
-            hubUrl: SignalRConfig.hubUrlFromApiBase(ref.read(apiClientProvider).baseUrl),
-            getToken: ref.read(apiClientProvider).getToken,
-          ));
+      unawaited(ref.read(socketProvider.notifier).ensureConnected());
     } else if (state == AppLifecycleState.paused) {
       _pollTimer?.cancel();
     }
@@ -118,7 +111,7 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
 
   Future<void> _pollQuiet() async {
     if (!mounted || _sessionKey == null) return;
-    if (ref.read(signalRProvider).status == SignalRConnectionStatus.connected) return;
+    if (ref.read(socketProvider).status == RealtimeConnectionStatus.connected) return;
     _invalidateData();
   }
 
@@ -175,9 +168,9 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
     final l10n = context.l10n;
     final key = _sessionKey;
 
-    ref.listen<int>(signalRProvider.select((s) => s.generation), (prev, next) {
+    ref.listen<int>(socketProvider.select((s) => s.generation), (prev, next) {
       if (prev == null || next == prev || key == null) return;
-      final event = ref.read(signalRProvider).lastEvent;
+      final event = ref.read(socketProvider).lastEvent;
       if (event == null) return;
       handleOwnerBookingRealtimeEvent(ref, context, event);
     });
@@ -202,7 +195,7 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
-              await ref.read(signalRProvider.notifier).disconnect();
+              await ref.read(socketProvider.notifier).disconnect();
               await ref.read(authServiceProvider).logout();
               await ref.read(authProvider.notifier).clearSession();
               if (!context.mounted) return;

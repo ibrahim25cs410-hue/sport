@@ -553,10 +553,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rtSignalRConnected => 'Connected to live updates';
+  String get rtLiveConnected => 'Connected to live updates';
 
   @override
-  String get rtSignalRReconnecting => 'Reconnecting…';
+  String get rtLiveReconnecting => 'Reconnecting…';
 
   @override
   String get slotUnderSelection => 'Being booked now…';

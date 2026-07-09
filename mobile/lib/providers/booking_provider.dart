@@ -7,7 +7,7 @@ import '../core/paging/paged_list_state.dart';
 import '../core/providers/repository_providers.dart';
 import 'session_key.dart';
 
-/// حجوزات المستخدم النشطة — يُبطَل عند وصول BookingUpdated من SignalR.
+/// Active user bookings — invalidated when a bookingUpdated socket event arrives.
 final userBookingsProvider =
     AsyncNotifierProvider.family<UserBookingsNotifier, List<Booking>, UserSessionKey>(
   UserBookingsNotifier.new,

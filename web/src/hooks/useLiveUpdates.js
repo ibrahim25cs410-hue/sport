@@ -1,11 +1,11 @@
 /**
- * تحديثات فورية — SignalR + polling احتياطي
+ * تحديثات فورية — Socket.io + polling احتياطي
  */
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { queryKeys } from '../lib/queryKeys';
-import { useSignalR } from './useSignalR';
+import { useSocket } from './useSocket';
 
 const FALLBACK_POLL_MS = 60_000;
 
@@ -14,7 +14,7 @@ export function useLiveUpdates(enabled = true) {
   const { session } = useAuth();
   const userId = session?.user?.id;
 
-  useSignalR(enabled);
+  useSocket(enabled);
 
   useEffect(() => {
     if (!enabled || !userId) return undefined;

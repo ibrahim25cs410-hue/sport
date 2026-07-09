@@ -13,7 +13,7 @@
 1. **Database Schema** — ERD + Domain entities (`SportsApp/Domain/`)
 2. **API Refactor** — Domain → Application → Infrastructure → Api
 3. **Security** — Password hashing, JWT, authorization
-4. **Real-Time** — SignalR notifications
+4. **Real-Time** — Socket.io notifications and state sync
 5. **Flutter** — `/mobile` with Dio + Riverpod
 6. **Web Chrome** — `cd web && npm run dev` → http://localhost:3000
 

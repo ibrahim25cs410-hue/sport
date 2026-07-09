@@ -3,24 +3,25 @@ import '../models/cancel_booking_result.dart';
 import '../models/create_booking_result.dart';
 import '../models/booking.dart';
 import '../models/schedule.dart';
+import '../models/stadium_booking.dart';
 import '../models/user_stats.dart';
 import '../exceptions/booking_cancellation_exception.dart';
 import '../exceptions/booking_conflict_exception.dart';
 import '../utils/paged_response.dart';
 import '../core/paging/paged_list_state.dart';
-import 'api_client.dart';
+import 'api_service.dart';
 
 class BookingService {
-  BookingService(this._client);
-  final ApiClient _client;
+  BookingService(this._api);
+  final ApiService _api;
 
   Future<FieldSchedule> getSchedule(int fieldId) async {
-    final res = await _client.dio.get('/fields/$fieldId/schedule');
+    final res = await _api.dio.get('/fields/$fieldId/schedule');
     return FieldSchedule.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<void> createBooking({required int fieldId, required DateTime startTime, required int hours}) async {
-    await _client.dio.post('/bookings', data: {
+    await _api.dio.post('/bookings', data: {
       'fieldId': fieldId,
       'startTime': startTime.toIso8601String(),
       'hours': hours,
@@ -34,7 +35,7 @@ class BookingService {
     String paymentMethod = 'online',
   }) async {
     try {
-      final res = await _client.dio.post('/bookings', data: {
+      final res = await _api.dio.post('/bookings', data: {
         'fieldId': fieldId,
         'startTime': startTime.toIso8601String(),
         'hours': hours,
@@ -59,18 +60,18 @@ class BookingService {
   }
 
   Future<List<Booking>> getUserBookings(int userId, {int page = 1, int limit = defaultPageSize}) async {
-    final res = await _client.dio.get('/bookings/user/$userId', queryParameters: {'page': page, 'limit': limit});
+    final res = await _api.dio.get('/bookings/user/$userId', queryParameters: {'page': page, 'limit': limit});
     return unwrapPagedList(res.data, Booking.fromJson);
   }
 
   Future<List<Booking>> getBookingHistory(int userId, {int page = 1, int limit = defaultPageSize}) async {
-    final res = await _client.dio.get('/bookings/user/$userId/history', queryParameters: {'page': page, 'limit': limit});
+    final res = await _api.dio.get('/bookings/user/$userId/history', queryParameters: {'page': page, 'limit': limit});
     return unwrapPagedList(res.data, Booking.fromJson);
   }
 
   Future<CancelBookingResult> cancelBooking(int bookingId) async {
     try {
-      final res = await _client.dio.post('/bookings/cancel', data: {'bookingId': bookingId});
+      final res = await _api.dio.post('/bookings/cancel', data: {'bookingId': bookingId});
       return CancelBookingResult.fromJson(res.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _mapCancelError(e);
@@ -126,20 +127,70 @@ class BookingService {
   }
 
   Future<OwnerDashboard> getOwnerDashboard(int ownerId) async {
-    final res = await _client.dio.get('/bookings/owner/$ownerId');
+    final res = await _api.dio.get('/bookings/owner/$ownerId');
     return OwnerDashboard.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<void> approveBooking(int bookingId) async {
-    await _client.dio.post('/bookings/approve', data: {'bookingId': bookingId});
+    await _api.dio.post('/bookings/approve', data: {'bookingId': bookingId});
   }
 
   Future<void> rejectBooking(int bookingId) async {
-    await _client.dio.post('/bookings/reject', data: {'bookingId': bookingId});
+    await _api.dio.post('/bookings/reject', data: {'bookingId': bookingId});
   }
 
   Future<UserStats> getUserStats(int userId) async {
-    final res = await _client.dio.get('/stats/user/$userId');
+    final res = await _api.dio.get('/stats/user/$userId');
     return UserStats.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Task 3 — stadium bookings
+  // ---------------------------------------------------------------------------
+
+  Future<StadiumBooking> createStadiumBooking({
+    required int stadiumId,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    final res = await _api.dio.post('/bookings', data: {
+      'stadiumId': stadiumId,
+      'startTime': startTime.toUtc().toIso8601String(),
+      'endTime': endTime.toUtc().toIso8601String(),
+    });
+    return StadiumBooking.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<List<StadiumBooking>> getMyStadiumBookings({
+    int page = 1,
+    int limit = defaultPageSize,
+  }) async {
+    final res = await _api.dio.get(
+      '/bookings/user/me',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    return unwrapPagedList(res.data, StadiumBooking.fromJson);
+  }
+
+  Future<OwnerStadiumBookingsPage> getOwnerStadiumBookings({
+    int page = 1,
+    int limit = defaultPageSize,
+  }) async {
+    final res = await _api.dio.get(
+      '/bookings/owner/me',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    return OwnerStadiumBookingsPage.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<StadiumBooking> updateBookingStatus({
+    required int bookingId,
+    required String status,
+  }) async {
+    final res = await _api.dio.patch(
+      '/bookings/$bookingId/status',
+      data: {'status': status},
+    );
+    return StadiumBooking.fromJson(res.data as Map<String, dynamic>);
   }
 }

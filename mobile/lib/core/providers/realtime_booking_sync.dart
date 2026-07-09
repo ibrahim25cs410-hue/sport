@@ -3,39 +3,46 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../config/signalr_config.dart';
 import '../../models/realtime_booking_event.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/booking_provider.dart';
 import '../../providers/session_key.dart';
-import '../../providers/signalr_provider.dart';
+import '../../providers/socket_provider.dart';
 import '../../utils/l10n_extension.dart';
 import '../../utils/realtime_l10n.dart';
 import '../../theme/riyada_theme_extension.dart';
 import '../../widgets/premium/realtime_toast.dart';
 
-/// اتصال SignalR للمستخدم — يُستدعى مرة واحدة من initState.
-Future<void> connectUserSignalR(WidgetRef ref) async {
+/// Socket.io connection for regular users.
+Future<void> connectUserRealtime(WidgetRef ref) async {
   final user = ref.read(authProvider).user;
   if (user == null || user.role != 'user') return;
-
-  final client = ref.read(apiClientProvider);
   try {
-    await ref.read(signalRProvider.notifier).ensureConnected(
-          hubUrl: SignalRConfig.hubUrlFromApiBase(client.baseUrl),
-          getToken: client.getToken,
-        );
+    await ref.read(socketProvider.notifier).ensureConnected();
   } catch (_) {}
 }
 
-/// معالجة حدث حجز لحظي — تحديث تدريجي بدون طلبات متكررة.
+/// Socket.io connection for owners — joins their primary field room when available.
+Future<void> connectOwnerRealtime(WidgetRef ref) async {
+  final user = ref.read(authProvider).user;
+  final fieldId = ref.read(authProvider).ownerField?.id;
+  if (user == null) return;
+
+  try {
+    await ref.read(socketProvider.notifier).ensureConnected();
+    if (fieldId != null) {
+      ref.read(socketProvider.notifier).joinField(fieldId);
+    }
+  } catch (_) {}
+}
+
 void handleUserBookingRealtimeEvent(WidgetRef ref, BuildContext context, BookingUpdatedEvent event) {
   if (!context.mounted) return;
 
   final user = ref.read(authProvider).user;
   if (user == null || user.role != 'user') return;
 
-  final session = UserSessionKey(client: ref.read(apiClientProvider), userId: user.id);
+  final session = UserSessionKey(client: ref.read(apiServiceProvider), userId: user.id);
   final bookings = ref.read(userBookingsProvider(session));
 
   if (bookings.hasValue && event.bookingId > 0) {
@@ -45,7 +52,9 @@ void handleUserBookingRealtimeEvent(WidgetRef ref, BuildContext context, Booking
   }
 
   final l10n = context.l10n;
-  if (event.titleKey == 'rtTitleBookingApproved' || event.status == 'approved') {
+  if (event.titleKey == 'rtTitleBookingApproved' ||
+      event.status == 'approved' ||
+      event.status == 'confirmed') {
     showRealtimeToast(
       context,
       title: localizeRealtimeTitle(l10n, event.titleKey),
@@ -63,14 +72,13 @@ void handleUserBookingRealtimeEvent(WidgetRef ref, BuildContext context, Booking
   }
 }
 
-/// معالجة حدث حجز لحظي للمالك — تحديث اللوحة فوراً.
 void handleOwnerBookingRealtimeEvent(WidgetRef ref, BuildContext context, BookingUpdatedEvent event) {
   if (!context.mounted) return;
 
   final user = ref.read(authProvider).user;
   if (user == null || user.role != 'owner') return;
 
-  final session = UserSessionKey(client: ref.read(apiClientProvider), userId: user.id);
+  final session = UserSessionKey(client: ref.read(apiServiceProvider), userId: user.id);
   final dash = ref.read(ownerDashboardProvider(session));
 
   if (dash.hasValue && event.bookingId > 0) {
@@ -90,23 +98,7 @@ void handleOwnerBookingRealtimeEvent(WidgetRef ref, BuildContext context, Bookin
   }
 }
 
-/// للمالك — انضمام لمجموعة الملعب وتحديث اللوحة.
-Future<void> connectOwnerSignalR(WidgetRef ref) async {
-  final user = ref.read(authProvider).user;
-  final fieldId = ref.read(authProvider).ownerField?.id;
-  if (user == null || fieldId == null) return;
-
-  final client = ref.read(apiClientProvider);
-  try {
-    await ref.read(signalRProvider.notifier).ensureConnected(
-          hubUrl: SignalRConfig.hubUrlFromApiBase(client.baseUrl),
-          getToken: client.getToken,
-        );
-    await ref.read(signalRProvider.notifier).joinField(fieldId);
-  } catch (_) {}
-}
-
-/// يدمج أحداث SignalR المتتالية في معالجة واحدة.
+/// Coalesces rapid booking events into a single UI update.
 class RealtimeEventCoalescer {
   RealtimeEventCoalescer({this.delay = const Duration(milliseconds: 450)});
 

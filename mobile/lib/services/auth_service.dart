@@ -3,14 +3,14 @@ import '../models/user.dart';
 import '../utils/api_logger.dart';
 import '../utils/paged_response.dart';
 import '../core/paging/paged_list_state.dart';
-import 'api_client.dart';
+import 'api_service.dart';
 import 'token_storage.dart';
 
 /// Handles JWT persistence and authentication API calls.
 class AuthService {
   AuthService(this._client, this._tokenStorage);
 
-  final ApiClient _client;
+  final ApiService _client;
   final TokenStorage _tokenStorage;
 
   /// Persists the JWT in [flutter_secure_storage] (with platform fallback).

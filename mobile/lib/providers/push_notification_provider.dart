@@ -1,6 +1,9 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/notification.dart';
+import '../services/local_notification_service.dart';
+
 /// Latest FCM message and a generation counter for [ref.listen].
 class PushNotificationState {
   const PushNotificationState({
@@ -33,5 +36,14 @@ class PushNotificationNotifier extends Notifier<PushNotificationState> {
       lastMessage: message,
       generation: state.generation + 1,
     );
+  }
+
+  Future<void> handleSocketNotification(AppNotification notification) async {
+    await LocalNotificationService.showBookingUpdate(
+      id: notification.id,
+      title: notification.title,
+      body: notification.message,
+    );
+    state = state.copyWith(generation: state.generation + 1);
   }
 }

@@ -553,10 +553,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get rtSignalRConnected => 'متصل بالتحديثات اللحظية';
+  String get rtLiveConnected => 'متصل بالتحديثات اللحظية';
 
   @override
-  String get rtSignalRReconnecting => 'إعادة الاتصال…';
+  String get rtLiveReconnecting => 'إعادة الاتصال…';
 
   @override
   String get slotUnderSelection => 'يتم الحجز الآن…';

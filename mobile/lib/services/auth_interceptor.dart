@@ -5,7 +5,7 @@ import 'token_storage.dart';
 
 typedef UnauthorizedCallback = Future<void> Function();
 
-/// Attaches Bearer tokens and handles session revocation on strict HTTP 401 only.
+/// Injects `Authorization: Bearer <token>` and routes strict HTTP 401 to [onUnauthorized].
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
     required TokenStorage tokenStorage,
@@ -19,10 +19,11 @@ class AuthInterceptor extends Interceptor {
   static bool isPublicAuthPath(String path) {
     return path == '/login' ||
         path == '/register-user' ||
-        path == '/register-owner';
+        path == '/register-owner' ||
+        path == '/auth/login' ||
+        path == '/auth/register';
   }
 
-  /// True only when the server returned HTTP 401 — never for timeouts or transport errors.
   static bool isStrictUnauthorized(DioException error) {
     return error.response?.statusCode == 401;
   }
@@ -46,7 +47,6 @@ class AuthInterceptor extends Interceptor {
     handler.next(response);
   }
 
-  /// HTTP 403 — permission denied; session stays active (handled per-service, e.g. [AdminService]).
   static bool isForbidden(DioException error) => error.response?.statusCode == 403;
 
   @override

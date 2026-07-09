@@ -1,18 +1,19 @@
 import { useEffect, useRef } from 'react';
-import * as signalR from '@microsoft/signalr';
+import { io } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { API_BASE, storage } from '../api';
 import { queryKeys } from '../lib/queryKeys';
 import { showBrowserNotification } from '../lib/webNotifications';
 
-const HUB_URL = API_BASE.replace(/\/api\/?$/, '') + '/hubs/booking';
+const SOCKET_URL = API_BASE.replace(/\/api\/?$/, '');
 
 /**
- * اتصال SignalR للتحديثات اللحظية — مع fallback للـ polling في useLiveUpdates.
+ * Socket.io connection for live notifications, booking updates, and slot sync.
+ * Polling fallback remains in useLiveUpdates when the socket is unavailable.
  */
-export function useSignalR(enabled = true) {
+export function useSocket(enabled = true) {
   const qc = useQueryClient();
-  const connectionRef = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -20,50 +21,59 @@ export function useSignalR(enabled = true) {
     if (!session?.token || !session?.user?.id) return undefined;
 
     const userId = session.user.id;
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL, { accessTokenFactory: () => session.token })
-      .withAutomaticReconnect([0, 2000, 5000, 10000])
-      .configureLogging(signalR.LogLevel.Warning)
-      .build();
+    const socket = io(SOCKET_URL, {
+      auth: { token: session.token },
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+    });
 
     const invalidateUser = () => {
       qc.invalidateQueries({ queryKey: queryKeys.notifications(userId) });
       qc.invalidateQueries({ queryKey: queryKeys.bookings(userId) });
     };
 
-    connection.on('BookingUpdated', (event) => {
+    socket.on('notification', () => {
+      invalidateUser();
+    });
+
+    socket.on('bookingUpdated', (event) => {
       invalidateUser();
       qc.invalidateQueries({ queryKey: queryKeys.bookingHistory(userId) });
-      if (event?.status === 'approved') {
+      const status = event?.status;
+      if (status === 'approved' || status === 'confirmed') {
         showBrowserNotification({
           title: 'تم قبول الحجز',
-          body: event?.messageArgs?.fieldName
-            ? `تمت الموافقة — ${event.messageArgs.fieldName}`
+          body: event?.messageArgs?.fieldName || event?.messageArgs?.stadiumName
+            ? `تمت الموافقة — ${event.messageArgs.fieldName || event.messageArgs.stadiumName}`
             : 'تمت الموافقة على حجزك',
           tag: `booking-${event?.bookingId ?? 'x'}`,
         });
       }
     });
-    connection.on('NotifySlotSelection', () => {
-      qc.invalidateQueries({ queryKey: queryKeys.fields });
-      qc.invalidateQueries({ queryKey: ['schedule'] });
-    });
-    connection.on('ReleaseSlot', () => {
+
+    socket.on('slotSelection', () => {
       qc.invalidateQueries({ queryKey: queryKeys.fields });
       qc.invalidateQueries({ queryKey: ['schedule'] });
     });
 
-    connection
-      .start()
-      .catch((err) => console.warn('[SignalR] connect failed — polling fallback', err));
+    socket.on('slotRelease', () => {
+      qc.invalidateQueries({ queryKey: queryKeys.fields });
+      qc.invalidateQueries({ queryKey: ['schedule'] });
+    });
 
-    connectionRef.current = connection;
+    socket.on('connect_error', (err) => {
+      console.warn('[Socket] connect failed — polling fallback', err?.message || err);
+    });
+
+    socketRef.current = socket;
 
     return () => {
-      connection.stop().catch(() => {});
-      connectionRef.current = null;
+      socket.disconnect();
+      socketRef.current = null;
     };
   }, [enabled, qc]);
 
-  return connectionRef;
+  return socketRef;
 }

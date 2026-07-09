@@ -9,7 +9,7 @@ import '../../../core/providers/realtime_booking_sync.dart';
 import '../../../core/utils/session_key_helper.dart';
 import '../../../models/booking.dart';
 import '../../../providers/booking_provider.dart';
-import '../../../providers/signalr_provider.dart';
+import '../../../providers/socket_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../theme/riyada_theme_extension.dart';
@@ -40,12 +40,12 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(connectOwnerSignalR(ref));
+      unawaited(connectOwnerRealtime(ref));
       _bookingEventsSub = ref.listenManual<int>(
-        signalRProvider.select((s) => s.generation),
+        socketProvider.select((s) => s.generation),
         (prev, next) {
           if (prev == null || next == prev || !mounted) return;
-          final event = ref.read(signalRProvider).lastEvent;
+          final event = ref.read(socketProvider).lastEvent;
           if (event == null) return;
           handleOwnerBookingRealtimeEvent(ref, context, event);
         },

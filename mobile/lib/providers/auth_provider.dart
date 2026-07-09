@@ -11,13 +11,19 @@ import '../models/field.dart';
 import '../models/user.dart';
 import '../router/app_router.dart';
 import '../router/navigation_keys.dart';
-import '../services/api_client.dart';
+import '../services/api_service.dart';
 import '../services/session_storage.dart';
 import '../utils/api_logger.dart';
 import '../utils/error_messages.dart';
+import '../providers/socket_provider.dart';
 import 'service_providers.dart';
 
-export 'service_providers.dart' show apiClientProvider, authServiceProvider, tokenStorageProvider;
+export 'service_providers.dart' show
+    apiServiceProvider,
+    apiClientProvider,
+    authServiceProvider,
+    tokenStorageProvider,
+    socketServiceProvider;
 
 /// حالة الجلسة — مصدر واحد للمصادقة عبر Riverpod.
 class AuthState {
@@ -71,7 +77,7 @@ final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new)
 
 /// Wires the Dio 401 handler to [AuthService.logout] and session cleanup.
 final authInterceptorProvider = Provider<void>((ref) {
-  ref.watch(apiClientProvider).onUnauthorized = () async {
+  ref.watch(apiServiceProvider).onUnauthorized = () async {
     await ref.read(authServiceProvider).logout();
     await ref.read(authProvider.notifier).clearSession();
     final ctx = rootNavigatorKey.currentContext;
@@ -82,7 +88,9 @@ final authInterceptorProvider = Provider<void>((ref) {
 });
 
 class AuthNotifier extends Notifier<AuthState> {
-  ApiClient get client => ref.read(apiClientProvider);
+  ApiService get client => ref.read(apiServiceProvider);
+
+  SocketNotifier get _socket => ref.read(socketProvider.notifier);
 
   AuthRepository get _repo => ref.read(authRepositoryProvider);
 
@@ -110,6 +118,7 @@ class AuthNotifier extends Notifier<AuthState> {
       state = state.copyWith(user: session.user, ownerField: session.field);
       await SessionStorage.save(session.user, session.field);
       await FcmService.syncTokenWithServer(client);
+      await _socket.connect();
     } on DioException catch (e) {
       if (AuthInterceptor.isStrictUnauthorized(e)) {
         await authService.logout();
@@ -124,6 +133,9 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     state = state.copyWith(bootstrapping: false);
+    if (state.isLoggedIn) {
+      await _socket.connect();
+    }
   }
 
   Future<void> _restoreCachedSession() async {
@@ -151,6 +163,7 @@ class AuthNotifier extends Notifier<AuthState> {
         state = state.copyWith(user: r.user, ownerField: r.field, hasStoredToken: true);
         await SessionStorage.save(r.user, r.field);
         await FcmService.syncTokenWithServer(client);
+        await _socket.connect();
       });
 
   Future<bool> registerUser(Map<String, dynamic> body) => _run(() async {
@@ -158,6 +171,7 @@ class AuthNotifier extends Notifier<AuthState> {
         state = state.copyWith(user: r.user, clearField: true, hasStoredToken: true);
         await SessionStorage.save(r.user, null);
         await FcmService.syncTokenWithServer(client);
+        await _socket.connect();
       });
 
   Future<bool> registerOwner(Map<String, dynamic> body) => _run(() async {
@@ -165,6 +179,7 @@ class AuthNotifier extends Notifier<AuthState> {
         state = state.copyWith(user: r.user, ownerField: r.field, hasStoredToken: true);
         await SessionStorage.save(r.user, r.field);
         await FcmService.syncTokenWithServer(client);
+        await _socket.connect();
       });
 
   /// Clears in-memory session state without touching the stored JWT.
@@ -174,6 +189,7 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    await _socket.disconnect();
     await ref.read(authServiceProvider).logout();
     await clearSession();
   }

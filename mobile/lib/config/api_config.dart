@@ -111,5 +111,8 @@ abstract final class ApiConfig {
     return url;
   }
 
+  /// Socket.io server origin (without `/api` suffix).
+  static String get socketBaseUrl => baseUrl.replaceAll(RegExp(r'/api/?$'), '');
+
   static const String tokenKey = 'riyada_jwt';
 }

@@ -7,7 +7,7 @@ import 'package:provider/provider.dart' as legacy;
 import '../../../core/providers/realtime_booking_sync.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/connectivity_provider.dart';
-import '../../../providers/signalr_provider.dart';
+import '../../../providers/socket_provider.dart';
 import '../../../utils/l10n_extension.dart';
 import '../../../widgets/brand/floating_bottom_navigation_bar.dart';
 import '../../../widgets/brand/riyada_nav_icon.dart';
@@ -93,16 +93,16 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     if (!mounted) return;
     final role = _roleFor(ref.read(authProvider).role);
     if (role == _ShellRole.owner) {
-      unawaited(connectOwnerSignalR(ref));
+      unawaited(connectOwnerRealtime(ref));
     } else if (role == _ShellRole.user) {
-      unawaited(connectUserSignalR(ref));
+      unawaited(connectUserRealtime(ref));
     }
     if (role != _ShellRole.admin) {
       _bookingEventsSub = ref.listenManual<int>(
-        signalRProvider.select((s) => s.generation),
+        socketProvider.select((s) => s.generation),
         (prev, next) {
           if (prev == null || next == prev || !mounted) return;
-          final event = ref.read(signalRProvider).lastEvent;
+          final event = ref.read(socketProvider).lastEvent;
           if (event == null) return;
           _realtimeCoalescer.schedule(event, (latest) {
             if (!mounted) return;

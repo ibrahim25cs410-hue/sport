@@ -29,4 +29,4 @@ class BookingUpdatedEvent {
   final Map<String, String> messageArgs;
 }
 
-enum SignalRConnectionStatus { disconnected, connecting, connected, reconnecting }
+enum RealtimeConnectionStatus { disconnected, connecting, connected, reconnecting }
