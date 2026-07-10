@@ -1,0 +1,36 @@
+# Dependencies & build output
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+*.log
+.env
+.env.local
+.env.*.local
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Flutter
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/.pub-cache/
+mobile/ios/Pods/
+
+# .NET
+SportsApp/**/bin/
+SportsApp/**/obj/
+*.user
+*.suo
+
+# Misc
+sport/
+*.db

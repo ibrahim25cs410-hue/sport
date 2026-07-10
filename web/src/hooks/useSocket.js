@@ -1,19 +1,16 @@
-import { useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { API_BASE, storage } from '../api';
+import { storage } from '../api';
 import { queryKeys } from '../lib/queryKeys';
 import { showBrowserNotification } from '../lib/webNotifications';
-
-const SOCKET_URL = API_BASE.replace(/\/api\/?$/, '');
+import { acquireSocket, releaseSocket, joinField, leaveField } from '../lib/socketClient';
 
 /**
- * Socket.io connection for live notifications, booking updates, and slot sync.
+ * Shared Socket.io connection for notifications, booking updates, and slot sync.
  * Polling fallback remains in useLiveUpdates when the socket is unavailable.
  */
 export function useSocket(enabled = true) {
   const qc = useQueryClient();
-  const socketRef = useRef(null);
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -21,24 +18,16 @@ export function useSocket(enabled = true) {
     if (!session?.token || !session?.user?.id) return undefined;
 
     const userId = session.user.id;
-    const socket = io(SOCKET_URL, {
-      auth: { token: session.token },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 2000,
-    });
+    const socket = acquireSocket();
+    if (!socket) return undefined;
 
     const invalidateUser = () => {
       qc.invalidateQueries({ queryKey: queryKeys.notifications(userId) });
       qc.invalidateQueries({ queryKey: queryKeys.bookings(userId) });
     };
 
-    socket.on('notification', () => {
-      invalidateUser();
-    });
-
-    socket.on('bookingUpdated', (event) => {
+    const onNotification = () => invalidateUser();
+    const onBookingUpdated = (event) => {
       invalidateUser();
       qc.invalidateQueries({ queryKey: queryKeys.bookingHistory(userId) });
       const status = event?.status;
@@ -51,29 +40,29 @@ export function useSocket(enabled = true) {
           tag: `booking-${event?.bookingId ?? 'x'}`,
         });
       }
-    });
-
-    socket.on('slotSelection', () => {
+    };
+    const onSlotSelection = () => {
       qc.invalidateQueries({ queryKey: queryKeys.fields });
       qc.invalidateQueries({ queryKey: ['schedule'] });
-    });
-
-    socket.on('slotRelease', () => {
+    };
+    const onSlotRelease = () => {
       qc.invalidateQueries({ queryKey: queryKeys.fields });
       qc.invalidateQueries({ queryKey: ['schedule'] });
-    });
+    };
 
-    socket.on('connect_error', (err) => {
-      console.warn('[Socket] connect failed — polling fallback', err?.message || err);
-    });
-
-    socketRef.current = socket;
+    socket.on('notification', onNotification);
+    socket.on('bookingUpdated', onBookingUpdated);
+    socket.on('slotSelection', onSlotSelection);
+    socket.on('slotRelease', onSlotRelease);
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      socket.off('notification', onNotification);
+      socket.off('bookingUpdated', onBookingUpdated);
+      socket.off('slotSelection', onSlotSelection);
+      socket.off('slotRelease', onSlotRelease);
+      releaseSocket();
     };
   }, [enabled, qc]);
 
-  return socketRef;
+  return { joinField, leaveField };
 }

@@ -17,6 +17,8 @@ class SocketService {
 
   final TokenStorage _tokens;
   io.Socket? _socket;
+  int? _joinedFieldId;
+  int? _joinedStadiumId;
 
   final _notificationController = StreamController<AppNotification>.broadcast();
   final _bookingUpdatedController = StreamController<BookingUpdatedEvent>.broadcast();
@@ -67,6 +69,7 @@ class SocketService {
     socket.onConnect((_) {
       apiLog('Socket connected', socket.id);
       _setStatus(RealtimeConnectionStatus.connected);
+      _rejoinRooms();
     });
     socket.onDisconnect((_) {
       apiLog('Socket disconnected');
@@ -76,7 +79,10 @@ class SocketService {
       apiLogError('Socket connect error', error);
       _setStatus(RealtimeConnectionStatus.disconnected);
     });
-    socket.onReconnect((_) => _setStatus(RealtimeConnectionStatus.connected));
+    socket.onReconnect((_) {
+      _setStatus(RealtimeConnectionStatus.connected);
+      _rejoinRooms();
+    });
     socket.onReconnectAttempt((_) => _setStatus(RealtimeConnectionStatus.reconnecting));
     socket.onReconnectError((_) => _setStatus(RealtimeConnectionStatus.reconnecting));
 
@@ -91,23 +97,38 @@ class SocketService {
   }
 
   void joinField(int fieldId) {
+    _joinedFieldId = fieldId;
     _socket?.emit('joinField', fieldId);
     apiLog('Socket joinField', '$fieldId');
   }
 
   void leaveField(int fieldId) {
+    if (_joinedFieldId == fieldId) _joinedFieldId = null;
     _socket?.emit('leaveField', fieldId);
     apiLog('Socket leaveField', '$fieldId');
   }
 
   void joinStadium(int stadiumId) {
+    _joinedStadiumId = stadiumId;
     _socket?.emit('joinStadium', stadiumId);
     apiLog('Socket joinStadium', '$stadiumId');
   }
 
   void leaveStadium(int stadiumId) {
+    if (_joinedStadiumId == stadiumId) _joinedStadiumId = null;
     _socket?.emit('leaveStadium', stadiumId);
     apiLog('Socket leaveStadium', '$stadiumId');
+  }
+
+  void _rejoinRooms() {
+    if (_joinedFieldId != null) {
+      _socket?.emit('joinField', _joinedFieldId);
+      apiLog('Socket rejoinField', '$_joinedFieldId');
+    }
+    if (_joinedStadiumId != null) {
+      _socket?.emit('joinStadium', _joinedStadiumId);
+      apiLog('Socket rejoinStadium', '$_joinedStadiumId');
+    }
   }
 
   void _onNotification(dynamic payload) => _parseMap(payload, (map) {
@@ -144,6 +165,8 @@ class SocketService {
     _socket?.off('slotRelease');
     _socket?.dispose();
     _socket = null;
+    _joinedFieldId = null;
+    _joinedStadiumId = null;
     _setStatus(RealtimeConnectionStatus.disconnected);
   }
 

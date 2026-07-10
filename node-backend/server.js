@@ -8,6 +8,8 @@
  * البنية: models/ + db/ + config.js + server.js
  */
 
+require('dotenv').config();
+
 const path = require('path');
 const http = require('http');
 const express = require('express');
@@ -179,7 +181,16 @@ app.get('/api/fields/:id/schedule', auth, async (req, res) => {
     }
     schedule.push({ date: day.toISOString(), slots });
   }
-  res.json({ id: f.id, name: f.name, pricePerHour: f.pricePerHour, schedule });
+  res.json({
+    id: f.id,
+    name: f.name,
+    pricePerHour: f.pricePerHour,
+    address: f.address || '',
+    phone: f.phone || '',
+    averageRating: f.averageRating || 0,
+    reviewCount: f.reviewCount || 0,
+    schedule,
+  });
 });
 
 // التقييمات (مبسّطة)

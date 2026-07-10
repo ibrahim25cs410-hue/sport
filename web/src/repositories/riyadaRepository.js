@@ -13,7 +13,7 @@ export const riyadaRepository = {
 
   // Fields & schedule
   getFields: (page = 1, limit = 20) => smartApi.getStadiums(page, limit),
-  invalidateFields: () => clearSmartCache('/stadiums'),
+  invalidateFields: () => clearSmartCache('/fields'),
   getSchedule: (fieldId) => smartApi.getSchedule(fieldId),
 
   // Bookings
@@ -38,7 +38,7 @@ export const riyadaRepository = {
 
   invalidateBookings: () => clearSmartCache('/bookings/user'),
   invalidateNotifications: () => clearSmartCache('/notifications'),
-  invalidateSchedule: (fieldId) => clearSmartCache(`/stadiums/${fieldId}/schedule`),
+  invalidateSchedule: (fieldId) => clearSmartCache(`/fields/${fieldId}/schedule`),
   getUserStats: (userId) => smartApi.getUserStats(userId),
 
   // Admin

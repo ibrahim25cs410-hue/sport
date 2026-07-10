@@ -1,4 +1,4 @@
-const API_PORT = import.meta.env.VITE_API_PORT || '61082';
+const API_PORT = import.meta.env.VITE_API_PORT || '3000';
 const API_HOST = import.meta.env.VITE_API_HOST || 'localhost';
 export const API_BASE = import.meta.env.VITE_API_BASE || `http://${API_HOST}:${API_PORT}/api`;
 
@@ -48,8 +48,8 @@ export const api = {
   registerUser: (body) => request('/register-user', { method: 'POST', body: JSON.stringify(body) }),
   registerOwner: (body) => request('/register-owner', { method: 'POST', body: JSON.stringify(body) }),
   login: (email, password) => request('/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  getStadiums: () => request('/stadiums'),
-  getSchedule: (id) => request(`/stadiums/${id}/schedule`),
+  getStadiums: () => request('/fields'),
+  getSchedule: (id) => request(`/fields/${id}/schedule`),
   createBooking: (body) =>
     request('/bookings', { method: 'POST', body: JSON.stringify({ fieldId: body.fieldId ?? body.stadiumId, startTime: body.startTime, hours: body.hours }) }, true),
   getUserBookings: (userId) => request(`/bookings/user/${userId}`, {}, true),

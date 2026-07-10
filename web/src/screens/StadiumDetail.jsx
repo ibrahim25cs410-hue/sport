@@ -4,6 +4,7 @@ import { MapPin, Phone, Clock, CheckCircle } from 'lucide-react';
 import { formatDate, formatTime, formatMoney } from '../api';
 import { riyadaRepository } from '../repositories/riyadaRepository';
 import { useSchedule, useReviewEligibility } from '../hooks/useRiyadaData';
+import { joinField, leaveField } from '../lib/socketClient';
 import { StarRatingDisplay, StarRatingInput } from '../components/StarRating';
 import { useAuth } from '../context/AuthContext';
 import { useSmartToast } from '../context/SmartToastContext';
@@ -28,6 +29,12 @@ export default function StadiumDetail() {
   const { data: scheduleData, isLoading, refetch } = useSchedule(fieldId);
   const { data: reviewInfo, refetch: refetchReview } = useReviewEligibility(fieldId);
   const schedule = scheduleData?.schedule || [];
+
+  useEffect(() => {
+    if (!fieldId || !session?.token) return undefined;
+    joinField(fieldId);
+    return () => leaveField(fieldId);
+  }, [fieldId, session?.token]);
 
   useEffect(() => {
     if (scheduleData && !stadium) {

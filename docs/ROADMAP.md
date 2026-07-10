@@ -1,37 +1,48 @@
 # Riyada — Architecture Roadmap
 
-## Current vs Target
+## Current stack
 
-| Layer | Current | Target |
-|-------|---------|--------|
-| API | Minimal API, SQLite | Clean Architecture + JWT |
-| Web | React + Vite | Same (Chrome testing ready) |
-| Mobile | React Native Expo | Flutter rewrite |
+| Layer | Technology |
+|-------|------------|
+| API | Node.js + Express + Socket.io (`node-backend/`) |
+| Database | MongoDB Atlas (prod) or in-memory (dev) |
+| Mobile | Flutter + Riverpod + Dio + Socket.io (`mobile/`) |
+| Web | React + Vite + Socket.io (`web/`) |
 
-## Phases
+Legacy: `SportsApp/` (.NET + SignalR) is unused by current clients.
 
-1. **Database Schema** — ERD + Domain entities (`SportsApp/Domain/`)
-2. **API Refactor** — Domain → Application → Infrastructure → Api
-3. **Security** — Password hashing, JWT, authorization
-4. **Real-Time** — Socket.io notifications and state sync
-5. **Flutter** — `/mobile` with Dio + Riverpod
-6. **Web Chrome** — `cd web && npm run dev` → http://localhost:3000
+## Done
 
-## Chrome Testing (Now)
+1. Auth (JWT, roles: user / owner)
+2. Fields + stadiums CRUD
+3. Bookings + notifications
+4. Real-time via Socket.io (`notification`, `bookingUpdated`, `slotSelection`, `slotRelease`)
+5. Flutter service layer + Socket bootstrap
+6. Web Socket.io client (replaces SignalR)
 
-```bash
-# Terminal 1
-cd SportsApp && dotnet run
+## Remaining (optional)
 
-# Terminal 2
-cd web && npm run dev
+- Admin API routes (`/admin/*`)
+- Stadium-first Flutter UI (services exist; screens still field-centric)
+- Reviews / wallet persistence (currently stubbed)
+- Retire or archive `SportsApp/`
+
+## Local testing
+
+```powershell
+# Terminal 1 — API
+cd node-backend
+copy .env.example .env   # optional for local
+npm install
+npm run dev              # http://localhost:3000
+
+# Terminal 2 — Web
+cd web
+npm install
+npm run dev              # http://localhost:5173
+
+# Terminal 3 — Flutter
+cd mobile
+flutter pub get
+flutter run -d windows --dart-define=API_PORT=3000
 ```
-
-Open http://localhost:3000 in Chrome. API proxied to :5000.
-
-## Flutter API Client Pattern
-
-- `dio` for HTTP
-- `flutter_secure_storage` for JWT
-- Interceptor: `Authorization: Bearer <token>`
-- Base URL: `http://10.0.2.2:5000/api/v1` (emulator)

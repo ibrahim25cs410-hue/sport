@@ -136,7 +136,7 @@ export async function smartFetch(path, options = {}) {
 
 export const smartApi = {
   getStadiums: (page = 1, limit = 50) =>
-    smartFetch(`/stadiums${pageQs(page, limit)}`, { ttlMs: 60_000 }).then(unwrapPagedList),
+    smartFetch(`/fields${pageQs(page, limit)}`, { ttlMs: 60_000 }).then(unwrapPagedList),
   getUserBookings: (userId, page = 1, limit = 50) =>
     smartFetch(`/bookings/user/${userId}${pageQs(page, limit)}`, { auth: true, ttlMs: 15_000 }).then(unwrapPagedList),
   getBookingHistory: (userId, page = 1, limit = 50) =>
@@ -166,12 +166,12 @@ export const smartApi = {
       body: { fieldId: body.fieldId ?? body.stadiumId, startTime: body.startTime, hours: body.hours },
       auth: true,
     }),
-  getSchedule: (id) => smartFetch(`/stadiums/${id}/schedule`, { ttlMs: 20_000 }),
+  getSchedule: (id) => smartFetch(`/fields/${id}/schedule`, { ttlMs: 20_000 }),
   getReviewEligibility: (fieldId) => smartFetch(`/fields/${fieldId}/review-eligibility`, { auth: true }),
   submitReview: (fieldId, body) =>
     smartFetch(`/fields/${fieldId}/reviews`, { method: 'POST', body, auth: true }).then((r) => {
-      clearSmartCache('/stadiums');
-      clearSmartCache(`/stadiums/${fieldId}/schedule`);
+      clearSmartCache('/fields');
+      clearSmartCache(`/fields/${fieldId}/schedule`);
       return r;
     }),
   cancelBooking: (bookingId) =>

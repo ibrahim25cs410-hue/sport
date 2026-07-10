@@ -25,7 +25,7 @@ export function SmartToastProvider({ children }) {
     if (err instanceof SmartApiError) {
       if (err.retryable) {
         push(err.message, 'warning', {
-          action: err.code === 'NETWORK' ? 'تحقق من تشغيل API على المنفذ 61082' : undefined,
+          action: err.code === 'NETWORK' ? 'تحقق من تشغيل API على المنفذ 3000' : undefined,
         });
       } else {
         push(err.message, 'error');

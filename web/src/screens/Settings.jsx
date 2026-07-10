@@ -52,7 +52,7 @@ export default function Settings() {
           <Server className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
           <div className="text-right flex-1">
             <p className="font-semibold">الخادم</p>
-            <p className="text-sm text-gray-500 mt-1">يتصل تلقائياً بمنفذ 61082 — يمكن تغييره عبر VITE_API_HOST</p>
+            <p className="text-sm text-gray-500 mt-1">يتصل تلقائياً بمنفذ 3000 — يمكن تغييره عبر VITE_API_HOST / VITE_API_PORT</p>
           </div>
         </div>
 
