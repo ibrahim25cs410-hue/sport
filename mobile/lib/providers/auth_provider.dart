@@ -233,6 +233,25 @@ class AuthNotifier extends Notifier<AuthState> {
     });
   }
 
+  Future<bool> createField({
+    required String name,
+    required String address,
+    required String phone,
+    required int pricePerHour,
+    String? image,
+  }) =>
+      _run(() async {
+        final created = await _repo.createField(
+          name: name,
+          address: address,
+          phone: phone,
+          pricePerHour: pricePerHour,
+          image: image,
+        );
+        state = state.copyWith(ownerField: created);
+        if (state.user != null) await SessionStorage.save(state.user!, created);
+      });
+
   Future<bool> _run(Future<void> Function() fn) async {
     state = state.copyWith(loading: true, clearError: true);
     try {

@@ -87,7 +87,7 @@ abstract final class ApiConfig {
       return normalizeBaseUrl('$scheme://$hostOverride:$port/api');
     }
     if (kReleaseMode) {
-      return normalizeBaseUrl('https://api.riyada.iq/api');
+      return normalizeBaseUrl('https://sports-x7v7.onrender.com/api');
     }
     return '$scheme://${_defaultHost()}:$port/api';
   }

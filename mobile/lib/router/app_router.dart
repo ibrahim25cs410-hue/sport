@@ -21,6 +21,7 @@ abstract final class AppRoutes {
   static const ownerCommissionCheckout = '/owner/commission-checkout';
   static const adminDashboard = '/admin-dashboard';
   static const profile = '/profile';
+  static const addField = '/owner/add-field';
   static const bookingHistory = '/history';
   static const penaltyShootout = '/games/penalty';
   static const penaltyFlame = '/games/penalty-flame';
@@ -48,6 +49,7 @@ extension AppNavigation on BuildContext {
   void goOwnerDashboard() => pushOverlay(AppRoutes.ownerDashboard);
   void goOwnerCommissionCheckout() => pushOverlay(AppRoutes.ownerCommissionCheckout);
   void goProfile() => pushOverlay(AppRoutes.profile);
+  void goAddField() => pushOverlay(AppRoutes.addField);
 
   void goBookingHistory() => pushOverlay(AppRoutes.bookingHistory);
   void goNotifications() => pushOverlay(AppRoutes.notifications);
@@ -73,17 +75,20 @@ extension AppNavigation on BuildContext {
     }
   }
 
-  /// بعد تسجيل الدخول — انتقل للوجهة الصحيحة بعد تحديث الحالة.
-  void goHomeAfterAuth({required bool isAdmin, required bool isOwner}) {
+  /// بعد تسجيل الدخول — انتقل للوجهة الصحيحة حسب الدور الفعلي في الجلسة.
+  void goHomeAfterAuth({bool? isAdmin, bool? isOwner}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (isAdmin) {
+      // Prefer explicit flags, but never block owner navigation.
+      if (isAdmin == true) {
         goAdminDashboard();
-      } else if (isOwner) {
-        goOwnerHome();
-      } else {
-        goUserHome();
+        return;
       }
+      if (isOwner == true) {
+        goOwnerHome();
+        return;
+      }
+      goUserHome();
     });
   }
 }

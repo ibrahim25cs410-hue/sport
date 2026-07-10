@@ -71,9 +71,16 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
   }
 
   Future<void> _bootstrap() async {
+    final user = ref.read(authProvider).user;
+    if (user == null) {
+      if (!mounted) return;
+      showAppWarningSnackBar(context, context.l10n.loginSubtitle);
+      context.goLogin();
+      return;
+    }
+
     final client = ref.read(apiClientProvider);
-    final userId = ref.read(authProvider).user!.id;
-    _sessionKey = UserSessionKey(client: client, userId: userId);
+    _sessionKey = UserSessionKey(client: client, userId: user.id);
     setState(() {});
 
     try {
@@ -157,7 +164,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
     super.dispose();
   }
 
-  int get _userId => ref.read(authProvider).user!.id;
+  int get _userId => ref.read(authProvider).user?.id ?? 0;
 
   Future<void> _reloadSchedule() async {
     final key = _scheduleKey;

@@ -83,15 +83,6 @@ public static class DbInitializer
         }
         catch { /* exists */ }
 
-        await db.Database.ExecuteSqlRawAsync("""
-            UPDATE Stadiums SET Latitude = 36.3480, Longitude = 43.1450
-            WHERE Name LIKE '%النور%' AND (Latitude IS NULL OR Longitude IS NULL)
-            """);
-        await db.Database.ExecuteSqlRawAsync("""
-            UPDATE Stadiums SET Latitude = 36.3310, Longitude = 43.1180
-            WHERE Name LIKE '%الأمل%' AND (Latitude IS NULL OR Longitude IS NULL)
-            """);
-
         await EnsureOwnerPaymentTablesAsync(db);
         await EnsureWalletTablesAsync(db);
         await EnsureDeviceTokensTableAsync(db);
@@ -447,33 +438,34 @@ public static class DbInitializer
 
     public static void Seed(AppDbContext db)
     {
-        if (db.Fields.Any()) return;
+        RemoveDemoFields(db);
+        EnsureAdminAccount(db);
+    }
 
-        var owner = new User
+    /// Hides seeded demo stadiums from the public list (keeps history if bookings exist).
+    static void RemoveDemoFields(AppDbContext db)
+    {
+        var changed = false;
+        var demoOwner = db.Users.FirstOrDefault(u => u.Email == "owner@test.com");
+        var demoFields = db.Fields
+            .Where(f =>
+                f.Name == "ملعب النور" ||
+                f.Name == "ملعب الأمل" ||
+                (demoOwner != null && f.OwnerId == demoOwner.Id))
+            .ToList();
+
+        foreach (var field in demoFields.Where(f => f.IsActive))
         {
-            Name = "أحمد المالك",
-            Email = "owner@test.com",
-            Phone = "07701234567",
-            Province = "نينوى",
-            Role = "owner"
-        };
-        owner.PasswordHash = PasswordService.Hash(owner, "123456");
-        db.Users.Add(owner);
-        db.SaveChanges();
+            field.IsActive = false;
+            changed = true;
+        }
 
-        db.Fields.AddRange(
-            new Field { OwnerId = owner.Id, Name = "ملعب النور", Address = "موصل - حي الزهور", Phone = "07701111111", PricePerHour = 15000, BasePrice = 15000, Latitude = 36.3480, Longitude = 43.1450 },
-            new Field { OwnerId = owner.Id, Name = "ملعب الأمل", Address = "موصل - حي العربي", Phone = "07702222222", PricePerHour = 12000, BasePrice = 12000, Latitude = 36.3310, Longitude = 43.1180 }
-        );
-        db.SaveChanges();
+        if (changed) db.SaveChanges();
+    }
 
-        db.Wallets.Add(new Wallet
-        {
-            OwnerId = owner.Id,
-            Balance = 500_000,
-            LastUpdated = DateTime.UtcNow
-        });
-        db.SaveChanges();
+    static void EnsureAdminAccount(AppDbContext db)
+    {
+        if (db.Users.Any(u => u.Role == "admin")) return;
 
         var admin = new User
         {
@@ -485,18 +477,6 @@ public static class DbInitializer
         };
         admin.PasswordHash = PasswordService.Hash(admin, "admin123");
         db.Users.Add(admin);
-        db.SaveChanges();
-
-        var testUser = new User
-        {
-            Name = "محمد اللاعب",
-            Email = "user@test.com",
-            Phone = "07709999999",
-            Province = "نينوى",
-            Role = "user"
-        };
-        testUser.PasswordHash = PasswordService.Hash(testUser, "123456");
-        db.Users.Add(testUser);
         db.SaveChanges();
     }
 }

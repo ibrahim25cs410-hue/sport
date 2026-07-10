@@ -28,6 +28,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const { initSocketHandler } = require('./socketHandler');
 const { auth, optionalAuth } = require('./middleware/auth');
 const { publicField } = require('./utils/dto');
+const { resolveField, ensureFieldsHaveIds } = require('./utils/fieldResolve');
 const { serverError } = require('./utils/errors');
 
 const PORT = config.port;
@@ -126,13 +127,13 @@ app.get('/api/fields', optionalAuth, async (req, res) => {
 });
 
 app.get('/api/fields/:id', auth, async (req, res) => {
-  const f = await store().findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   if (!f || f.isActive === false) return res.status(404).json({ message: 'الملعب غير موجود' });
   res.json(publicField(f));
 });
 
 app.put('/api/fields/:id', auth, async (req, res) => {
-  const f = await store().findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   if (!f || f.isActive === false) return res.status(404).json({ message: 'الملعب غير موجود' });
   if (Number(f.ownerId) !== Number(req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
   const { name, address, phone, pricePerHour, image } = req.body || {};
@@ -142,23 +143,27 @@ app.put('/api/fields/:id', auth, async (req, res) => {
   if (phone != null) patch.phone = phone;
   if (pricePerHour != null) patch.pricePerHour = Number(pricePerHour);
   if (image != null) patch.image = image;
-  res.json(publicField(await store().update('fields', req.params.id, patch)));
+  const updated = f.id != null
+    ? await store().update('fields', f.id, patch)
+    : f;
+  res.json(publicField(updated || f));
 });
 
 // حذف منطقي (soft delete) — يخفي الملعب دون مسح الحجوزات السابقة
 app.delete('/api/fields/:id', auth, async (req, res) => {
-  const f = await store().findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   if (!f || f.isActive === false) return res.status(404).json({ message: 'الملعب غير موجود' });
   if (Number(f.ownerId) !== Number(req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
-  await store().softDeleteField(req.params.id);
-  res.json({ message: 'تم حذف الملعب', id: Number(req.params.id) });
+  if (f.id != null) await store().softDeleteField(f.id);
+  res.json({ message: 'تم حذف الملعب', id: publicField(f).id });
 });
 
 // جدول المواعيد: 7 أيام × ساعات 10:00–23:00 مع علامة التوفر
 app.get('/api/fields/:id/schedule', auth, async (req, res) => {
-  const f = await store().findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   if (!f || f.isActive === false) return res.status(404).json({ message: 'الملعب غير موجود' });
-  const booked = (await bookingsByField(f.id)).filter((b) => b.status === 'pending' || b.status === 'approved');
+  const fieldKey = f.id != null ? f.id : publicField(f).id;
+  const booked = (await bookingsByField(fieldKey)).filter((b) => b.status === 'pending' || b.status === 'approved');
   const bookedKeys = new Set(booked.map((b) => new Date(b.startTime).toISOString().slice(0, 13)));
 
   const today = new Date();
@@ -181,21 +186,22 @@ app.get('/api/fields/:id/schedule', auth, async (req, res) => {
     }
     schedule.push({ date: day.toISOString(), slots });
   }
+  const pub = publicField(f);
   res.json({
-    id: f.id,
-    name: f.name,
-    pricePerHour: f.pricePerHour,
-    address: f.address || '',
-    phone: f.phone || '',
-    averageRating: f.averageRating || 0,
-    reviewCount: f.reviewCount || 0,
+    id: pub.id,
+    name: pub.name,
+    pricePerHour: pub.pricePerHour,
+    address: pub.address || '',
+    phone: pub.phone || '',
+    averageRating: pub.averageRating || 0,
+    reviewCount: pub.reviewCount || 0,
     schedule,
   });
 });
 
 // التقييمات (مبسّطة)
 app.get('/api/fields/:id/review-eligibility', auth, async (req, res) => {
-  const f = await store().findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   res.json({ canReview: false, hasBooked: false, userRating: null, averageRating: f?.averageRating || 0, reviewCount: f?.reviewCount || 0 });
 });
 app.get('/api/fields/:id/reviews', auth, (_req, res) => res.json([]));
@@ -314,6 +320,11 @@ app.use((err, _req, res, _next) => {
 async function start() {
   await initStore();
   console.log(`التخزين: ${store().kind}`);
+  try {
+    await ensureFieldsHaveIds();
+  } catch (e) {
+    console.error('تحذير: فشل إصلاح معرّفات الملاعب:', e.message || e);
+  }
 
   const server = http.createServer(app);
   const io = new Server(server, {

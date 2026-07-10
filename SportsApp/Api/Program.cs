@@ -277,7 +277,7 @@ app.MapPost("/api/login", async (AppDbContext db, JwtService jwt, LoginRequest r
     var token = jwt.CreateToken(user);
     if (user.Role == "owner")
     {
-        var field = await db.Fields.FirstOrDefaultAsync(f => f.OwnerId == user.Id);
+        var field = await db.Fields.FirstOrDefaultAsync(f => f.OwnerId == user.Id && f.IsActive);
         var fd = field is not null ? DtoMapper.ToDto(field) : null;
         return Results.Ok(new { token, user = dto, field = fd, stadium = fd });
     }
@@ -292,7 +292,7 @@ app.MapGet("/api/me", async (ClaimsPrincipal p, AppDbContext db) =>
     var dto = DtoMapper.ToDto(user);
     if (user.Role == "owner")
     {
-        var field = await db.Fields.AsNoTracking().FirstOrDefaultAsync(f => f.OwnerId == user.Id);
+        var field = await db.Fields.AsNoTracking().FirstOrDefaultAsync(f => f.OwnerId == user.Id && f.IsActive);
         var fd = field is not null ? DtoMapper.ToDto(field) : null;
         return Results.Ok(new { user = dto, field = fd, stadium = fd });
     }
@@ -317,9 +317,8 @@ app.MapPut("/api/me", async (ClaimsPrincipal p, AppDbContext db, UpdateProfileRe
 async Task<IResult> ListFields(AppDbContext db, int? page, int? limit)
 {
     var (p, l, explicitPaging) = Pagination.Parse(page, limit);
-    var query = db.Fields.AsNoTracking()
-        .Where(f => f.IsActive)
-        .Where(f => db.Wallets.Any(w => w.OwnerId == f.OwnerId && w.Balance > 0));
+    // Active fields are listed immediately for users — wallet balance only gates bookings.
+    var query = db.Fields.AsNoTracking().Where(f => f.IsActive);
 
     var total = await query.CountAsync();
     var take = explicitPaging ? l : Pagination.LegacyMaxItems;
@@ -371,8 +370,6 @@ async Task<IResult> GetField(AppDbContext db, int id)
 {
     var field = await db.Fields.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id && f.IsActive);
     if (field is null) return Results.NotFound();
-    var walletOk = await db.Wallets.AsNoTracking().AnyAsync(w => w.OwnerId == field.OwnerId && w.Balance > 0);
-    if (!walletOk) return Results.NotFound();
     var (avg, count) = await ReviewService.GetFieldRatingAsync(db, id);
     return Results.Ok(DtoMapper.ToDto(field, avg, count));
 }
@@ -382,6 +379,38 @@ app.MapGet("/api/fields/{id:int}", GetField);
 app.MapGet("/api/fields/{id:int}/schedule", FieldSchedule);
 app.MapGet("/api/stadiums", ListFields);
 app.MapGet("/api/stadiums/{id:int}/schedule", FieldSchedule);
+
+app.MapPost("/api/fields", async (ClaimsPrincipal p, AppDbContext db, CreateFieldRequest req) =>
+{
+    var ownerId = UserId(p);
+    var owner = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == ownerId);
+    if (owner is null || owner.Role != "owner")
+        return Results.Json(new { message = "غير مصرح — لأصحاب الملاعب فقط" }, statusCode: 403);
+    if (string.IsNullOrWhiteSpace(req.Name) || string.IsNullOrWhiteSpace(req.Address) || string.IsNullOrWhiteSpace(req.Phone))
+        return Results.BadRequest(new { message = "اسم الملعب والعنوان والهاتف مطلوبة" });
+    if (req.PricePerHour < 1000) return Results.BadRequest(new { message = "السعر غير صالح" });
+
+    var field = new Field
+    {
+        OwnerId = ownerId,
+        Name = req.Name.Trim(),
+        Address = req.Address.Trim(),
+        Phone = req.Phone.Trim(),
+        Image = req.Image,
+        PricePerHour = req.PricePerHour,
+        BasePrice = req.PricePerHour,
+        IsActive = true,
+        Latitude = req.Latitude,
+        Longitude = req.Longitude,
+    };
+    db.Fields.Add(field);
+
+    if (!await db.Wallets.AnyAsync(w => w.OwnerId == ownerId))
+        db.Wallets.Add(new Wallet { OwnerId = ownerId, Balance = 0, LastUpdated = DateTime.UtcNow });
+
+    await db.SaveChangesAsync();
+    return Results.Ok(DtoMapper.ToDto(field));
+}).RequireAuthorization();
 
 app.MapPut("/api/fields/{id:int}", async (ClaimsPrincipal p, AppDbContext db, int id, UpdateFieldRequest req) =>
 {

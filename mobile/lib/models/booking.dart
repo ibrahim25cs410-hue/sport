@@ -1,4 +1,5 @@
 import 'field.dart';
+import '../utils/json_int.dart';
 
 class Booking {
   final int id;
@@ -36,7 +37,7 @@ class Booking {
   bool get needsPayment => paymentStatus != 'paid' && status != 'cancelled' && status != 'rejected';
 
   factory Booking.fromJson(Map<String, dynamic> json) => Booking(
-        id: json['id'] as int,
+        id: asInt(json['id']) ?? 0,
         referenceCode: json['referenceCode'] as String?,
         fieldName: json['fieldName'] as String? ?? '',
         fieldPhone: json['fieldPhone'] as String? ?? '',
@@ -44,8 +45,8 @@ class Booking {
         fieldAddress: json['fieldAddress'] as String? ?? '',
         startTime: DateTime.parse(json['startTime'] as String),
         endTime: DateTime.parse(json['endTime'] as String),
-        hours: json['hours'] as int? ?? 1,
-        totalPrice: json['totalPrice'] as int? ?? 0,
+        hours: asInt(json['hours']) ?? 1,
+        totalPrice: asInt(json['totalPrice']) ?? 0,
         status: json['status'] as String? ?? 'pending',
         paymentStatus: json['paymentStatus'] as String? ?? 'paid',
         remainingHours: (json['remainingHours'] as num?)?.toDouble() ?? 0,
@@ -77,20 +78,20 @@ class OwnerBooking {
   });
 
   factory OwnerBooking.fromJson(Map<String, dynamic> json) => OwnerBooking(
-        id: json['id'] as int,
+        id: asInt(json['id']) ?? 0,
         referenceCode: json['referenceCode'] as String?,
         userName: json['userName'] as String? ?? '',
         userPhone: json['userPhone'] as String? ?? '',
         userEmail: json['userEmail'] as String? ?? '',
         startTime: DateTime.parse(json['startTime'] as String),
-        hours: json['hours'] as int? ?? 1,
-        totalPrice: json['totalPrice'] as int? ?? 0,
+        hours: asInt(json['hours']) ?? 1,
+        totalPrice: asInt(json['totalPrice']) ?? 0,
         status: json['status'] as String? ?? 'pending',
       );
 }
 
 class OwnerDashboard {
-  final Field field;
+  final Field? field;
   final List<OwnerBooking> bookings;
   final int totalRevenue;
   final int appCommission;
@@ -98,7 +99,7 @@ class OwnerDashboard {
   final int pendingCount;
 
   const OwnerDashboard({
-    required this.field,
+    this.field,
     required this.bookings,
     required this.totalRevenue,
     required this.appCommission,
@@ -106,14 +107,17 @@ class OwnerDashboard {
     required this.pendingCount,
   });
 
-  factory OwnerDashboard.fromJson(Map<String, dynamic> json) => OwnerDashboard(
-        field: Field.fromJson(json['field'] as Map<String, dynamic>),
-        bookings: (json['bookings'] as List<dynamic>)
-            .map((e) => OwnerBooking.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        totalRevenue: json['totalRevenue'] as int? ?? 0,
-        appCommission: json['appCommission'] as int? ?? 0,
-        netRevenue: json['netRevenue'] as int? ?? 0,
-        pendingCount: json['pendingCount'] as int? ?? 0,
-      );
+  factory OwnerDashboard.fromJson(Map<String, dynamic> json) {
+    final rawField = json['field'];
+    return OwnerDashboard(
+      field: rawField is Map<String, dynamic> ? Field.fromJson(rawField) : null,
+      bookings: (json['bookings'] as List<dynamic>? ?? const [])
+          .map((e) => OwnerBooking.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      totalRevenue: asInt(json['totalRevenue']) ?? 0,
+      appCommission: asInt(json['appCommission']) ?? 0,
+      netRevenue: asInt(json['netRevenue']) ?? 0,
+      pendingCount: asInt(json['pendingCount']) ?? 0,
+    );
+  }
 }

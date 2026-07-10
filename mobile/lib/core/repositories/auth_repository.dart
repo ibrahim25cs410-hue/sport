@@ -20,7 +20,7 @@ class AuthRepository {
   Future<({String token, User user})> registerUser(Map<String, dynamic> body) =>
       _remote.registerUser(body);
 
-  Future<({String token, User user, Field field})> registerOwner(Map<String, dynamic> body) =>
+  Future<({String token, User user, Field? field})> registerOwner(Map<String, dynamic> body) =>
       _remote.registerOwner(body);
 
   Future<void> logout() => _remote.logout();
@@ -31,9 +31,21 @@ class AuthRepository {
   Future<({User user, Field? field})> bootstrapFromToken() async {
     final res = await _client.dio.get('/me');
     final data = res.data as Map<String, dynamic>;
-    final user = User.fromJson(data['user'] as Map<String, dynamic>);
     final fj = data['field'] ?? data['stadium'];
-    final field = fj != null ? Field.fromJson(fj as Map<String, dynamic>) : null;
+    Field? field;
+    if (fj is Map<String, dynamic>) {
+      try {
+        field = Field.fromJson(fj);
+      } catch (_) {
+        field = null;
+      }
+    }
+    var user = User.fromJson(
+      data['user'] is Map<String, dynamic> ? data['user'] as Map<String, dynamic> : <String, dynamic>{},
+    );
+    if (field != null && !user.isOwner && !user.isAdmin) {
+      user = user.copyWith(role: 'owner');
+    }
     return (user: user, field: field);
   }
 
@@ -60,5 +72,24 @@ class AuthRepository {
         phone: phone,
         pricePerHour: pricePerHour,
         image: image,
+      );
+
+  Future<Field> createField({
+    required String name,
+    required String address,
+    required String phone,
+    required int pricePerHour,
+    String? image,
+    double? latitude,
+    double? longitude,
+  }) =>
+      _remote.createField(
+        name: name,
+        address: address,
+        phone: phone,
+        pricePerHour: pricePerHour,
+        image: image,
+        latitude: latitude,
+        longitude: longitude,
       );
 }

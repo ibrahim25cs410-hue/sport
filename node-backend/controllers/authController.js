@@ -6,7 +6,7 @@ const { isEmail, isStrongEnough, normalizeEmail } = require('../utils/validators
 const { serverError } = require('../utils/errors');
 
 const BCRYPT_ROUNDS = 12;
-const DUPLICATE_EMAIL_MSG = 'Account already exists, please login';
+const DUPLICATE_EMAIL_MSG = 'البريد مستخدم مسبقاً — سجّل الدخول بدل إنشاء حساب جديد';
 const VALID_ROLES = new Set(['user', 'owner']);
 
 const store = () => getStore();
@@ -49,9 +49,18 @@ function validateCredentials({ name, email, password }) {
 }
 
 async function attachOwnerField(body, user) {
-  if (user.role !== 'owner') return body;
-  const owned = await fieldsByOwner(user.id);
+  if (String(user.role || '').toLowerCase() !== 'owner') return body;
+  let owned = await fieldsByOwner(user.id);
+  // بيانات قديمة بلا ownerId — اربط أول ملعب بلا مالك إن وُجد اسم مطابق لاحقاً
+  if (!owned.length) {
+    const all = isMongo()
+      ? await store().find('fields', { isActive: { $ne: false } })
+      : await store().find('fields', (f) => f.isActive !== false);
+    owned = all.filter((f) => Number(f.ownerId) === Number(user.id) || f.ownerId == null);
+  }
   if (owned[0]) body.field = publicField(owned[0]);
+  // تأكيد الدور للمزوّد حتى لو نقص من المستند
+  if (body.user) body.user.role = 'owner';
   return body;
 }
 

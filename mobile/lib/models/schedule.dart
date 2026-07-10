@@ -1,3 +1,5 @@
+import '../utils/json_int.dart';
+
 class TimeSlot {
   final DateTime startTime;
   final DateTime endTime;
@@ -34,7 +36,7 @@ class DaySchedule {
 
   factory DaySchedule.fromJson(Map<String, dynamic> json) => DaySchedule(
         date: DateTime.parse(json['date'] as String),
-        slots: (json['slots'] as List<dynamic>)
+        slots: (json['slots'] as List<dynamic>? ?? const [])
             .map((e) => TimeSlot.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
@@ -54,10 +56,10 @@ class FieldSchedule {
   });
 
   factory FieldSchedule.fromJson(Map<String, dynamic> json) => FieldSchedule(
-        id: json['id'] as int,
+        id: asInt(json['id']) ?? 0,
         name: json['name'] as String? ?? '',
-        pricePerHour: json['pricePerHour'] as int? ?? 0,
-        schedule: (json['schedule'] as List<dynamic>)
+        pricePerHour: asInt(json['pricePerHour']) ?? 0,
+        schedule: (json['schedule'] as List<dynamic>? ?? const [])
             .map((e) => DaySchedule.fromJson(e as Map<String, dynamic>))
             .toList(),
       );

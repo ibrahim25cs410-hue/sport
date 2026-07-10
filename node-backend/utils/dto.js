@@ -1,24 +1,26 @@
+const { publicNumericId, flutterStableId } = require('./fieldResolve');
+
 const publicUser = (user) => ({
-  id: user.id,
+  id: Number(user.id) || flutterStableId({ name: user.email || user.name, phone: user.phone || '', address: '' }),
   name: user.name,
   email: user.email,
   phone: user.phone || '',
   province: user.province || 'نينوى',
   image: user.image || null,
-  role: user.role,
-  loyaltyPoints: user.loyaltyPoints || 0,
+  role: String(user.role || 'user').toLowerCase(),
+  loyaltyPoints: Number(user.loyaltyPoints) || 0,
 });
 
 const publicField = (field) => ({
-  id: field.id,
+  id: publicNumericId(field),
   name: field.name,
   address: field.address || '',
   phone: field.phone || '',
   image: field.image || null,
-  pricePerHour: field.pricePerHour || 0,
-  ownerId: field.ownerId,
-  averageRating: field.averageRating || 0,
-  reviewCount: field.reviewCount || 0,
+  pricePerHour: Number(field.pricePerHour) || 0,
+  ownerId: Number(field.ownerId) || 0,
+  averageRating: Number(field.averageRating) || 0,
+  reviewCount: Number(field.reviewCount) || 0,
   latitude: field.latitude ?? null,
   longitude: field.longitude ?? null,
 });

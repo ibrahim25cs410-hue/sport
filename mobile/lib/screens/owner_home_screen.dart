@@ -185,7 +185,7 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
 
     return RtlScaffold(
       appBar: AppBar(
-        title: Text(dash?.field.name ?? l10n.ownerDashboard),
+        title: Text(dash?.field?.name ?? l10n.ownerDashboard),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_rounded),

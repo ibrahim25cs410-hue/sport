@@ -2,6 +2,8 @@ const { getStore } = require('../db');
 const { serverError } = require('../utils/errors');
 const { sendNotification } = require('../utils/notifications');
 const { emitBookingUpdated } = require('../utils/realtime');
+const { publicField } = require('../utils/dto');
+const { resolveField } = require('../utils/fieldResolve');
 
 const store = () => getStore();
 const isMongo = () => store().kind === 'mongodb';
@@ -22,7 +24,7 @@ function endTimeOf(startIso, hours) {
 
 function userBookingDto(booking, field) {
   return {
-    id: booking.id,
+    id: Number(booking.id) || 0,
     referenceCode: booking.referenceCode || null,
     fieldName: field?.name || booking.fieldName || '',
     fieldPhone: field?.phone || '',
@@ -30,9 +32,9 @@ function userBookingDto(booking, field) {
     fieldAddress: field?.address || '',
     startTime: booking.startTime,
     endTime: endTimeOf(booking.startTime, booking.hours),
-    hours: booking.hours,
-    totalPrice: booking.totalPrice,
-    status: booking.status,
+    hours: Number(booking.hours) || 1,
+    totalPrice: Number(booking.totalPrice) || 0,
+    status: booking.status || 'pending',
     paymentStatus: booking.paymentStatus || 'unpaid',
     remainingHours: 0,
     canCancel: booking.status === 'pending' || booking.status === 'approved',
@@ -41,15 +43,15 @@ function userBookingDto(booking, field) {
 
 function ownerBookingDto(booking, user) {
   return {
-    id: booking.id,
+    id: Number(booking.id) || 0,
     referenceCode: booking.referenceCode || null,
     userName: user?.name || '',
     userPhone: user?.phone || '',
     userEmail: user?.email || '',
     startTime: booking.startTime,
-    hours: booking.hours,
-    totalPrice: booking.totalPrice,
-    status: booking.status,
+    hours: Number(booking.hours) || 1,
+    totalPrice: Number(booking.totalPrice) || 0,
+    status: booking.status || 'pending',
   };
 }
 
@@ -79,20 +81,6 @@ async function fieldsByOwner(ownerId) {
   return store().find('fields', q);
 }
 
-const publicField = (field) => ({
-  id: field.id,
-  name: field.name,
-  address: field.address || '',
-  phone: field.phone || '',
-  image: field.image || null,
-  pricePerHour: field.pricePerHour || 0,
-  ownerId: field.ownerId,
-  averageRating: field.averageRating || 0,
-  reviewCount: field.reviewCount || 0,
-  latitude: field.latitude ?? null,
-  longitude: field.longitude ?? null,
-});
-
 /**
  * POST /api/bookings — legacy field booking (Flutter app, body.fieldId)
  */
@@ -103,16 +91,18 @@ async function createFieldBooking(req, res) {
       return res.status(400).json({ message: 'الملعب ووقت البدء مطلوبان' });
     }
 
-    const field = await store().findById('fields', fieldId);
+    const field = await resolveField(fieldId);
     if (!field || field.isActive === false) {
       return res.status(404).json({ message: 'الملعب غير موجود' });
     }
 
+    const pub = publicField(field);
+    const resolvedFieldId = pub.id;
     const hrs = Number(hours) || 1;
     const start = new Date(startTime).toISOString();
     const end = endTimeOf(start, hrs);
 
-    const existing = (await bookingsByField(field.id))
+    const existing = (await bookingsByField(resolvedFieldId))
       .filter((b) => b.status === 'pending' || b.status === 'approved');
     const clash = existing.some(
       (b) => new Date(b.startTime).toISOString().slice(0, 13) === start.slice(0, 13),
@@ -121,11 +111,11 @@ async function createFieldBooking(req, res) {
       return res.status(409).json({ code: 'ConflictError', messageKey: 'slotJustBooked' });
     }
 
-    const hourlyRate = field.pricePerHour || 0;
+    const hourlyRate = Number(field.pricePerHour) || 0;
     const totalPrice = hourlyRate * hrs;
     const booking = await store().insert('bookings', {
-      fieldId: field.id,
-      ownerId: field.ownerId,
+      fieldId: resolvedFieldId,
+      ownerId: Number(field.ownerId) || 0,
       userId: req.user.id,
       startTime: start,
       endTime: end,
@@ -137,10 +127,12 @@ async function createFieldBooking(req, res) {
       referenceCode: `REF-${Date.now().toString().slice(-6)}`,
     });
 
-    await sendNotification(field.ownerId, {
-      title: 'طلب حجز جديد',
-      message: `طلب حجز على ${field.name}`,
-    });
+    if (field.ownerId) {
+      await sendNotification(field.ownerId, {
+        title: 'طلب حجز جديد',
+        message: `طلب حجز على ${field.name}`,
+      });
+    }
 
     emitBookingUpdated({
       booking,
@@ -151,7 +143,7 @@ async function createFieldBooking(req, res) {
     });
 
     return res.status(201).json({
-      id: booking.id,
+      id: Number(booking.id) || 0,
       referenceCode: booking.referenceCode,
       paymentStatus: booking.paymentStatus,
       totalPrice: booking.totalPrice,
@@ -173,7 +165,7 @@ async function getUserFieldBookings(req, res) {
     const items = [];
 
     for (const booking of active.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
-      fieldsCache[booking.fieldId] ??= await store().findById('fields', booking.fieldId);
+      fieldsCache[booking.fieldId] ??= await resolveField(booking.fieldId);
       items.push(userBookingDto(booking, fieldsCache[booking.fieldId]));
     }
 
@@ -190,7 +182,7 @@ async function getUserFieldBookingHistory(req, res) {
     const items = [];
 
     for (const booking of list.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
-      fieldsCache[booking.fieldId] ??= await store().findById('fields', booking.fieldId);
+      fieldsCache[booking.fieldId] ??= await resolveField(booking.fieldId);
       items.push(userBookingDto(booking, fieldsCache[booking.fieldId]));
     }
 
@@ -255,7 +247,21 @@ async function getOwnerFieldBookings(req, res) {
     const appCommission = Math.round(totalRevenue * commissionRate);
 
     return res.json({
-      field: field ? publicField(field) : null,
+      field: field
+        ? publicField(field)
+        : {
+            id: 0,
+            name: 'ملعبك',
+            address: '',
+            phone: '',
+            image: null,
+            pricePerHour: 0,
+            ownerId: ownerId,
+            averageRating: 0,
+            reviewCount: 0,
+            latitude: null,
+            longitude: null,
+          },
       bookings,
       totalRevenue,
       appCommission,

@@ -16,6 +16,7 @@ import '../models/field.dart';
 import '../models/user.dart';
 import '../providers/auth_provider.dart';
 import '../providers/onboarding_provider.dart';
+import '../screens/add_field_screen.dart';
 import '../screens/booking_history_screen.dart';
 import '../features/explore/presentation/field_detail_route_screen.dart';
 import '../screens/login_screen.dart';
@@ -122,8 +123,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AppRoutes.onboarding;
         }
         if (auth.hasStoredToken && path == AppRoutes.userHome) return null;
+        if (auth.hasStoredToken && path.startsWith('/field/')) return null;
         if (_shellPaths.contains(path)) return AppRoutes.welcome;
         if (path == AppRoutes.onboarding) return AppRoutes.welcome;
+        if (path.startsWith('/field/')) return AppRoutes.login;
         return publicPaths.contains(path) ? null : AppRoutes.welcome;
       }
 
@@ -206,6 +209,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.profile,
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (c, s) => riyadaTransitionPage(child: const ProfileScreen(), state: s, fromBottom: true),
+      ),
+      GoRoute(
+        path: AppRoutes.addField,
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (c, s) => riyadaTransitionPage(child: const AddFieldScreen(), state: s, fromBottom: true),
       ),
       GoRoute(
         path: AppRoutes.bookingHistory,

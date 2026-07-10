@@ -73,6 +73,15 @@ public record UpdateProfileRequest(string Name, string Phone, string? Image, str
 
 public record UpdateFieldRequest(string Name, string Address, string Phone, string? Image, int PricePerHour);
 
+public record CreateFieldRequest(
+    string Name,
+    string Address,
+    string Phone,
+    string? Image,
+    int PricePerHour,
+    double? Latitude = null,
+    double? Longitude = null);
+
 public record UpdateDeviceTokenRequest(string Token, string? Platform = null);
 
 public record InitiateBookingPaymentRequest(string Gateway);

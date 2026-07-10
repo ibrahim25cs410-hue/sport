@@ -177,7 +177,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
           RiyadaNavIcon.home,
           RiyadaNavIcon.bookings,
           RiyadaNavIcon.accounts,
-          RiyadaNavIcon.explore,
+          RiyadaNavIcon.favorites,
           RiyadaNavIcon.profile,
         ],
       _ShellRole.user => const [

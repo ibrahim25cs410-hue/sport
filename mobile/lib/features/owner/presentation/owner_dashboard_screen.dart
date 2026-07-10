@@ -124,7 +124,7 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(dash?.field.name ?? l10n.ownerDashboard),
+        title: Text(dash?.field?.name ?? l10n.ownerDashboard),
         actions: [
           if (outstandingAmount > 0)
             IconButton(

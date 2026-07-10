@@ -53,9 +53,8 @@ class AuthService {
     final data = res.data as Map<String, dynamic>;
     final token = data['token'] as String;
     await saveToken(token);
-    final user = User.fromJson(data['user'] as Map<String, dynamic>);
-    final fj = data['field'] ?? data['stadium'];
-    final field = fj != null ? Field.fromJson(fj as Map<String, dynamic>) : null;
+    final field = _parseOptionalField(data);
+    final user = _parseUser(data['user'], fallbackOwner: field != null);
     return (token: token, user: user, field: field);
   }
 
@@ -68,25 +67,41 @@ class AuthService {
       final data = res.data as Map<String, dynamic>;
       final token = data['token'] as String;
       await saveToken(token);
-      return (token: token, user: User.fromJson(data['user'] as Map<String, dynamic>));
+      return (token: token, user: _parseUser(data['user']));
     } catch (e, st) {
       apiLogError('register-user failed', e, st);
       rethrow;
     }
   }
 
-  Future<({String token, User user, Field field})> registerOwner(Map<String, dynamic> body) async {
+  Future<({String token, User user, Field? field})> registerOwner(Map<String, dynamic> body) async {
     final res = await _client.dio.post('/register-owner', data: body);
     final data = res.data as Map<String, dynamic>;
     final token = data['token'] as String;
     await saveToken(token);
-    final user = User.fromJson(data['user'] as Map<String, dynamic>);
+    final field = _parseOptionalField(data);
+    final user = _parseUser(data['user'], fallbackOwner: true);
+    return (token: token, user: user, field: field);
+  }
+
+  User _parseUser(dynamic raw, {bool fallbackOwner = false}) {
+    final map = raw is Map<String, dynamic> ? raw : <String, dynamic>{};
+    var user = User.fromJson(map);
+    if (fallbackOwner && !user.isOwner && !user.isAdmin) {
+      user = user.copyWith(role: 'owner');
+    }
+    return user;
+  }
+
+  Field? _parseOptionalField(Map<String, dynamic> data) {
     final fj = data['field'] ?? data['stadium'];
-    return (
-      token: token,
-      user: user,
-      field: Field.fromJson(fj as Map<String, dynamic>),
-    );
+    if (fj is! Map<String, dynamic>) return null;
+    try {
+      return Field.fromJson(fj);
+    } catch (e, st) {
+      apiLogError('field parse skipped', e, st);
+      return null;
+    }
   }
 
   Future<List<Field>> getFields({int page = 1, int limit = defaultPageSize}) async {
@@ -128,6 +143,27 @@ class AuthService {
       'phone': phone,
       'pricePerHour': pricePerHour,
       if (image != null) 'image': image,
+    });
+    return Field.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<Field> createField({
+    required String name,
+    required String address,
+    required String phone,
+    required int pricePerHour,
+    String? image,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final res = await _client.dio.post('/fields', data: {
+      'name': name,
+      'address': address,
+      'phone': phone,
+      'pricePerHour': pricePerHour,
+      if (image != null) 'image': image,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
     });
     return Field.fromJson(res.data as Map<String, dynamic>);
   }

@@ -1,3 +1,5 @@
+import '../utils/json_int.dart';
+
 class CreateBookingResult {
   const CreateBookingResult({
     required this.id,
@@ -22,13 +24,13 @@ class CreateBookingResult {
   bool get needsPayment => paymentStatus != 'paid';
 
   factory CreateBookingResult.fromJson(Map<String, dynamic> json) => CreateBookingResult(
-        id: json['id'] as int,
+        id: asInt(json['id']) ?? 0,
         referenceCode: json['referenceCode'] as String?,
         paymentStatus: json['paymentStatus'] as String? ?? 'unpaid',
-        totalPrice: json['totalPrice'] as int? ?? 0,
-        discountAmount: json['discountAmount'] as int? ?? 0,
+        totalPrice: asInt(json['totalPrice']) ?? 0,
+        discountAmount: asInt(json['discountAmount']) ?? 0,
         isDiscountApplied: json['isDiscountApplied'] as bool? ?? false,
-        hourlyRate: json['hourlyRate'] as int?,
-        loyaltyPoints: json['loyaltyPoints'] as int? ?? 0,
+        hourlyRate: asInt(json['hourlyRate']),
+        loyaltyPoints: asInt(json['loyaltyPoints']) ?? 0,
       );
 }
