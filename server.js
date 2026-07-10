@@ -62,6 +62,11 @@ function createMemoryStore() {
       Object.assign(rec, patch);
       return clone(rec);
     },
+    async deleteAll(col) {
+      const n = data[col].length;
+      data[col] = [];
+      return n;
+    },
   };
 }
 
@@ -106,6 +111,10 @@ async function createMongoStore(uri) {
     },
     async update(col, id, patch) {
       return out(await models[col].findOneAndUpdate({ id: Number(id) }, patch, { new: true }));
+    },
+    async deleteAll(col) {
+      const result = await models[col].deleteMany({});
+      return result.deletedCount || 0;
     },
   };
 }
@@ -311,6 +320,21 @@ app.put('/api/me', auth, async (req, res) => {
 app.get('/api/fields', optionalAuth, async (req, res) => {
   const list = (await allFields()).map(publicField);
   res.json(paged(list, req.query.page, req.query.limit));
+});
+
+/** حذف كل الملاعب (طلب صريح من الإدارة) — يحتاج تأكيد في الجسم. */
+app.post('/api/admin/clear-fields', auth, async (req, res) => {
+  try {
+    if (req.body?.confirm !== 'DELETE_ALL_FIELDS') {
+      return res.status(400).json({ message: 'أرسل confirm: DELETE_ALL_FIELDS' });
+    }
+    const deleted = await store.deleteAll('fields');
+    // الحجوزات القديمة تبقى لكن بدون ملاعب ظاهرة
+    return res.json({ ok: true, deleted });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'فشل حذف الملاعب' });
+  }
 });
 
 app.get('/api/fields/:id', auth, async (req, res) => {
@@ -580,6 +604,26 @@ app.use((err, _req, res, _next) => {
 async function start() {
   if (MONGODB_URI) { store = await createMongoStore(MONGODB_URI); console.log('التخزين: MongoDB'); }
   else { store = createMemoryStore(); console.log('التخزين: في الذاكرة (in-memory)'); }
+
+  // حذف لمرة واحدة للملاعب التجريبية الحالية عند أول تشغيل بعد هذا التحديث
+  try {
+    const flag = isMongo()
+      ? await store.findOne('notifications', { title: '__cleared_all_fields_v1__' })
+      : await store.findOne('notifications', (n) => n.title === '__cleared_all_fields_v1__');
+    if (!flag) {
+      const deleted = await store.deleteAll('fields');
+      await store.insert('notifications', {
+        userId: 0,
+        title: '__cleared_all_fields_v1__',
+        message: `deleted ${deleted} fields`,
+        isRead: true,
+      });
+      console.log(`تم حذف ${deleted} ملعب من قاعدة البيانات`);
+    }
+  } catch (e) {
+    console.error('تحذير: فشل تنظيف الملاعب:', e.message || e);
+  }
+
   app.listen(PORT, () => console.log(`الخادم يعمل على المنفذ ${PORT}`));
 }
 
