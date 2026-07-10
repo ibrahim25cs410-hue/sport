@@ -123,7 +123,12 @@ async function createMongoStore(uri) {
 const isMongo = () => store.kind === 'mongodb';
 
 async function findUserByEmail(email) {
-  return isMongo() ? store.findOne('users', { email }) : store.findOne('users', (u) => u.email === email);
+  const norm = String(email || '').trim().toLowerCase();
+  if (!norm) return null;
+  // مطابقة حرفية كاملة فقط — ibrahem@gmail.com ≠ ibrah2007@gmail.com
+  return isMongo()
+    ? store.findOne('users', { email: norm })
+    : store.findOne('users', (u) => String(u.email || '').trim().toLowerCase() === norm);
 }
 async function fieldsByOwner(ownerId) {
   return isMongo() ? store.find('fields', { ownerId: Number(ownerId) }) : store.find('fields', (f) => f.ownerId === Number(ownerId));
@@ -170,17 +175,54 @@ function optionalAuth(req, _res, next) {
 /* ================================================================== */
 
 const publicUser = (u) => ({
-  id: u.id, name: u.name, email: u.email, phone: u.phone || '',
+  id: Number(u.id), name: u.name, email: u.email, phone: u.phone || '',
   province: u.province || 'نينوى', image: u.image || null,
   role: u.role, loyaltyPoints: u.loyaltyPoints || 0,
 });
 
+/** نفس خوارزمية Field._stableId في Flutter (seed: name|phone|address). */
+function flutterStableId(field) {
+  const seed = `${field.name || ''}|${field.phone || ''}|${field.address || ''}`;
+  let h = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    const c = seed.charCodeAt(i);
+    h = 0x1fffffff & (h + c);
+    h = 0x1fffffff & (h + ((0x0007ffff & h) << 10));
+    h ^= h >> 6;
+  }
+  h = 0x1fffffff & (h + ((0x03ffffff & h) << 3));
+  h ^= h >> 11;
+  h = 0x1fffffff & (h + ((0x00003fff & h) << 15));
+  const n = Math.abs(h);
+  return n === 0 ? 1 : n;
+}
+
+function publicNumericId(field) {
+  const n = Number(field.id);
+  if (Number.isFinite(n) && n > 0) return n;
+  return flutterStableId(field);
+}
+
 const publicField = (f) => ({
-  id: f.id, name: f.name, address: f.address || '', phone: f.phone || '',
-  image: f.image || null, pricePerHour: f.pricePerHour || 0, ownerId: f.ownerId,
+  id: publicNumericId(f), name: f.name, address: f.address || '', phone: f.phone || '',
+  image: f.image || null, pricePerHour: f.pricePerHour || 0, ownerId: Number(f.ownerId) || 0,
   averageRating: f.averageRating || 0, reviewCount: f.reviewCount || 0,
   latitude: f.latitude ?? null, longitude: f.longitude ?? null,
 });
+
+/** إيجاد ملعب بالمعرّف الحقيقي أو هاش Flutter الاحتياطي. */
+async function resolveField(publicId) {
+  const n = Number(publicId);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const byId = await store.findById('fields', n);
+  if (byId) return byId;
+  const all = await allFields();
+  return all.find((f) => publicNumericId(f) === n || flutterStableId(f) === n) || null;
+}
+
+function sameId(a, b) {
+  return Number(a) === Number(b);
+}
 
 function endTimeOf(startIso, hours) {
   return new Date(new Date(startIso).getTime() + (hours || 1) * 3600 * 1000).toISOString();
@@ -245,10 +287,11 @@ app.post('/api/register-user', async (req, res) => {
   try {
     const { name, email, password, phone, province, image } = req.body || {};
     if (!name || !email || !password) return res.status(400).json({ message: 'الاسم والبريد وكلمة المرور مطلوبة' });
-    if (await findUserByEmail(email)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
+    const normEmail = String(email).trim().toLowerCase();
+    if (await findUserByEmail(normEmail)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
     const hashed = await bcrypt.hash(password, 10);
     const user = await store.insert('users', {
-      name, email, password: hashed, phone: phone || '', province: province || 'نينوى',
+      name, email: normEmail, password: hashed, phone: phone || '', province: province || 'نينوى',
       image: image || null, role: 'user', loyaltyPoints: 0,
     });
     res.status(201).json({ token: sign(user), user: publicUser(user) });
@@ -259,10 +302,11 @@ app.post('/api/register-owner', async (req, res) => {
   try {
     const { name, email, password, phone, stadiumName, stadiumAddress, stadiumPhone, pricePerHour, stadiumImage } = req.body || {};
     if (!name || !email || !password || !stadiumName) return res.status(400).json({ message: 'بيانات ناقصة' });
-    if (await findUserByEmail(email)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
+    const normEmail = String(email).trim().toLowerCase();
+    if (await findUserByEmail(normEmail)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
     const hashed = await bcrypt.hash(password, 10);
     const user = await store.insert('users', {
-      name, email, password: hashed, phone: phone || '', province: 'نينوى',
+      name, email: normEmail, password: hashed, phone: phone || '', province: 'نينوى',
       image: null, role: 'owner', loyaltyPoints: 0,
     });
     const field = await store.insert('fields', {
@@ -276,11 +320,19 @@ app.post('/api/register-owner', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, password } = req.body || {};
+    const { email, password, expectedRole } = req.body || {};
     if (!email || !password) return res.status(400).json({ message: 'البريد وكلمة المرور مطلوبة' });
-    const user = await findUserByEmail(email);
+    const normEmail = String(email).trim().toLowerCase();
+    const user = await findUserByEmail(normEmail);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'بيانات الدخول غير صحيحة' });
+    }
+    const role = String(expectedRole || '').trim().toLowerCase();
+    if (role === 'owner' && user.role !== 'owner' && user.role !== 'admin') {
+      return res.status(403).json({ message: 'هذا حساب مستخدم — استخدم تسجيل دخول المستخدم' });
+    }
+    if (role === 'user' && user.role === 'owner') {
+      return res.status(403).json({ message: 'هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب' });
     }
     const body = { token: sign(user), user: publicUser(user) };
     if (user.role === 'owner') {
@@ -338,15 +390,15 @@ app.post('/api/admin/clear-fields', auth, async (req, res) => {
 });
 
 app.get('/api/fields/:id', auth, async (req, res) => {
-  const f = await store.findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   if (!f) return res.status(404).json({ message: 'الملعب غير موجود' });
   res.json(publicField(f));
 });
 
 app.put('/api/fields/:id', auth, async (req, res) => {
-  const f = await store.findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   if (!f) return res.status(404).json({ message: 'الملعب غير موجود' });
-  if (f.ownerId !== req.user.id) return res.status(403).json({ message: 'غير مصرح' });
+  if (!sameId(f.ownerId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
   const { name, address, phone, pricePerHour, image } = req.body || {};
   const patch = {};
   if (name != null) patch.name = name;
@@ -354,42 +406,56 @@ app.put('/api/fields/:id', auth, async (req, res) => {
   if (phone != null) patch.phone = phone;
   if (pricePerHour != null) patch.pricePerHour = Number(pricePerHour);
   if (image != null) patch.image = image;
-  res.json(publicField(await store.update('fields', req.params.id, patch)));
+  const updated = f.id != null
+    ? await store.update('fields', f.id, patch)
+    : { ...f, ...patch };
+  res.json(publicField(updated));
 });
 
 // جدول المواعيد: 7 أيام × ساعات 10:00–23:00 مع علامة التوفر
 app.get('/api/fields/:id/schedule', auth, async (req, res) => {
-  const f = await store.findById('fields', req.params.id);
-  if (!f) return res.status(404).json({ message: 'الملعب غير موجود' });
-  const booked = (await bookingsByField(f.id)).filter((b) => b.status === 'pending' || b.status === 'approved');
-  const bookedKeys = new Set(booked.map((b) => new Date(b.startTime).toISOString().slice(0, 13)));
+  try {
+    const f = await resolveField(req.params.id);
+    if (!f) return res.status(404).json({ message: 'الملعب غير موجود' });
+    const fieldKey = f.id != null ? f.id : publicNumericId(f);
+    const booked = (await bookingsByField(fieldKey)).filter((b) => b.status === 'pending' || b.status === 'approved');
+    const bookedKeys = new Set(booked.map((b) => new Date(b.startTime).toISOString().slice(0, 13)));
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const schedule = [];
-  for (let d = 0; d < 7; d++) {
-    const day = new Date(today.getTime() + d * 86400000);
-    const slots = [];
-    for (let h = 10; h <= 22; h++) {
-      const start = new Date(day); start.setHours(h, 0, 0, 0);
-      const end = new Date(start.getTime() + 3600000);
-      const key = start.toISOString().slice(0, 13);
-      slots.push({
-        startTime: start.toISOString(),
-        endTime: end.toISOString(),
-        isAvailable: !bookedKeys.has(key) && start > new Date(),
-        status: null,
-        heldUntil: null,
-      });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const schedule = [];
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(today.getTime() + d * 86400000);
+      const slots = [];
+      for (let h = 10; h <= 22; h++) {
+        const start = new Date(day); start.setHours(h, 0, 0, 0);
+        const end = new Date(start.getTime() + 3600000);
+        const key = start.toISOString().slice(0, 13);
+        slots.push({
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          isAvailable: !bookedKeys.has(key) && start > new Date(),
+          status: null,
+          heldUntil: null,
+        });
+      }
+      schedule.push({ date: day.toISOString(), slots });
     }
-    schedule.push({ date: day.toISOString(), slots });
+    res.json({
+      id: publicNumericId(f),
+      name: f.name,
+      pricePerHour: f.pricePerHour || 0,
+      schedule,
+    });
+  } catch (e) {
+    console.error('schedule error:', e);
+    return res.status(500).json({ message: 'فشل تحميل جدول المواعيد' });
   }
-  res.json({ id: f.id, name: f.name, pricePerHour: f.pricePerHour, schedule });
 });
 
 // التقييمات (مبسّطة)
 app.get('/api/fields/:id/review-eligibility', auth, async (req, res) => {
-  const f = await store.findById('fields', req.params.id);
+  const f = await resolveField(req.params.id);
   res.json({ canReview: false, hasBooked: false, userRating: null, averageRating: f?.averageRating || 0, reviewCount: f?.reviewCount || 0 });
 });
 app.get('/api/fields/:id/reviews', auth, (_req, res) => res.json([]));
@@ -411,21 +477,25 @@ app.post('/api/slots/release', auth, (_req, res) => res.json({ ok: true }));
 app.post('/api/bookings', auth, async (req, res) => {
   const { fieldId, startTime, hours, paymentMethod } = req.body || {};
   if (!fieldId || !startTime) return res.status(400).json({ message: 'الملعب ووقت البدء مطلوبان' });
-  const field = await store.findById('fields', fieldId);
+  const field = await resolveField(fieldId);
   if (!field) return res.status(404).json({ message: 'الملعب غير موجود' });
 
   const hrs = Number(hours) || 1;
   const start = new Date(startTime).toISOString();
+  const resolvedFieldId = publicNumericId(field);
 
   // منع التعارض على نفس الساعة
-  const existing = (await bookingsByField(field.id)).filter((b) => b.status === 'pending' || b.status === 'approved');
+  const existing = (await bookingsByField(field.id != null ? field.id : resolvedFieldId))
+    .filter((b) => b.status === 'pending' || b.status === 'approved');
   const clash = existing.some((b) => new Date(b.startTime).toISOString().slice(0, 13) === start.slice(0, 13));
   if (clash) return res.status(409).json({ code: 'ConflictError', messageKey: 'slotJustBooked' });
 
   const hourlyRate = field.pricePerHour || 0;
   const totalPrice = hourlyRate * hrs;
   const booking = await store.insert('bookings', {
-    fieldId: field.id, ownerId: field.ownerId, userId: req.user.id,
+    fieldId: field.id != null ? field.id : resolvedFieldId,
+    ownerId: Number(field.ownerId) || 0,
+    userId: Number(req.user.id),
     startTime: start, hours: hrs, totalPrice, status: 'pending',
     paymentStatus: 'unpaid',
     paymentMethod: paymentMethod || 'online',
@@ -473,15 +543,13 @@ app.post('/api/bookings/cancel', auth, async (req, res) => {
   const { bookingId } = req.body || {};
   const b = await store.findById('bookings', bookingId);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
-  if (b.userId !== req.user.id) return res.status(403).json({ message: 'غير مصرح' });
+  if (!sameId(b.userId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
   await store.update('bookings', bookingId, { status: 'cancelled' });
   await notify(b.ownerId, 'إلغاء حجز', 'قام المستخدم بإلغاء حجز');
   res.json({ message: 'تم الإلغاء', tier: 'free', penaltyIqd: 0, ownerShareIqd: 0, platformShareIqd: 0 });
 });
 
-app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
-  const ownerId = Number(req.params.ownerId);
-  if (req.user.id !== ownerId) return res.status(403).json({ message: 'غير مصرح' });
+async function buildOwnerDashboard(ownerId) {
   const owned = await fieldsByOwner(ownerId);
   const field = owned[0] || null;
   const list = await bookingsByOwner(ownerId);
@@ -490,27 +558,59 @@ app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
   let totalRevenue = 0;
   let pendingCount = 0;
   for (const b of list.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
-    usersCache[b.userId] ??= await store.findById('users', b.userId);
-    bookings.push(ownerBookingDto(b, usersCache[b.userId]));
-    if (b.status === 'approved') totalRevenue += b.totalPrice;
-    if (b.status === 'pending') pendingCount++;
+    try {
+      usersCache[b.userId] ??= await store.findById('users', b.userId);
+      bookings.push(ownerBookingDto(b, usersCache[b.userId]));
+      if (b.status === 'approved') totalRevenue += Number(b.totalPrice) || 0;
+      if (b.status === 'pending') pendingCount++;
+    } catch (e) {
+      console.error('تخطي حجز تالف في لوحة المالك:', e.message || e);
+    }
   }
   const appCommission = Math.round(totalRevenue * COMMISSION_RATE);
-  res.json({
+  return {
     field: field ? publicField(field) : null,
     bookings,
     totalRevenue,
     appCommission,
     netRevenue: totalRevenue - appCommission,
     pendingCount,
-  });
+  };
+}
+
+app.get('/api/bookings/owner/me', auth, async (req, res) => {
+  try {
+    res.json(await buildOwnerDashboard(Number(req.user.id)));
+  } catch (e) {
+    console.error('owner/me dashboard:', e);
+    res.status(500).json({ message: 'فشل تحميل لوحة المالك' });
+  }
+});
+
+app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
+  try {
+    const ownerId = Number(req.params.ownerId);
+    if (!sameId(req.user.id, ownerId)) return res.status(403).json({ message: 'غير مصرح' });
+    res.json(await buildOwnerDashboard(ownerId));
+  } catch (e) {
+    console.error('owner dashboard:', e);
+    res.status(500).json({
+      field: null,
+      bookings: [],
+      totalRevenue: 0,
+      appCommission: 0,
+      netRevenue: 0,
+      pendingCount: 0,
+      message: 'فشل تحميل لوحة المالك',
+    });
+  }
 });
 
 app.post('/api/bookings/approve', auth, async (req, res) => {
   const { bookingId } = req.body || {};
   const b = await store.findById('bookings', bookingId);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
-  if (b.ownerId !== req.user.id) return res.status(403).json({ message: 'غير مصرح' });
+  if (!sameId(b.ownerId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
   await store.update('bookings', bookingId, { status: 'approved' });
   await notify(b.userId, 'تمت الموافقة', 'تمت الموافقة على حجزك');
   res.json({ ok: true });
@@ -520,7 +620,7 @@ app.post('/api/bookings/reject', auth, async (req, res) => {
   const { bookingId } = req.body || {};
   const b = await store.findById('bookings', bookingId);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
-  if (b.ownerId !== req.user.id) return res.status(403).json({ message: 'غير مصرح' });
+  if (!sameId(b.ownerId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
   await store.update('bookings', bookingId, { status: 'rejected' });
   await notify(b.userId, 'تم الرفض', 'عذراً، تم رفض حجزك');
   res.json({ ok: true });
@@ -573,10 +673,49 @@ app.post('/api/notifications/user/:userId/read-all', auth, async (req, res) => {
 app.post('/api/users/update-token', auth, (_req, res) => res.json({ ok: true }));
 
 app.get('/api/owner/wallet/status', auth, (req, res) => {
-  res.json({ ownerId: req.user.id, balance: 0, status: 'active', message: null });
+  res.json({ ownerId: Number(req.user.id), balance: 0, status: 'active', message: null });
 });
 app.get('/api/owner/wallet', auth, (req, res) => {
-  res.json({ walletId: 1, ownerId: req.user.id, balance: 0, status: 'active', lastUpdated: new Date().toISOString(), transactions: [] });
+  res.json({
+    walletId: 1,
+    ownerId: Number(req.user.id),
+    balance: 0,
+    status: 'active',
+    lastUpdated: new Date().toISOString(),
+    transactions: [],
+  });
+});
+
+// حساب عمولات المالك (stub حتى لا تنهار شاشات الدفع)
+app.get('/api/payments/owner/:ownerId/account', auth, (req, res) => {
+  if (!sameId(req.user.id, req.params.ownerId) && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'غير مصرح' });
+  }
+  res.json({
+    outstandingAmount: 0,
+    outstandingHours: 0,
+    totalPaid: 0,
+    pendingInvoices: [],
+    paidInvoices: [],
+    recentPayments: [],
+  });
+});
+app.post('/api/payments/initiate', auth, (req, res) => {
+  res.json({
+    transactionToken: 'demo-' + Date.now(),
+    gateway: req.body?.gateway || 'card',
+    amount: Number(req.body?.amount) || 0,
+    checkoutUrl: null,
+  });
+});
+app.post('/api/payments/verify', auth, (_req, res) => {
+  res.json({
+    success: true,
+    status: 'paid',
+    invoiceId: null,
+    outstandingAmount: 0,
+    message: 'تم',
+  });
 });
 
 /* ================================================================== */

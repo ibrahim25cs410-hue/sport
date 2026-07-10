@@ -14,8 +14,12 @@ class AuthRepository {
   ApiClient get client => _client;
   AuthService get authService => _remote;
 
-  Future<({String token, User user, Field? field})> login(String email, String password) =>
-      _remote.login(email, password);
+  Future<({String token, User user, Field? field})> login(
+    String email,
+    String password, {
+    String? expectedRole,
+  }) =>
+      _remote.login(email, password, expectedRole: expectedRole);
 
   Future<({String token, User user})> registerUser(Map<String, dynamic> body) =>
       _remote.registerUser(body);

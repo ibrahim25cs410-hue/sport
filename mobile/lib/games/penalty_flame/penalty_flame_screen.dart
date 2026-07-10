@@ -73,6 +73,7 @@ class _PenaltyFlameScreenState extends State<PenaltyFlameScreen> with WidgetsBin
       backgroundColor: const Color(0xFF0B3D1C),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
         title: const Text('Penalty Kick (Flame)'),
         actions: [
           Padding(
@@ -86,32 +87,53 @@ class _PenaltyFlameScreenState extends State<PenaltyFlameScreen> with WidgetsBin
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(DesignTokens.spaceMd),
-            child: Text(
-              _hud,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-              textAlign: TextAlign.center,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(DesignTokens.spaceMd),
+              child: Text(
+                _hud,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
-              child: GameWidget(
-                game: _game,
-                loadingBuilder: (context) => const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceMd),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(DesignTokens.radiusLg),
+                  child: GameWidget(
+                    game: _game,
+                    loadingBuilder: (context) => const ColoredBox(
+                      color: Color(0xFF1B5E20),
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                    errorBuilder: (context, error) => ColoredBox(
+                      color: const Color(0xFF1B5E20),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'تعذّر تشغيل اللعبة\n$error',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: DesignTokens.spaceMd),
-        ],
+            const SizedBox(height: DesignTokens.spaceMd),
+          ],
+        ),
       ),
     );
   }

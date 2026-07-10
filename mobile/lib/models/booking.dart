@@ -77,17 +77,26 @@ class OwnerBooking {
     required this.status,
   });
 
-  factory OwnerBooking.fromJson(Map<String, dynamic> json) => OwnerBooking(
-        id: asInt(json['id']) ?? 0,
-        referenceCode: json['referenceCode'] as String?,
-        userName: json['userName'] as String? ?? '',
-        userPhone: json['userPhone'] as String? ?? '',
-        userEmail: json['userEmail'] as String? ?? '',
-        startTime: DateTime.parse(json['startTime'] as String),
-        hours: asInt(json['hours']) ?? 1,
-        totalPrice: asInt(json['totalPrice']) ?? 0,
-        status: json['status'] as String? ?? 'pending',
-      );
+  factory OwnerBooking.fromJson(Map<String, dynamic> json) {
+    final rawStart = json['startTime'];
+    DateTime start;
+    if (rawStart is String && rawStart.isNotEmpty) {
+      start = DateTime.tryParse(rawStart) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    } else {
+      start = DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return OwnerBooking(
+      id: asInt(json['id']) ?? 0,
+      referenceCode: json['referenceCode'] as String?,
+      userName: json['userName'] as String? ?? '',
+      userPhone: json['userPhone'] as String? ?? '',
+      userEmail: json['userEmail'] as String? ?? '',
+      startTime: start,
+      hours: asInt(json['hours']) ?? 1,
+      totalPrice: asInt(json['totalPrice']) ?? 0,
+      status: json['status'] as String? ?? 'pending',
+    );
+  }
 }
 
 class OwnerDashboard {
@@ -109,11 +118,26 @@ class OwnerDashboard {
 
   factory OwnerDashboard.fromJson(Map<String, dynamic> json) {
     final rawField = json['field'];
+    Field? field;
+    if (rawField is Map<String, dynamic>) {
+      try {
+        field = Field.fromJson(rawField);
+      } catch (_) {
+        field = null;
+      }
+    }
+    final bookings = <OwnerBooking>[];
+    for (final e in (json['bookings'] as List<dynamic>? ?? const [])) {
+      if (e is! Map<String, dynamic>) continue;
+      try {
+        bookings.add(OwnerBooking.fromJson(e));
+      } catch (_) {
+        // تخطّي حجوزات تالفة بدل إسقاط اللوحة كاملة
+      }
+    }
     return OwnerDashboard(
-      field: rawField is Map<String, dynamic> ? Field.fromJson(rawField) : null,
-      bookings: (json['bookings'] as List<dynamic>? ?? const [])
-          .map((e) => OwnerBooking.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      field: field,
+      bookings: bookings,
       totalRevenue: asInt(json['totalRevenue']) ?? 0,
       appCommission: asInt(json['appCommission']) ?? 0,
       netRevenue: asInt(json['netRevenue']) ?? 0,

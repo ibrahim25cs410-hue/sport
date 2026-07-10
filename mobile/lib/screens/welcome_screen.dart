@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../router/app_router.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
 import '../utils/l10n_extension.dart';
+import '../widgets/auth_entry_app_bar_actions.dart';
 import '../widgets/common.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -23,6 +25,7 @@ class WelcomeScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         actionsIconTheme: const IconThemeData(color: Colors.white),
         foregroundColor: Colors.white,
+        actions: const [AuthEntryAppBarActions()],
       ),
       body: BrandGradientBackground(
         child: SafeArea(
@@ -51,17 +54,6 @@ class WelcomeScreen extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: DesignTokens.spaceLg),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              alignment: WrapAlignment.center,
-                              children: [
-                                FeatureChip(icon: Icons.bolt_rounded, label: l10n.featureInstant),
-                                FeatureChip(icon: Icons.notifications_active_outlined, label: l10n.featureNotify),
-                                FeatureChip(icon: Icons.verified_user_outlined, label: l10n.featureTrusted),
-                              ],
-                            ),
-                            const SizedBox(height: DesignTokens.spaceLg),
                           ],
                         ),
                       ),
@@ -82,21 +74,42 @@ class WelcomeScreen extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: DesignTokens.spaceLg),
+                            Text(
+                              l10n.registerUser,
+                              style: Theme.of(context).textTheme.titleMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: DesignTokens.spaceSm),
                             FilledButton.icon(
                               onPressed: () => context.goRegisterUser(),
                               icon: const Icon(Icons.person_add_rounded),
-                              label: Text(l10n.registerUserCta),
+                              label: Text(l10n.goToUserRegister),
                             ),
                             const SizedBox(height: DesignTokens.spaceSm),
                             OutlinedButton.icon(
+                              onPressed: () => context.goLoginUser(),
+                              icon: const Icon(Icons.login_rounded),
+                              label: Text(l10n.loginAsUser),
+                            ),
+                            const SizedBox(height: DesignTokens.spaceLg),
+                            Divider(color: c.outline.withValues(alpha: 0.35)),
+                            const SizedBox(height: DesignTokens.spaceMd),
+                            Text(
+                              l10n.registerOwner,
+                              style: Theme.of(context).textTheme.titleMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: DesignTokens.spaceSm),
+                            FilledButton.tonalIcon(
                               onPressed: () => context.goRegisterOwner(),
                               icon: const Icon(Icons.storefront_rounded),
-                              label: Text(l10n.registerOwnerCta),
+                              label: Text(l10n.goToOwnerRegister),
                             ),
-                            const SizedBox(height: DesignTokens.spaceMd),
-                            TextButton(
-                              onPressed: () => context.goLogin(),
-                              child: Text(l10n.alreadyHaveAccount),
+                            const SizedBox(height: DesignTokens.spaceSm),
+                            OutlinedButton.icon(
+                              onPressed: () => context.goLoginOwner(),
+                              icon: const Icon(Icons.login_rounded),
+                              label: Text(l10n.loginAsOwner),
                             ),
                           ],
                         ),

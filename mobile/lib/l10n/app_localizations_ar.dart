@@ -132,6 +132,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loginSubtitle => 'سجّل دخولك للمتابعة';
 
   @override
+  String get loginAsUser => 'تسجيل دخول مستخدم';
+
+  @override
+  String get loginAsOwner => 'تسجيل دخول صاحب ملعب';
+
+  @override
+  String get loginUserSubtitle => 'لحجز الملاعب ومتابعة حجوزاتك';
+
+  @override
+  String get loginOwnerSubtitle => 'لإدارة ملعبك وطلبات الحجز';
+
+  @override
+  String get useUserLoginInstead => 'هذا حساب مستخدم — استخدم تسجيل دخول المستخدم';
+
+  @override
+  String get useOwnerLoginInstead => 'هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب';
+
+  @override
+  String get goToUserRegister => 'إنشاء حساب مستخدم';
+
+  @override
+  String get goToOwnerRegister => 'إنشاء حساب صاحب ملعب';
+
+  @override
+  String get goToUserLogin => 'لدي حساب مستخدم — تسجيل الدخول';
+
+  @override
+  String get goToOwnerLogin => 'لدي حساب صاحب ملعب — تسجيل الدخول';
+
+  @override
+  String get emailExactHint => 'كل بريد مختلف تماماً — حتى لو نفس @gmail.com';
+
+  @override
   String get demoAccounts => 'حسابات تجريبية';
 
   @override
@@ -338,6 +371,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveField => 'حفظ الملعب';
+
+  @override
+  String get addNewField => 'إضافة ملعب جديد';
+
+  @override
+  String get fieldAddedSuccess => 'تم إضافة الملعب — يظهر للمستخدمين الآن';
 
   @override
   String get fieldUpdated => 'تم تحديث بيانات الملعب';

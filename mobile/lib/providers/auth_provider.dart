@@ -82,7 +82,7 @@ final authInterceptorProvider = Provider<void>((ref) {
     await ref.read(authProvider.notifier).clearSession();
     final ctx = rootNavigatorKey.currentContext;
     if (ctx != null && ctx.mounted) {
-      GoRouter.of(ctx).go(AppRoutes.login);
+      GoRouter.of(ctx).go(AppRoutes.loginUser);
     }
   };
 });
@@ -157,8 +157,17 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith();
   }
 
-  Future<bool> login(String email, String password) => _run(() async {
-        final r = await _repo.login(email, password);
+  Future<bool> login(String email, String password, {String? expectedRole}) => _run(() async {
+        final r = await _repo.login(email, password, expectedRole: expectedRole);
+        final role = expectedRole?.trim().toLowerCase();
+        if (role == 'owner' && !r.user.isOwner && !r.user.isAdmin) {
+          await ref.read(authServiceProvider).logout();
+          throw Exception('هذا حساب مستخدم — استخدم تسجيل دخول المستخدم');
+        }
+        if (role == 'user' && r.user.isOwner) {
+          await ref.read(authServiceProvider).logout();
+          throw Exception('هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب');
+        }
         state = state.copyWith(user: r.user, ownerField: r.field, hasStoredToken: true);
         await SessionStorage.save(r.user, r.field);
         await FcmService.syncTokenWithServer(client);

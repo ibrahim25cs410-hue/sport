@@ -50,7 +50,10 @@ String? _homeFor(User user) {
   return AppRoutes.userHome;
 }
 
-bool _isAuthEntryPath(String path) => path == AppRoutes.login ||
+bool _isAuthEntryPath(String path) =>
+    path == AppRoutes.login ||
+    path == AppRoutes.loginUser ||
+    path == AppRoutes.loginOwner ||
     path == AppRoutes.registerUser ||
     path == AppRoutes.registerOwner ||
     path == AppRoutes.welcome ||
@@ -113,6 +116,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.onboarding,
         AppRoutes.welcome,
         AppRoutes.login,
+        AppRoutes.loginUser,
+        AppRoutes.loginOwner,
         AppRoutes.registerUser,
         AppRoutes.registerOwner,
       };
@@ -126,7 +131,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (auth.hasStoredToken && path.startsWith('/field/')) return null;
         if (_shellPaths.contains(path)) return AppRoutes.welcome;
         if (path == AppRoutes.onboarding) return AppRoutes.welcome;
-        if (path.startsWith('/field/')) return AppRoutes.login;
+        if (path.startsWith('/field/')) return AppRoutes.loginUser;
         return publicPaths.contains(path) ? null : AppRoutes.welcome;
       }
 
@@ -164,7 +169,25 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => riyadaTransitionPage(child: const LoginScreen(), state: s, fromBottom: true),
+        redirect: (c, s) => AppRoutes.loginUser,
+      ),
+      GoRoute(
+        path: AppRoutes.loginUser,
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (c, s) => riyadaTransitionPage(
+          child: const LoginScreen(expectedRole: 'user'),
+          state: s,
+          fromBottom: true,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.loginOwner,
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (c, s) => riyadaTransitionPage(
+          child: const LoginScreen(expectedRole: 'owner'),
+          state: s,
+          fromBottom: true,
+        ),
       ),
       GoRoute(
         path: AppRoutes.registerUser,

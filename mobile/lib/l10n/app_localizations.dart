@@ -341,6 +341,72 @@ abstract class AppLocalizations {
   /// **'Sign in to continue'**
   String get loginSubtitle;
 
+  /// No description provided for @loginAsUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User log in'**
+  String get loginAsUser;
+
+  /// No description provided for @loginAsOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner log in'**
+  String get loginAsOwner;
+
+  /// No description provided for @loginUserSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Book fields and manage your bookings'**
+  String get loginUserSubtitle;
+
+  /// No description provided for @loginOwnerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your field and booking requests'**
+  String get loginOwnerSubtitle;
+
+  /// No description provided for @useUserLoginInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a user account — use user log in'**
+  String get useUserLoginInstead;
+
+  /// No description provided for @useOwnerLoginInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'This is an owner account — use owner log in'**
+  String get useOwnerLoginInstead;
+
+  /// No description provided for @goToUserRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Create user account'**
+  String get goToUserRegister;
+
+  /// No description provided for @goToOwnerRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Create owner account'**
+  String get goToOwnerRegister;
+
+  /// No description provided for @goToUserLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'I have a user account — log in'**
+  String get goToUserLogin;
+
+  /// No description provided for @goToOwnerLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'I have an owner account — log in'**
+  String get goToOwnerLogin;
+
+  /// No description provided for @emailExactHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each email is unique — even if both end with @gmail.com'**
+  String get emailExactHint;
+
   /// No description provided for @demoAccounts.
   ///
   /// In en, this message translates to:
@@ -736,6 +802,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save field'**
   String get saveField;
+
+  /// No description provided for @addNewField.
+  ///
+  /// In en, this message translates to:
+  /// **'Add new field'**
+  String get addNewField;
+
+  /// No description provided for @fieldAddedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Field added — visible to users now'**
+  String get fieldAddedSuccess;
 
   /// No description provided for @fieldUpdated.
   ///

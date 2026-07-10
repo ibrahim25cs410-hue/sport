@@ -6,6 +6,7 @@ import '../../../core/utils/session_key_helper.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../utils/error_messages.dart';
 import '../../../utils/format.dart';
 import '../../../utils/l10n_extension.dart';
 import '../../../widgets/common.dart';
@@ -27,6 +28,7 @@ class OwnerHomeTab extends ConsumerWidget {
         ref.watch(ownerPaymentAccountProvider(key).select((a) => a.valueOrNull?.outstandingAmount ?? 0));
     final dash = dashAsync.valueOrNull;
     final loading = dashAsync.isLoading && dash == null;
+    final errorText = dashAsync.hasError ? friendlyErrorMessage(dashAsync.error) : null;
 
     Future<void> refresh() async {
       await ref.read(ownerDashboardProvider(key).notifier).refreshPreservingData();
@@ -40,7 +42,7 @@ class OwnerHomeTab extends ConsumerWidget {
           : dashAsync.hasError && dash == null
               ? RefreshableEmptyState(
                   icon: Icons.cloud_off_rounded,
-                  title: l10n.connectionLost,
+                  title: errorText ?? l10n.connectionLost,
                   subtitle: l10n.retry,
                   onRefresh: refresh,
                 )

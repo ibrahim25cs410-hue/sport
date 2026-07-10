@@ -8,6 +8,7 @@ import '../theme/riyada_theme_extension.dart';
 import '../utils/error_messages.dart';
 import '../utils/l10n_extension.dart';
 import '../utils/validators.dart';
+import '../widgets/auth_entry_app_bar_actions.dart';
 import '../widgets/common.dart';
 import '../widgets/form_fields.dart';
 import '../router/app_router.dart';
@@ -52,7 +53,7 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
     final auth = ref.read(authProvider.notifier);
     final ok = await auth.registerOwner({
       'name': _name.text.trim(),
-      'email': _email.text.trim(),
+      'email': _email.text.trim().toLowerCase(),
       'phone': normalizeIraqiPhone(_phone.text),
       'password': _pass.text,
       'stadiumName': _fieldName.text.trim(),
@@ -74,12 +75,17 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
     final l10n = context.l10n;
     final loading = ref.watch(authProvider).loading;
     return RtlScaffold(
-      appBar: AppBar(title: Text(l10n.registerOwner)),
+      appBar: AppBar(
+        title: Text(l10n.registerOwner),
+        actions: const [AuthEntryAppBarActions()],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            Text(l10n.emailExactHint, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
             _sectionTitle(Icons.person_outline_rounded, l10n.yourInfo),
             TextFormField(controller: _name, decoration: InputDecoration(labelText: l10n.nameShort), validator: (v) => validateRequired(v, label: l10n.nameShort)),
             const SizedBox(height: 12),
@@ -134,8 +140,8 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
             LoadingButton(loading: loading, onPressed: _submit, label: l10n.createOwnerAccount, icon: Icons.storefront_rounded),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: () => context.goLogin(),
-              child: Text(l10n.alreadyHaveAccount),
+              onPressed: () => context.goLoginOwner(),
+              child: Text(l10n.goToOwnerLogin),
             ),
           ],
         ),

@@ -11,6 +11,7 @@ import '../utils/api_logger.dart';
 import '../utils/error_messages.dart';
 import '../utils/validators.dart';
 import '../widgets/api_server_settings_card.dart';
+import '../widgets/auth_entry_app_bar_actions.dart';
 import '../widgets/common.dart';
 import '../widgets/form_fields.dart';
 import '../router/app_router.dart';
@@ -55,7 +56,7 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
     final auth = ref.read(authProvider.notifier);
     final body = {
       'name': _name.text.trim(),
-      'email': _email.text.trim(),
+      'email': _email.text.trim().toLowerCase(),
       'phone': normalizeIraqiPhone(_phone.text),
       'province': 'نينوى',
       'password': _pass.text,
@@ -85,7 +86,10 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
     final l10n = context.l10n;
     final c = context.colors;
     return RtlScaffold(
-      appBar: AppBar(title: Text(l10n.registerUser)),
+      appBar: AppBar(
+        title: Text(l10n.registerUser),
+        actions: const [AuthEntryAppBarActions()],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -117,7 +121,9 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
             ),
             const SizedBox(height: 8),
             Center(child: Text(l10n.addProfilePhoto, style: Theme.of(context).textTheme.bodyMedium)),
-            const SizedBox(height: 28),
+            const SizedBox(height: 8),
+            Center(child: Text(l10n.emailExactHint, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _name,
               decoration: InputDecoration(labelText: l10n.name, prefixIcon: const Icon(Icons.badge_outlined)),
@@ -145,6 +151,11 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
             if (kDebugMode) const ApiServerSettingsCard(),
             if (kDebugMode) const SizedBox(height: 16),
             LoadingButton(loading: loading, onPressed: _submit, label: l10n.createAccountLogin, icon: Icons.person_add_rounded),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => context.goLoginUser(),
+              child: Text(l10n.goToUserLogin),
+            ),
           ],
         ),
       ),

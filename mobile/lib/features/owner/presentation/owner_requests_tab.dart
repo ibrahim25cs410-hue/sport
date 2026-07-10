@@ -6,6 +6,7 @@ import '../../../core/utils/session_key_helper.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/riyada_theme_extension.dart';
+import '../../../utils/error_messages.dart';
 import '../../../utils/l10n_extension.dart';
 import '../../../widgets/common.dart';
 import '../../shell/shell_layout.dart';
@@ -67,7 +68,7 @@ class _OwnerRequestsTabState extends ConsumerState<OwnerRequestsTab> with Automa
           : dashAsync.hasError && dash == null
               ? RefreshableEmptyState(
                   icon: Icons.cloud_off_rounded,
-                  title: l10n.connectionLost,
+                  title: friendlyErrorMessage(dashAsync.error),
                   subtitle: l10n.retry,
                   onRefresh: refresh,
                 )

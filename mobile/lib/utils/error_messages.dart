@@ -100,19 +100,33 @@ String _genericConnection() {
 
 String _httpStatus(int? code, String? serverMsg) {
   if (serverMsg != null && !_isTechnical(serverMsg) && serverMsg.length < 160) {
-    if (code == 400 || code == 402 || code == 409 || code == 429) return serverMsg;
+    if (code == 409) return _mapConflict(serverMsg);
+    if (code == 400 || code == 402 || code == 403 || code == 429) return serverMsg;
   }
   return switch (code) {
     400 => serverMsg ?? 'البيانات المدخلة غير صحيحة.',
     401 => 'البريد أو كلمة المرور غير صحيحة.',
-    403 => 'ليس لديك صلاحية لهذا الإجراء.',
+    403 => serverMsg ?? 'ليس لديك صلاحية لهذا الإجراء.',
     404 => 'تعذّر إتمام الطلب. حاول مرة أخرى لاحقاً.',
     402 => serverMsg ?? 'رصيد المحفظة غير كافٍ لتغطية العمولة. يرجى شحن الرصيد.',
-    409 => serverMsg ?? 'هذا الإجراء غير متاح حالياً.',
+    409 => _mapConflict(serverMsg),
     429 => 'طلبات كثيرة — انتظر قليلاً ثم حاول مجدداً.',
     500 || 502 || 503 || 504 => serverMsg ?? 'الخادم غير متاح حالياً. حاول لاحقاً.',
     _ => serverMsg ?? 'حدث خطأ، يرجى المحاولة لاحقاً.',
   };
+}
+
+String _mapConflict(String? serverMsg) {
+  final m = (serverMsg ?? '').toLowerCase();
+  // تطابق صارم لرسالة تكرار البريد فقط — لا تعتبر أي نص فيه «مستخدم» بريداً مكرراً
+  final isEmailDup = (m.contains('بريد') && (m.contains('مسبقا') || m.contains('مستخدم مسبقا'))) ||
+      m.contains('البريد مستخدم') ||
+      (m.contains('email') &&
+          (m.contains('already') || m.contains('exists') || m.contains('taken') || m.contains('duplicate')));
+  if (isEmailDup) {
+    return 'البريد مستخدم مسبقاً — سجّل الدخول بدل إنشاء حساب جديد';
+  }
+  return serverMsg ?? 'هذا الإجراء غير متاح حالياً.';
 }
 
 /// يستخرج أرقام الهاتف العراقي فقط (07xxxxxxxxx).

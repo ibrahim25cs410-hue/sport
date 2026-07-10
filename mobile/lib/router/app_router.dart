@@ -13,6 +13,8 @@ abstract final class AppRoutes {
   static const onboarding = '/onboarding';
   static const welcome = '/welcome';
   static const login = '/login';
+  static const loginUser = '/login/user';
+  static const loginOwner = '/login/owner';
   static const registerUser = '/register/user';
   static const registerOwner = '/register/owner';
   static const userHome = '/home';
@@ -38,7 +40,9 @@ extension AppNavigation on BuildContext {
   void goOnboarding() => _router.go(AppRoutes.onboarding);
   void goWelcome() => _router.go(AppRoutes.welcome);
 
-  void goLogin() => pushOverlay(AppRoutes.login);
+  void goLogin() => pushOverlay(AppRoutes.loginUser);
+  void goLoginUser() => pushOverlay(AppRoutes.loginUser);
+  void goLoginOwner() => pushOverlay(AppRoutes.loginOwner);
   void goRegisterUser() => pushOverlay(AppRoutes.registerUser);
   void goRegisterOwner() => pushOverlay(AppRoutes.registerOwner);
 
@@ -64,7 +68,7 @@ extension AppNavigation on BuildContext {
 
   void goWelcomeClearStack() => _router.go(AppRoutes.welcome);
 
-  void goLoginClearStack() => _router.go(AppRoutes.login);
+  void goLoginClearStack() => _router.go(AppRoutes.loginUser);
 
   void popResult<T extends Object?>([T? result]) {
     if (_router.canPop()) {
@@ -79,7 +83,6 @@ extension AppNavigation on BuildContext {
   void goHomeAfterAuth({bool? isAdmin, bool? isOwner}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // Prefer explicit flags, but never block owner navigation.
       if (isAdmin == true) {
         goAdminDashboard();
         return;

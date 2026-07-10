@@ -22,6 +22,7 @@ import '../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
 import '../utils/booking_messages.dart';
+import '../utils/error_messages.dart';
 import '../utils/field_image.dart';
 import '../utils/format.dart';
 import '../utils/l10n_extension.dart';
@@ -417,7 +418,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
               ? EmptyState(
                   icon: Icons.cloud_off_rounded,
                   title: l10n.retry,
-                  subtitle: l10n.connectionLost,
+                  subtitle: friendlyErrorMessage(scheduleAsync?.error),
                   actionLabel: l10n.retry,
                   onAction: _reloadSchedule,
                 )

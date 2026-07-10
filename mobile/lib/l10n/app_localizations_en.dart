@@ -132,6 +132,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSubtitle => 'Sign in to continue';
 
   @override
+  String get loginAsUser => 'User log in';
+
+  @override
+  String get loginAsOwner => 'Owner log in';
+
+  @override
+  String get loginUserSubtitle => 'Book fields and manage your bookings';
+
+  @override
+  String get loginOwnerSubtitle => 'Manage your field and booking requests';
+
+  @override
+  String get useUserLoginInstead => 'This is a user account — use user log in';
+
+  @override
+  String get useOwnerLoginInstead => 'This is an owner account — use owner log in';
+
+  @override
+  String get goToUserRegister => 'Create user account';
+
+  @override
+  String get goToOwnerRegister => 'Create owner account';
+
+  @override
+  String get goToUserLogin => 'I have a user account — log in';
+
+  @override
+  String get goToOwnerLogin => 'I have an owner account — log in';
+
+  @override
+  String get emailExactHint => 'Each email is unique — even if both end with @gmail.com';
+
+  @override
   String get demoAccounts => 'Demo accounts';
 
   @override
@@ -338,6 +371,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveField => 'Save field';
+
+  @override
+  String get addNewField => 'Add new field';
+
+  @override
+  String get fieldAddedSuccess => 'Field added — visible to users now';
 
   @override
   String get fieldUpdated => 'Field updated';

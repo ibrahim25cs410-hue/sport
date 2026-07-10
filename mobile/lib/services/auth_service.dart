@@ -48,8 +48,16 @@ class AuthService {
     return token != null && token.isNotEmpty;
   }
 
-  Future<({String token, User user, Field? field})> login(String email, String password) async {
-    final res = await _client.dio.post('/login', data: {'email': email, 'password': password});
+  Future<({String token, User user, Field? field})> login(
+    String email,
+    String password, {
+    String? expectedRole,
+  }) async {
+    final res = await _client.dio.post('/login', data: {
+      'email': email.trim().toLowerCase(),
+      'password': password,
+      if (expectedRole != null && expectedRole.isNotEmpty) 'expectedRole': expectedRole,
+    });
     final data = res.data as Map<String, dynamic>;
     final token = data['token'] as String;
     await saveToken(token);

@@ -18,11 +18,13 @@ class PenaltyFlameGame extends FlameGame with PanDetector {
 
   final void Function(PenaltyRoundResult result)? onRoundResolved;
 
-  late final Vector2 _fieldSize;
-  late final GoalFrame _goal;
-  late final PlayerShooter _player;
-  late final Goalkeeper _keeper;
-  late final PenaltyBall _ball;
+  late Vector2 _fieldSize;
+  late GoalFrame _goal;
+  late PlayerShooter _player;
+  late Goalkeeper _keeper;
+  late PenaltyBall _ball;
+  bool _built = false;
+  bool _resolving = false;
 
   Vector2? _panStart;
   Vector2? _panCurrent;
@@ -34,33 +36,57 @@ class PenaltyFlameGame extends FlameGame with PanDetector {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    _fieldSize = size;
+    if (size.x > 0 && size.y > 0) {
+      await _buildField(size);
+    }
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    if (!_built && size.x > 0 && size.y > 0) {
+      _buildField(size);
+    }
+  }
+
+  Future<void> _buildField(Vector2 fieldSize) async {
+    if (_built) return;
+    _built = true;
+    _fieldSize = fieldSize.clone();
+
+    // Flame 1.16+: drawables must live on [world] (not the game root).
+    final pitch = RectangleComponent(
+      size: _fieldSize,
+      paint: Paint()..color = const Color(0xFF1B5E20),
+    );
+    final stripeH = _fieldSize.y / 10;
+    for (var i = 0; i < 10; i += 2) {
+      pitch.add(
+        RectangleComponent(
+          position: Vector2(0, i * stripeH),
+          size: Vector2(_fieldSize.x, stripeH),
+          paint: Paint()..color = const Color(0xFF2E7D32),
+        ),
+      );
+    }
+
     _goal = GoalFrame(size: Vector2(_fieldSize.x * 0.72, _fieldSize.y * 0.28))
       ..position = Vector2(_fieldSize.x * 0.14, _fieldSize.y * 0.08);
     _player = PlayerShooter(fieldSize: _fieldSize);
     _keeper = Goalkeeper(goalSize: _goal.size);
     _ball = PenaltyBall(fieldSize: _fieldSize);
 
-    await add(RectangleComponent(
-      size: _fieldSize,
-      paint: Paint()..color = const Color(0xFF1B5E20),
-    ));
-    await add(_goal);
-    await add(_player);
+    await world.addAll([pitch, _goal, _player, _keeper, _ball]);
     _keeper.position += _goal.position;
-    await add(_keeper);
-    await add(_ball);
-  }
 
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    _fieldSize = size;
+    camera.viewfinder.visibleGameSize = _fieldSize;
+    camera.viewfinder.position = _fieldSize / 2;
+    camera.viewfinder.anchor = Anchor.center;
   }
 
   @override
   void onPanStart(DragStartInfo info) {
-    if (_ball.inFlight) return;
+    if (!_built || _ball.inFlight) return;
     _panStart = info.eventPosition.widget;
     _panCurrent = _panStart;
     _status = 'Release to shoot';
@@ -73,6 +99,7 @@ class PenaltyFlameGame extends FlameGame with PanDetector {
 
   @override
   void onPanEnd(DragEndInfo info) {
+    if (!_built) return;
     final start = _panStart;
     final end = _panCurrent;
     _panStart = null;
@@ -99,7 +126,7 @@ class PenaltyFlameGame extends FlameGame with PanDetector {
   @override
   void update(double dt) {
     super.update(dt);
-    if (!_ball.inFlight || _ball.resolved) return;
+    if (!_built || !_ball.inFlight || _ball.resolved || _resolving) return;
 
     final goalRect = Rect.fromLTWH(
       _goal.position.x,
@@ -126,7 +153,8 @@ class PenaltyFlameGame extends FlameGame with PanDetector {
   }
 
   void _resolve(PenaltyRoundResult result) {
-    if (_ball.resolved) return;
+    if (_resolving) return;
+    _resolving = true;
     _ball.resolved = true;
     _ball.inFlight = false;
     _status = switch (result) {
@@ -137,11 +165,12 @@ class PenaltyFlameGame extends FlameGame with PanDetector {
     onRoundResolved?.call(result);
 
     Future<void>.delayed(const Duration(milliseconds: 1200), () {
-      if (!isMounted) return;
+      if (!isMounted || !_built) return;
       _keeper.reset();
       _player.reset();
       _ball.resetToSpot();
       _status = 'Swipe toward the goal';
+      _resolving = false;
     });
   }
 
