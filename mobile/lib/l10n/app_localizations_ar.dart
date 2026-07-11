@@ -332,11 +332,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get platformCommissionRate => '10% من سعر الساعة لكل ساعة محجوزة';
 
   @override
-  String get bookingSent => 'تم إرسال طلب الحجز بنجاح';
+  String get bookingSent => 'تم الحجز بانتظار موافقة صاحب الملعب';
 
   @override
   String bookingSentRef(String code) {
-    return 'تم الإرسال — الرقم المرجعي: $code';
+    return 'تم الحجز بانتظار موافقة صاحب الملعب — الرقم المرجعي: $code';
   }
 
   @override

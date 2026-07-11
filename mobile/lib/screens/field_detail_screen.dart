@@ -35,6 +35,7 @@ import '../widgets/payment_method_selector.dart';
 import '../widgets/skeleton_loaders.dart';
 import '../widgets/star_rating.dart';
 import '../router/app_router.dart';
+import '../features/shell/shell_state.dart';
 
 class FieldDetailScreen extends ConsumerStatefulWidget {
   const FieldDetailScreen({super.key, required this.field});
@@ -342,6 +343,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
           } else {
             final msg = value.referenceCode != null ? l10n.bookingSentRef(value.referenceCode!) : l10n.bookingSent;
             showAppSnackBar(context, msg);
+            ref.read(shellTabProvider.notifier).select(2);
             context.popResult();
           }
         case BookingErr(:final failure):

@@ -127,6 +127,8 @@ class BookingActions {
       hours: hours,
       totalPrice: quote.total,
       status: 'pending',
+      paymentStatus: paymentMethod == 'cash' ? 'pay_at_venue' : 'unpaid',
+      paymentMethod: paymentMethod,
       remainingHours: hours.toDouble(),
       canCancel: BookingPolicy.canCancel(startTime: startTime, status: 'pending'),
     );

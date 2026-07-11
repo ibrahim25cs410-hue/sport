@@ -121,8 +121,6 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
             ),
             const SizedBox(height: 8),
             Center(child: Text(l10n.addProfilePhoto, style: Theme.of(context).textTheme.bodyMedium)),
-            const SizedBox(height: 8),
-            Center(child: Text(l10n.emailExactHint, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
             const SizedBox(height: 20),
             TextFormField(
               controller: _name,

@@ -84,12 +84,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.emailExactHint,
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
               const SizedBox(height: 28),
               EmailFormField(controller: _email, validator: validateEmail),
               const SizedBox(height: 16),

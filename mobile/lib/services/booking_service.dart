@@ -127,7 +127,7 @@ class BookingService {
   }
 
   Future<OwnerDashboard> getOwnerDashboard(int ownerId) async {
-    final res = await _api.dio.get('/bookings/owner/$ownerId');
+    final res = await _api.dio.get('/bookings/owner/me');
     return OwnerDashboard.fromJson(res.data as Map<String, dynamic>);
   }
 

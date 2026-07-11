@@ -131,19 +131,24 @@ async function findUserByEmail(email) {
     : store.findOne('users', (u) => String(u.email || '').trim().toLowerCase() === norm);
 }
 async function fieldsByOwner(ownerId) {
-  return isMongo() ? store.find('fields', { ownerId: Number(ownerId) }) : store.find('fields', (f) => f.ownerId === Number(ownerId));
+  const all = await store.find('fields');
+  return all.filter((f) => sameId(f.ownerId, ownerId));
 }
 async function bookingsByUser(userId) {
-  return isMongo() ? store.find('bookings', { userId: Number(userId) }) : store.find('bookings', (b) => b.userId === Number(userId));
+  const all = await store.find('bookings');
+  return all.filter((b) => sameId(b.userId, userId));
 }
 async function bookingsByOwner(ownerId) {
-  return isMongo() ? store.find('bookings', { ownerId: Number(ownerId) }) : store.find('bookings', (b) => b.ownerId === Number(ownerId));
+  const all = await store.find('bookings');
+  return all.filter((b) => sameId(b.ownerId, ownerId));
 }
 async function bookingsByField(fieldId) {
-  return isMongo() ? store.find('bookings', { fieldId: Number(fieldId) }) : store.find('bookings', (b) => b.fieldId === Number(fieldId));
+  const all = await store.find('bookings');
+  return all.filter((b) => sameId(b.fieldId, fieldId));
 }
 async function notificationsByUser(userId) {
-  return isMongo() ? store.find('notifications', { userId: Number(userId) }) : store.find('notifications', (n) => n.userId === Number(userId));
+  const all = await store.find('notifications');
+  return all.filter((n) => sameId(n.userId, userId));
 }
 async function allFields() {
   return store.find('fields');
@@ -154,19 +159,32 @@ async function allFields() {
 /* ================================================================== */
 
 function sign(user) {
-  return jwt.sign({ id: user.id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign({ id: Number(user.id), role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
 }
 function auth(req, res, next) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : null;
   if (!token) return res.status(401).json({ message: 'مطلوب تسجيل الدخول' });
-  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
-  catch { return res.status(401).json({ message: 'انتهت الجلسة' }); }
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = { ...payload, id: Number(payload.id) };
+    if (!Number.isFinite(req.user.id)) {
+      return res.status(401).json({ message: 'انتهت الجلسة' });
+    }
+    next();
+  } catch {
+    return res.status(401).json({ message: 'انتهت الجلسة' });
+  }
 }
 function optionalAuth(req, _res, next) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : null;
-  if (token) { try { req.user = jwt.verify(token, JWT_SECRET); } catch { /* تجاهل */ } }
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET);
+      req.user = { ...payload, id: Number(payload.id) };
+    } catch { /* تجاهل */ }
+  }
   next();
 }
 
@@ -221,7 +239,18 @@ async function resolveField(publicId) {
 }
 
 function sameId(a, b) {
-  return Number(a) === Number(b);
+  if (a == null || b == null) return false;
+  const sa = String(a).trim();
+  const sb = String(b).trim();
+  if (sa === sb) return true;
+  const na = Number(a);
+  const nb = Number(b);
+  return Number.isFinite(na) && Number.isFinite(nb) && na === nb;
+}
+
+/** معرّف المالك من التوكن — يتجاهل أي id خاطئ من التطبيق. */
+function authedOwnerId(req) {
+  return Number(req.user.id);
 }
 
 function endTimeOf(startIso, hours) {
@@ -242,6 +271,7 @@ function userBookingDto(b, field) {
     totalPrice: b.totalPrice,
     status: b.status,
     paymentStatus: b.paymentStatus || 'unpaid',
+    paymentMethod: b.paymentMethod || 'online',
     remainingHours: 0,
     canCancel: b.status === 'pending' || b.status === 'approved',
   };
@@ -311,7 +341,7 @@ app.post('/api/register-owner', async (req, res) => {
     });
     const field = await store.insert('fields', {
       name: stadiumName, address: stadiumAddress || '', phone: stadiumPhone || phone || '',
-      image: stadiumImage || null, pricePerHour: Number(pricePerHour) || 0, ownerId: user.id,
+      image: stadiumImage || null, pricePerHour: Number(pricePerHour) || 0, ownerId: Number(user.id),
       averageRating: 0, reviewCount: 0, latitude: null, longitude: null,
     });
     res.status(201).json({ token: sign(user), user: publicUser(user), field: publicField(field) });
@@ -492,22 +522,32 @@ app.post('/api/bookings', auth, async (req, res) => {
 
   const hourlyRate = field.pricePerHour || 0;
   const totalPrice = hourlyRate * hrs;
+  const method = String(paymentMethod || 'online').toLowerCase() === 'cash' ? 'cash' : 'online';
+  // نقداً: لا دفع إلكتروني — الحجز بانتظار موافقة المالك والدفع في الملعب
+  const paymentStatus = method === 'cash' ? 'pay_at_venue' : 'unpaid';
   const booking = await store.insert('bookings', {
     fieldId: field.id != null ? field.id : resolvedFieldId,
     ownerId: Number(field.ownerId) || 0,
     userId: Number(req.user.id),
     startTime: start, hours: hrs, totalPrice, status: 'pending',
-    paymentStatus: 'unpaid',
-    paymentMethod: paymentMethod || 'online',
+    paymentStatus,
+    paymentMethod: method,
     referenceCode: 'REF-' + Date.now().toString().slice(-6),
     createdAt: new Date().toISOString(),
   });
-  await notify(field.ownerId, 'طلب حجز جديد', `طلب حجز على ${field.name}`);
+  await notify(
+    field.ownerId,
+    'طلب حجز جديد',
+    method === 'cash'
+      ? `طلب حجز نقدي على ${field.name} — بانتظار موافقتك`
+      : `طلب حجز على ${field.name}`,
+  );
 
   res.status(201).json({
     id: booking.id,
     referenceCode: booking.referenceCode,
     paymentStatus: booking.paymentStatus,
+    paymentMethod: booking.paymentMethod,
     totalPrice: booking.totalPrice,
     discountAmount: 0,
     isDiscountApplied: false,
@@ -580,7 +620,7 @@ async function buildOwnerDashboard(ownerId) {
 
 app.get('/api/bookings/owner/me', auth, async (req, res) => {
   try {
-    res.json(await buildOwnerDashboard(Number(req.user.id)));
+    res.json(await buildOwnerDashboard(authedOwnerId(req)));
   } catch (e) {
     console.error('owner/me dashboard:', e);
     res.status(500).json({ message: 'فشل تحميل لوحة المالك' });
@@ -589,9 +629,14 @@ app.get('/api/bookings/owner/me', auth, async (req, res) => {
 
 app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
   try {
-    const ownerId = Number(req.params.ownerId);
-    if (!sameId(req.user.id, ownerId)) return res.status(403).json({ message: 'غير مصرح' });
-    res.json(await buildOwnerDashboard(ownerId));
+    // المالك دائماً يرى لوحته من التوكن (يتجنب mismatch معرّف التطبيق)
+    if (req.user.role === 'admin') {
+      return res.json(await buildOwnerDashboard(Number(req.params.ownerId)));
+    }
+    if (req.user.role !== 'owner') {
+      return res.status(403).json({ message: 'غير مصرح' });
+    }
+    res.json(await buildOwnerDashboard(authedOwnerId(req)));
   } catch (e) {
     console.error('owner dashboard:', e);
     res.status(500).json({
@@ -612,7 +657,13 @@ app.post('/api/bookings/approve', auth, async (req, res) => {
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
   if (!sameId(b.ownerId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
   await store.update('bookings', bookingId, { status: 'approved' });
-  await notify(b.userId, 'تمت الموافقة', 'تمت الموافقة على حجزك');
+  await notify(
+    b.userId,
+    'تمت الموافقة على حجزك',
+    b.referenceCode
+      ? `تمت الموافقة على حجزك — الرقم المرجعي: ${b.referenceCode}`
+      : 'تمت الموافقة على حجزك — يمكنك مراجعته من قائمة الحجوزات',
+  );
   res.json({ ok: true });
 });
 
@@ -673,12 +724,13 @@ app.post('/api/notifications/user/:userId/read-all', auth, async (req, res) => {
 app.post('/api/users/update-token', auth, (_req, res) => res.json({ ok: true }));
 
 app.get('/api/owner/wallet/status', auth, (req, res) => {
-  res.json({ ownerId: Number(req.user.id), balance: 0, status: 'active', message: null });
+  res.json({ ownerId: authedOwnerId(req), balance: 0, status: 'active', message: null });
 });
 app.get('/api/owner/wallet', auth, (req, res) => {
+  const ownerId = authedOwnerId(req);
   res.json({
-    walletId: 1,
-    ownerId: Number(req.user.id),
+    walletId: ownerId,
+    ownerId,
     balance: 0,
     status: 'active',
     lastUpdated: new Date().toISOString(),
@@ -687,18 +739,27 @@ app.get('/api/owner/wallet', auth, (req, res) => {
 });
 
 // حساب عمولات المالك (stub حتى لا تنهار شاشات الدفع)
-app.get('/api/payments/owner/:ownerId/account', auth, (req, res) => {
-  if (!sameId(req.user.id, req.params.ownerId) && req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'غير مصرح' });
-  }
-  res.json({
+function ownerPaymentAccountDto() {
+  return {
     outstandingAmount: 0,
     outstandingHours: 0,
     totalPaid: 0,
     pendingInvoices: [],
     paidInvoices: [],
     recentPayments: [],
-  });
+  };
+}
+app.get('/api/payments/owner/me/account', auth, (req, res) => {
+  if (req.user.role !== 'owner' && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'غير مصرح' });
+  }
+  res.json(ownerPaymentAccountDto());
+});
+app.get('/api/payments/owner/:ownerId/account', auth, (req, res) => {
+  if (req.user.role === 'admin') return res.json(ownerPaymentAccountDto());
+  if (req.user.role !== 'owner') return res.status(403).json({ message: 'غير مصرح' });
+  // ثقة بالتوكن — حتى لو معرّف المسار لا يطابق كاش التطبيق
+  res.json(ownerPaymentAccountDto());
 });
 app.post('/api/payments/initiate', auth, (req, res) => {
   res.json({

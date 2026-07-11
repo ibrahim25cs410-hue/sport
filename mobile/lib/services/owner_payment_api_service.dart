@@ -6,7 +6,7 @@ class OwnerPaymentApiService {
   final ApiClient _client;
 
   Future<OwnerPaymentAccount> getAccount(int ownerId) async {
-    final res = await _client.dio.get('/payments/owner/$ownerId/account');
+    final res = await _client.dio.get('/payments/owner/me/account');
     return OwnerPaymentAccount.fromJson(res.data as Map<String, dynamic>);
   }
 

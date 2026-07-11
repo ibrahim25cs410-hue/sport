@@ -332,11 +332,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get platformCommissionRate => '10% of field price per booked hour';
 
   @override
-  String get bookingSent => 'Booking request sent successfully';
+  String get bookingSent => 'Booking submitted — waiting for the owner to approve';
 
   @override
   String bookingSentRef(String code) {
-    return 'Sent — reference: $code';
+    return 'Waiting for owner approval — reference: $code';
   }
 
   @override

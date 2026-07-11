@@ -4,6 +4,7 @@ import '../../theme/design_tokens.dart';
 import '../../theme/riyada_motion.dart';
 import '../../theme/riyada_theme_extension.dart';
 import '../../utils/l10n_extension.dart';
+import '../brand/riyada_icon_badge.dart';
 import 'glass_surface.dart';
 
 /// شريط علوي: تحية + موقع (يمين) | إشعارات (يسار في RTL).
@@ -127,19 +128,19 @@ class PremiumSearchBar extends StatelessWidget {
           const SizedBox(width: DesignTokens.spaceSm),
           Material(
             color: DesignTokens.primaryTeal,
-            borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+            shape: const CircleBorder(),
             elevation: 0,
             shadowColor: DesignTokens.primaryTeal.withValues(alpha: 0.4),
             child: InkWell(
               onTap: onFilter,
-              borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
+              customBorder: const CircleBorder(),
               child: Container(
-                width: 56,
-                height: 56,
+                width: 52,
+                height: 52,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(DesignTokens.radius2xl),
-                  boxShadow: DesignTokens.glowShadow(DesignTokens.primaryTeal),
+                  shape: BoxShape.circle,
+                  boxShadow: DesignTokens.glowShadow(DesignTokens.primaryTeal, subtle: true),
                   border: hasActiveFilters
                       ? Border.all(color: Colors.white.withValues(alpha: 0.85), width: 2)
                       : null,
@@ -147,7 +148,7 @@ class PremiumSearchBar extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(Icons.tune_rounded, color: DesignTokens.onNeon, size: 26),
+                    const Icon(Icons.tune_rounded, color: DesignTokens.onNeon, size: 24),
                     if (hasActiveFilters)
                       Positioned(
                         top: 10,
@@ -210,59 +211,63 @@ class _PremiumHeroBannerState extends State<PremiumHeroBanner> {
               itemCount: slides.length,
               itemBuilder: (context, i) {
                 final (title, subtitle, colors) = slides[i];
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 320),
+                const radius = DesignTokens.radiusXl; // 24 — smooth modern card corners
+                return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(DesignTokens.radius3xl),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [colors[0], colors[1]],
-                    ),
+                    borderRadius: BorderRadius.circular(radius),
                     boxShadow: DesignTokens.glowShadow(DesignTokens.primaryTeal, elevated: true),
                   ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(DesignTokens.radius3xl),
-                        child: CustomPaint(painter: _StadiumNightPainter()),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(DesignTokens.spaceXl),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.15),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              subtitle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 13, height: 1.35),
-                            ),
-                            const Spacer(),
-                            FilledButton(
-                              onPressed: widget.onBook,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: DesignTokens.primaryTeal,
-                                foregroundColor: DesignTokens.onNeon,
-                                minimumSize: const Size(0, 44),
-                                padding: const EdgeInsets.symmetric(horizontal: 24),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
-                              ),
-                              child: Text(l10n.bookNow, style: const TextStyle(fontWeight: FontWeight.w800)),
-                            ),
-                          ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(radius),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [colors[0], colors[1]],
                         ),
                       ),
-                    ],
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CustomPaint(painter: _StadiumNightPainter()),
+                          Padding(
+                            padding: const EdgeInsets.all(DesignTokens.spaceXl),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.15),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  subtitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 13, height: 1.35),
+                                ),
+                                const Spacer(),
+                                FilledButton(
+                                  onPressed: widget.onBook,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: DesignTokens.primaryTeal,
+                                    foregroundColor: DesignTokens.onNeon,
+                                    minimumSize: const Size(0, 44),
+                                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
+                                  ),
+                                  child: Text(l10n.bookNow, style: const TextStyle(fontWeight: FontWeight.w800)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               },
@@ -300,7 +305,10 @@ class _StadiumNightPainter extends CustomPainter {
     }
     final pitch = Paint()..color = Colors.black.withValues(alpha: 0.25);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(size.width * 0.15, size.height * 0.35, size.width * 0.7, size.height * 0.45), const Radius.circular(12)),
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.15, size.height * 0.35, size.width * 0.7, size.height * 0.45),
+        const Radius.circular(16),
+      ),
       pitch,
     );
     final ball = Paint()..color = Colors.white.withValues(alpha: 0.12);
@@ -332,7 +340,7 @@ class PremiumFeaturesGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final items = [
-      (Icons.local_offer_rounded, l10n.quickOffers, onOffers),
+      (Icons.sports_soccer_rounded, l10n.penaltyShootout, onOffers),
       (Icons.event_available_rounded, l10n.myBookings, onBookings),
       (Icons.bolt_rounded, l10n.availableNow, onAvailable),
       (Icons.verified_user_rounded, l10n.quickCertified, onCertified),
@@ -376,15 +384,9 @@ class PremiumPromoBanner extends StatelessWidget {
         blur: 0,
         child: Row(
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: DesignTokens.neonGradient,
-                boxShadow: DesignTokens.glowShadow(DesignTokens.primaryTeal),
-              ),
-              child: const Icon(Icons.emoji_events_rounded, color: DesignTokens.onNeon, size: 30),
+            RiyadaIconBadge(
+              size: RiyadaIconBadgeSize.lg,
+              child: const Icon(Icons.sports_soccer_rounded),
             ),
             const SizedBox(width: DesignTokens.spaceLg),
             Expanded(

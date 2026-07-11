@@ -95,6 +95,7 @@ class UserBookingsNotifier extends FamilyAsyncNotifier<List<Booking>, UserSessio
         totalPrice: b.totalPrice,
         status: status,
         paymentStatus: b.paymentStatus,
+        paymentMethod: b.paymentMethod,
         remainingHours: b.remainingHours,
         canCancel: status == 'pending' || status == 'approved' ? b.canCancel : false,
       );

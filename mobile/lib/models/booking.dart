@@ -14,6 +14,7 @@ class Booking {
   final int totalPrice;
   final String status;
   final String paymentStatus;
+  final String paymentMethod;
   final double remainingHours;
   final bool canCancel;
 
@@ -30,11 +31,18 @@ class Booking {
     required this.totalPrice,
     required this.status,
     this.paymentStatus = 'paid',
+    this.paymentMethod = 'online',
     required this.remainingHours,
     required this.canCancel,
   });
 
-  bool get needsPayment => paymentStatus != 'paid' && status != 'cancelled' && status != 'rejected';
+  /// Online unpaid only — cash is paid at the venue after owner approval.
+  bool get needsPayment =>
+      status != 'cancelled' &&
+      status != 'rejected' &&
+      paymentStatus != 'paid' &&
+      paymentStatus != 'pay_at_venue' &&
+      paymentMethod.toLowerCase() != 'cash';
 
   factory Booking.fromJson(Map<String, dynamic> json) => Booking(
         id: asInt(json['id']) ?? 0,
@@ -49,6 +57,7 @@ class Booking {
         totalPrice: asInt(json['totalPrice']) ?? 0,
         status: json['status'] as String? ?? 'pending',
         paymentStatus: json['paymentStatus'] as String? ?? 'paid',
+        paymentMethod: json['paymentMethod'] as String? ?? 'online',
         remainingHours: (json['remainingHours'] as num?)?.toDouble() ?? 0,
         canCancel: json['canCancel'] as bool? ?? false,
       );

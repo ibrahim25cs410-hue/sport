@@ -84,8 +84,6 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text(l10n.emailExactHint, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
             _sectionTitle(Icons.person_outline_rounded, l10n.yourInfo),
             TextFormField(controller: _name, decoration: InputDecoration(labelText: l10n.nameShort), validator: (v) => validateRequired(v, label: l10n.nameShort)),
             const SizedBox(height: 12),

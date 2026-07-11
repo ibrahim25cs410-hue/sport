@@ -110,8 +110,8 @@
   },
   "commissionNote": "A 10% platform commission on (price per hour × hours booked) applies when the owner confirms",
   "platformCommissionRate": "10% of field price per booked hour",
-  "bookingSent": "Booking request sent successfully",
-  "bookingSentRef": "Sent — reference: {code}",
+  "bookingSent": "Booking submitted — waiting for the owner to approve",
+  "bookingSentRef": "Waiting for owner approval — reference: {code}",
   "@bookingSentRef": {
     "placeholders": {
       "code": {"type": "String"}

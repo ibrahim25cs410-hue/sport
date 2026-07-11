@@ -1,3 +1,5 @@
+import '../utils/json_int.dart';
+
 class WalletTransaction {
   const WalletTransaction({
     required this.id,
@@ -35,15 +37,15 @@ class WalletTransaction {
   }
 
   factory WalletTransaction.fromJson(Map<String, dynamic> json) => WalletTransaction(
-        id: json['id'] as int,
-        amount: json['amount'] as int? ?? 0,
+        id: asInt(json['id']) ?? 0,
+        amount: asInt(json['amount']) ?? 0,
         type: json['type'] as String? ?? '',
         typeLabel: json['typeLabel'] as String? ?? json['type'] as String? ?? '',
         description: json['description'] as String? ?? '',
-        bookingId: json['bookingId'] as int?,
+        bookingId: asInt(json['bookingId']),
         bookingReference: json['bookingReference'] as String?,
         adminNote: json['adminNote'] as String?,
-        createdAt: DateTime.parse(json['createdAt'] as String),
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       );
 }
 
@@ -63,7 +65,7 @@ class WalletStatus {
   bool get isBlocked => status == 'blocked';
 
   factory WalletStatus.fromJson(Map<String, dynamic> json) => WalletStatus(
-        ownerId: json['ownerId'] as int? ?? 0,
+        ownerId: asInt(json['ownerId']) ?? 0,
         balance: (json['balance'] as num?)?.toDouble() ?? 0,
         status: json['status'] as String? ?? 'active',
         message: json['message'] as String?,
@@ -90,13 +92,14 @@ class WalletDetail {
   bool get isBlocked => status == 'blocked';
 
   factory WalletDetail.fromJson(Map<String, dynamic> json) => WalletDetail(
-        walletId: json['walletId'] as int? ?? 0,
-        ownerId: json['ownerId'] as int? ?? 0,
+        walletId: asInt(json['walletId']) ?? asInt(json['ownerId']) ?? 0,
+        ownerId: asInt(json['ownerId']) ?? 0,
         balance: (json['balance'] as num?)?.toDouble() ?? 0,
         status: json['status'] as String? ?? 'active',
-        lastUpdated: DateTime.parse(json['lastUpdated'] as String),
+        lastUpdated: DateTime.tryParse(json['lastUpdated'] as String? ?? '') ?? DateTime.now(),
         transactions: (json['transactions'] as List<dynamic>? ?? [])
-            .map((e) => WalletTransaction.fromJson(e as Map<String, dynamic>))
+            .whereType<Map<String, dynamic>>()
+            .map(WalletTransaction.fromJson)
             .toList(),
       );
 }

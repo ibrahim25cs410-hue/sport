@@ -1,3 +1,5 @@
+import '../utils/json_int.dart';
+
 class OwnerFeeInvoice {
   const OwnerFeeInvoice({
     required this.id,
@@ -23,14 +25,14 @@ class OwnerFeeInvoice {
   bool get isPaid => status == 'paid';
 
   factory OwnerFeeInvoice.fromJson(Map<String, dynamic> json) => OwnerFeeInvoice(
-        id: json['id'] as int,
-        amount: json['amount'] as int,
-        totalHours: json['totalHours'] as int,
-        status: json['status'] as String,
-        title: json['title'] as String,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        paidAt: json['paidAt'] != null ? DateTime.parse(json['paidAt'] as String) : null,
-        bookingCount: json['bookingCount'] as int? ?? 0,
+        id: asInt(json['id']) ?? 0,
+        amount: asInt(json['amount']) ?? 0,
+        totalHours: asInt(json['totalHours']) ?? 0,
+        status: json['status'] as String? ?? 'pending',
+        title: json['title'] as String? ?? '',
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
+        paidAt: json['paidAt'] != null ? DateTime.tryParse(json['paidAt'] as String) : null,
+        bookingCount: asInt(json['bookingCount']) ?? 0,
       );
 }
 
@@ -54,13 +56,13 @@ class OwnerPaymentRecord {
   final DateTime? verifiedAt;
 
   factory OwnerPaymentRecord.fromJson(Map<String, dynamic> json) => OwnerPaymentRecord(
-        id: json['id'] as int,
-        invoiceId: json['invoiceId'] as int,
-        amount: json['amount'] as int,
-        gateway: json['gateway'] as String,
-        status: json['status'] as String,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        verifiedAt: json['verifiedAt'] != null ? DateTime.parse(json['verifiedAt'] as String) : null,
+        id: asInt(json['id']) ?? 0,
+        invoiceId: asInt(json['invoiceId']) ?? 0,
+        amount: asInt(json['amount']) ?? 0,
+        gateway: json['gateway'] as String? ?? '',
+        status: json['status'] as String? ?? '',
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
+        verifiedAt: json['verifiedAt'] != null ? DateTime.tryParse(json['verifiedAt'] as String) : null,
       );
 }
 
@@ -82,17 +84,20 @@ class OwnerPaymentAccount {
   final List<OwnerPaymentRecord> recentPayments;
 
   factory OwnerPaymentAccount.fromJson(Map<String, dynamic> json) => OwnerPaymentAccount(
-        outstandingAmount: json['outstandingAmount'] as int? ?? 0,
-        outstandingHours: json['outstandingHours'] as int? ?? 0,
-        totalPaid: json['totalPaid'] as int? ?? 0,
+        outstandingAmount: asInt(json['outstandingAmount']) ?? 0,
+        outstandingHours: asInt(json['outstandingHours']) ?? 0,
+        totalPaid: asInt(json['totalPaid']) ?? 0,
         pendingInvoices: (json['pendingInvoices'] as List<dynamic>? ?? [])
-            .map((e) => OwnerFeeInvoice.fromJson(e as Map<String, dynamic>))
+            .whereType<Map<String, dynamic>>()
+            .map(OwnerFeeInvoice.fromJson)
             .toList(),
         paidInvoices: (json['paidInvoices'] as List<dynamic>? ?? [])
-            .map((e) => OwnerFeeInvoice.fromJson(e as Map<String, dynamic>))
+            .whereType<Map<String, dynamic>>()
+            .map(OwnerFeeInvoice.fromJson)
             .toList(),
         recentPayments: (json['recentPayments'] as List<dynamic>? ?? [])
-            .map((e) => OwnerPaymentRecord.fromJson(e as Map<String, dynamic>))
+            .whereType<Map<String, dynamic>>()
+            .map(OwnerPaymentRecord.fromJson)
             .toList(),
       );
 }
@@ -111,9 +116,9 @@ class PaymentInitiation {
   final String? checkoutUrl;
 
   factory PaymentInitiation.fromJson(Map<String, dynamic> json) => PaymentInitiation(
-        transactionToken: json['transactionToken'] as String,
-        gateway: json['gateway'] as String,
-        amount: json['amount'] as int,
+        transactionToken: json['transactionToken'] as String? ?? '',
+        gateway: json['gateway'] as String? ?? 'card',
+        amount: asInt(json['amount']) ?? 0,
         checkoutUrl: json['checkoutUrl'] as String?,
       );
 }
@@ -136,8 +141,8 @@ class PaymentVerification {
   factory PaymentVerification.fromJson(Map<String, dynamic> json) => PaymentVerification(
         success: json['success'] as bool? ?? false,
         status: json['status'] as String? ?? '',
-        invoiceId: json['invoiceId'] as int?,
-        outstandingAmount: json['outstandingAmount'] as int? ?? 0,
+        invoiceId: asInt(json['invoiceId']),
+        outstandingAmount: asInt(json['outstandingAmount']) ?? 0,
         message: json['message'] as String? ?? '',
       );
 }
