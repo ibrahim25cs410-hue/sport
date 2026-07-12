@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../config/api_config.dart';
 import '../services/auth_interceptor.dart';
+import '../core/providers/booking_actions_provider.dart';
 import '../core/providers/repository_providers.dart';
 import '../core/repositories/auth_repository.dart';
 import '../data/datasources/remote/fcm_service.dart';
@@ -259,6 +260,8 @@ class AuthNotifier extends Notifier<AuthState> {
         );
         state = state.copyWith(ownerField: created);
         if (state.user != null) await SessionStorage.save(state.user!, created);
+        // حدّث قائمة الملاعب عند كل الجلسات المحلية فوراً
+        ref.invalidate(fieldsListProvider);
       });
 
   Future<bool> _run(Future<void> Function() fn) async {

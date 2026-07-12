@@ -39,9 +39,12 @@ Future<void> showFieldFiltersSheet(BuildContext context, WidgetRef ref) async {
               const SizedBox(height: 16),
               Text(l10n.filterPrice),
               RangeSlider(
-                values: RangeValues(minPrice, maxPrice.clamp(minPrice, 200000)),
-                max: 200000,
-                divisions: 20,
+                values: RangeValues(
+                  minPrice,
+                  maxPrice.clamp(minPrice, ShellState.defaultMaxPrice),
+                ),
+                max: ShellState.defaultMaxPrice,
+                divisions: 50,
                 activeColor: context.accentColor,
                 onChanged: (v) => setModal(() {
                   minPrice = v.start;

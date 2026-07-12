@@ -63,6 +63,19 @@ android {
             isShrinkResources = false
         }
     }
+
+    // APK موحّد لكل المعماريات + مكتبات أصلية غير مضغوطة (حجم أكبر واستقرار أفضل على أجهزة متنوعة)
+    splits {
+        abi {
+            isEnable = false
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 flutter {

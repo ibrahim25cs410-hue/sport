@@ -508,6 +508,39 @@ app.get('/api/fields', optionalAuth, async (req, res) => {
   res.json(paged(list, req.query.page, req.query.limit));
 });
 
+/** إضافة ملعب جديد لصاحب الملعب — يظهر فوراً في قائمة المستخدمين. */
+app.post('/api/fields', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'owner' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'غير مصرح — حساب صاحب ملعب فقط' });
+    }
+    const { name, address, phone, pricePerHour, image, latitude, longitude } = req.body || {};
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ message: 'اسم الملعب مطلوب' });
+    }
+    const price = Number(pricePerHour);
+    if (!Number.isFinite(price) || price < 1000) {
+      return res.status(400).json({ message: 'سعر الساعة غير صالح' });
+    }
+    const field = await store.insert('fields', {
+      name: String(name).trim(),
+      address: String(address || '').trim(),
+      phone: String(phone || '').trim(),
+      image: image || null,
+      pricePerHour: Math.round(price),
+      ownerId: Number(req.user.id),
+      averageRating: 0,
+      reviewCount: 0,
+      latitude: latitude != null ? Number(latitude) : null,
+      longitude: longitude != null ? Number(longitude) : null,
+    });
+    res.status(201).json(publicField(field));
+  } catch (e) {
+    console.error('POST /fields:', e);
+    res.status(500).json({ message: 'فشل إنشاء الملعب', error: String(e.message || e) });
+  }
+});
+
 /** حذف كل الملاعب والحجوزات (طلب صريح من الإدارة). */
 app.post('/api/admin/clear-fields', auth, async (req, res) => {
   try {

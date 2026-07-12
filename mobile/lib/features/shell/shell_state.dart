@@ -25,10 +25,13 @@ class ShellState {
     this.selectedCategory,
     this.favoritesLoaded = false,
     this.minPrice = 0,
-    this.maxPrice = 200000,
+    this.maxPrice = defaultMaxPrice,
     this.minRating = 0,
     this.availableOnly = false,
   });
+
+  /// سقف افتراضي عالٍ حتى لا تُخفى الملاعب غالية السعر عن المستخدم.
+  static const double defaultMaxPrice = 5000000;
 
   final String search;
   final Set<int> favorites;
@@ -40,7 +43,7 @@ class ShellState {
   final bool availableOnly;
 
   bool get hasActiveFilters =>
-      minPrice > 0 || maxPrice < 200000 || minRating > 0 || availableOnly;
+      minPrice > 0 || maxPrice < defaultMaxPrice || minRating > 0 || availableOnly;
 
   ShellState copyWith({
     String? search,
@@ -60,7 +63,7 @@ class ShellState {
         selectedCategory: clearCategory ? null : (selectedCategory ?? this.selectedCategory),
         favoritesLoaded: favoritesLoaded ?? this.favoritesLoaded,
         minPrice: resetFilters ? 0 : (minPrice ?? this.minPrice),
-        maxPrice: resetFilters ? 200000 : (maxPrice ?? this.maxPrice),
+        maxPrice: resetFilters ? defaultMaxPrice : (maxPrice ?? this.maxPrice),
         minRating: resetFilters ? 0 : (minRating ?? this.minRating),
         availableOnly: resetFilters ? false : (availableOnly ?? this.availableOnly),
       );
