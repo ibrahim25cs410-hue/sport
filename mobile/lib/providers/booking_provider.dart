@@ -18,8 +18,19 @@ class UserBookingsNotifier extends FamilyAsyncNotifier<List<Booking>, UserSessio
   bool _hasMore = true;
   bool _loadingMore = false;
 
+  /// حجوزات أُنشئت محلياً ولم ترجع بعد من الـ API — يمنع سباق build() من مسحها.
+  final List<Booking> _confirmedLocal = [];
+
   bool get hasMore => _hasMore;
   bool get loadingMore => _loadingMore;
+
+  List<Booking> _mergeWithLocal(List<Booking> remote) {
+    final ids = {for (final b in remote) b.id};
+    _confirmedLocal.removeWhere((b) => b.id > 0 && ids.contains(b.id));
+    final extras = _confirmedLocal.where((b) => b.id > 0 && !ids.contains(b.id)).toList();
+    if (extras.isEmpty) return remote;
+    return [...extras, ...remote];
+  }
 
   @override
   Future<List<Booking>> build(UserSessionKey arg) async {
@@ -29,7 +40,7 @@ class UserBookingsNotifier extends FamilyAsyncNotifier<List<Booking>, UserSessio
         .read(bookingRepositoryProvider(arg.client))
         .getUserBookings(arg.userId, page: 1, limit: defaultPageSize);
     _hasMore = inferHasMore(items.length, defaultPageSize);
-    return items;
+    return _mergeWithLocal(items);
   }
 
   Future<void> loadMore() async {
@@ -60,6 +71,10 @@ class UserBookingsNotifier extends FamilyAsyncNotifier<List<Booking>, UserSessio
 
   /// بعد نجاح الإنشاء: استبدال الحجوزات المؤقتة بالحجز الحقيقي دون مسح القائمة.
   void confirmCreated(Booking booking) {
+    if (booking.id > 0) {
+      _confirmedLocal.removeWhere((b) => b.id == booking.id || b.id < 0);
+      _confirmedLocal.insert(0, booking);
+    }
     final current = state.valueOrNull ?? <Booking>[];
     final cleaned = current.where((b) => b.id > 0 && b.id != booking.id).toList();
     state = AsyncData([booking, ...cleaned]);
@@ -82,12 +97,12 @@ class UserBookingsNotifier extends FamilyAsyncNotifier<List<Booking>, UserSessio
           .read(bookingRepositoryProvider(arg.client))
           .getUserBookings(arg.userId, page: 1, limit: defaultPageSize);
       _hasMore = inferHasMore(data.length, defaultPageSize);
+      final merged = _mergeWithLocal(data);
       // إن رجع الخادم فارغاً وما زال عندنا حجوزات مؤكدة محلياً — لا تمسحها
-      // (يحمي من سباق /me قبل اكتمال النشر أو تأخير قاعدة البيانات)
-      if (data.isEmpty && previous != null && previous.any((b) => b.id > 0)) {
+      if (merged.isEmpty && previous != null && previous.any((b) => b.id > 0)) {
         state = AsyncData(previous.where((b) => b.id > 0).toList());
       } else {
-        state = AsyncData(data);
+        state = AsyncData(merged);
       }
     } catch (e, st) {
       if (previous != null) {

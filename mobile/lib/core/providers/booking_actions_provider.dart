@@ -148,6 +148,10 @@ class BookingActions {
 
     if (result.isOk) {
       final created = result.valueOrNull!;
+      if (created.id <= 0) {
+        _ref.invalidate(userBookingsProvider(_session));
+        return const BookingErr(BookingFailure(code: BookingFailureCode.unknown));
+      }
       final confirmed = Booking(
         id: created.id,
         referenceCode: created.referenceCode,

@@ -90,11 +90,14 @@ async function createMongoStore(uri) {
   await mongoose.connect(uri);
   const { Schema } = mongoose;
 
+  // id: false — مهم جداً: بدونها Mongoose يستبدل حقل id الرقمي بـ virtual من _id
+  // فيصبح Number(user.id) = NaN و ownerId=0 والحجوزات تختفي من القوائم
+  const schemaOpts = { strict: false, timestamps: true, id: false };
   const models = {
-    users: mongoose.model('User', new Schema({}, { strict: false, timestamps: true })),
-    fields: mongoose.model('Field', new Schema({}, { strict: false, timestamps: true })),
-    bookings: mongoose.model('Booking', new Schema({}, { strict: false, timestamps: true })),
-    notifications: mongoose.model('Notification', new Schema({}, { strict: false, timestamps: true })),
+    users: mongoose.model('User', new Schema({}, schemaOpts)),
+    fields: mongoose.model('Field', new Schema({}, schemaOpts)),
+    bookings: mongoose.model('Booking', new Schema({}, schemaOpts)),
+    notifications: mongoose.model('Notification', new Schema({}, schemaOpts)),
   };
   const Counter = mongoose.model('Counter', new Schema({ _id: String, n: Number }));
 
@@ -104,8 +107,13 @@ async function createMongoStore(uri) {
   }
   const out = (doc) => {
     if (!doc) return null;
-    const o = doc.toObject ? doc.toObject() : doc;
+    // virtuals: false حتى لا يغطي ObjectId على id الرقمي المخزّن
+    const o = doc.toObject ? doc.toObject({ virtuals: false }) : { ...doc };
+    const rawId = doc.get ? doc.get('id', null, { getters: false }) : o.id;
     delete o._id; delete o.__v; delete o.createdAt; delete o.updatedAt;
+    if (rawId != null && Number.isFinite(Number(rawId))) {
+      o.id = Number(rawId);
+    }
     return o;
   };
 
@@ -113,7 +121,13 @@ async function createMongoStore(uri) {
     kind: 'mongodb',
     async insert(col, doc) {
       const id = await nextId(col);
-      return out(await models[col].create({ id, ...doc }));
+      const created = await models[col].create({ ...doc, id });
+      const mapped = out(created);
+      // ضمان أن الإدخال الجديد يحمل id رقمياً دائماً
+      if (!mapped || !Number.isFinite(Number(mapped.id)) || Number(mapped.id) <= 0) {
+        throw new Error(`فشل إنشاء سجل في ${col}: id رقمي مفقود`);
+      }
+      return mapped;
     },
     async findById(col, id) {
       const n = Number(id);
@@ -385,7 +399,16 @@ function fieldKeys(field) {
 }
 
 function bookingBelongsToField(b, field) {
-  return fieldKeys(field).has(String(b.fieldId));
+  if (!b || !field) return false;
+  const keys = fieldKeys(field);
+  if (keys.has(String(b.fieldId))) return true;
+  if (b.fieldPublicId != null && keys.has(String(b.fieldPublicId))) return true;
+  return false;
+}
+
+function bookingBelongsToOwner(b, ownerId, ownedFields) {
+  if (sameId(b.ownerId, ownerId)) return true;
+  return (ownedFields || []).some((f) => bookingBelongsToField(b, f));
 }
 
 /* ================================================================== */
@@ -525,7 +548,7 @@ async function wipeAllAppData(reason) {
   }
   await store.insert('notifications', {
     userId: 0,
-    title: '__launch_clean_slate_v1__',
+    title: '__launch_clean_slate_v2_mongoose_id__',
     message: `wiped via ${reason}: users=${deletedUsers} fields=${deletedFields} bookings=${deletedBookings} notifs=${deletedNotifications}`,
     isRead: true,
   });
@@ -641,9 +664,13 @@ app.post('/api/bookings', auth, async (req, res) => {
   const method = String(paymentMethod || 'online').toLowerCase() === 'cash' ? 'cash' : 'online';
   // نقداً: لا دفع إلكتروني — الحجز بانتظار موافقة المالك والدفع في الملعب
   const paymentStatus = method === 'cash' ? 'pay_at_venue' : 'unpaid';
+  const ownerId = Number(field.ownerId) || 0;
+  const storedFieldId = field.id != null ? field.id : resolvedFieldId;
   const booking = await store.insert('bookings', {
-    fieldId: field.id != null ? field.id : resolvedFieldId,
-    ownerId: Number(field.ownerId) || 0,
+    fieldId: storedFieldId,
+    // نسخة رقمية عامة للمطابقة مع Flutter (stableId / public id)
+    fieldPublicId: resolvedFieldId,
+    ownerId,
     userId: Number(req.user.id),
     startTime: start, hours: hrs, totalPrice, status: 'pending',
     paymentStatus,
@@ -652,7 +679,7 @@ app.post('/api/bookings', auth, async (req, res) => {
     createdAt: new Date().toISOString(),
   });
   await notify(
-    Number(field.ownerId) || 0,
+    ownerId,
     'طلب حجز جديد',
     method === 'cash'
       ? `طلب حجز نقدي على ${field.name} — بانتظار موافقتك`
@@ -666,7 +693,7 @@ app.post('/api/bookings', auth, async (req, res) => {
   );
 
   res.status(201).json({
-    id: booking.id,
+    id: Number(booking.id),
     referenceCode: booking.referenceCode,
     paymentStatus: booking.paymentStatus,
     paymentMethod: booking.paymentMethod,
@@ -675,6 +702,11 @@ app.post('/api/bookings', auth, async (req, res) => {
     isDiscountApplied: false,
     hourlyRate,
     loyaltyPoints: 0,
+    status: 'pending',
+    fieldId: resolvedFieldId,
+    fieldName: field.name,
+    startTime: booking.startTime,
+    hours: booking.hours,
   });
 });
 
@@ -739,12 +771,11 @@ app.post('/api/bookings/cancel', auth, async (req, res) => {
 async function buildOwnerDashboard(ownerId) {
   const owned = await fieldsByOwner(ownerId);
   const field = owned[0] || null;
-  // فقط حجوزات ملاعب هذا المالك — لا تُدمج حجوزات ملاعب أخرى / يتيمة
+  // حجوزات ملاعب هذا المالك — بالميدان أو بـ ownerId المخزّن على الحجز
   const allBookings = await store.find('bookings');
   const list = allBookings.filter((b) => {
     if (!Number.isFinite(Number(b.id)) || Number(b.id) <= 0) return false;
-    // فقط حجوزات ملاعب هذا المالك — لا حجوزات ملاعب أخرى أو يتيمة
-    return owned.some((f) => bookingBelongsToField(b, f));
+    return bookingBelongsToOwner(b, ownerId, owned);
   });
   const usersCache = {};
   const bookings = [];
@@ -756,7 +787,9 @@ async function buildOwnerDashboard(ownerId) {
   let pendingCount = 0;
   for (const b of list.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
     try {
-      const f = owned.find((of) => bookingBelongsToField(b, of));
+      const f = owned.find((of) => bookingBelongsToField(b, of))
+        || owned.find((of) => sameId(of.id, b.fieldId) || sameId(publicNumericId(of), b.fieldPublicId))
+        || null;
       usersCache[b.userId] ??= await store.findById('users', b.userId);
       const dto = ownerBookingDto(b, usersCache[b.userId], f);
       bookings.push(dto);
@@ -819,8 +852,7 @@ app.post('/api/bookings/approve', auth, async (req, res) => {
   const b = await resolveBooking(bookingId, referenceCode);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
   const owned = await fieldsByOwner(req.user.id);
-  const ownsBooking = owned.some((f) => bookingBelongsToField(b, f))
-    || sameId(b.ownerId, req.user.id);
+  const ownsBooking = bookingBelongsToOwner(b, req.user.id, owned);
   if (!ownsBooking) return res.status(403).json({ message: 'غير مصرح' });
   await store.update('bookings', b.id, { status: 'approved', ownerId: Number(req.user.id) });
   await notify(
@@ -838,8 +870,7 @@ app.post('/api/bookings/reject', auth, async (req, res) => {
   const b = await resolveBooking(bookingId, referenceCode);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
   const owned = await fieldsByOwner(req.user.id);
-  const ownsBooking = owned.some((f) => bookingBelongsToField(b, f))
-    || sameId(b.ownerId, req.user.id);
+  const ownsBooking = bookingBelongsToOwner(b, req.user.id, owned);
   if (!ownsBooking) return res.status(403).json({ message: 'غير مصرح' });
   await store.update('bookings', b.id, { status: 'rejected', ownerId: Number(req.user.id) });
   await notify(b.userId, 'تم الرفض', 'عذراً، تم رفض حجزك');
@@ -993,8 +1024,9 @@ async function start() {
   // بعدها يمكن التسجيل من جديد بنفس البريد دون «الحساب موجود»
   try {
     const flag = isMongo()
-      ? await store.findOne('notifications', { title: '__launch_clean_slate_v1__' })
-      : await store.findOne('notifications', (n) => n.title === '__launch_clean_slate_v1__');
+      // v2: بعد إصلاح Mongoose id virtual — مسح البيانات التالفة (ownerId=0 / بدون id رقمي)
+      ? await store.findOne('notifications', { title: '__launch_clean_slate_v2_mongoose_id__' })
+      : await store.findOne('notifications', (n) => n.title === '__launch_clean_slate_v2_mongoose_id__');
     if (!flag) {
       await wipeAllAppData('startup');
     }

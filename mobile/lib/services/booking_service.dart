@@ -37,7 +37,7 @@ class BookingService {
     try {
       final res = await _api.dio.post('/bookings', data: {
         'fieldId': fieldId,
-        'startTime': startTime.toIso8601String(),
+        'startTime': startTime.toUtc().toIso8601String(),
         'hours': hours,
         'paymentMethod': paymentMethod,
       });
