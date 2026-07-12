@@ -12,6 +12,7 @@ import '../../../router/app_router.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../theme/riyada_motion.dart';
 import '../../../theme/riyada_theme_extension.dart';
+import '../../../utils/error_messages.dart';
 import '../../../utils/l10n_extension.dart';
 import '../../../utils/phone_launcher.dart';
 import '../../../widgets/common.dart';
@@ -31,14 +32,31 @@ class HomeTab extends ConsumerStatefulWidget {
   ConsumerState<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends ConsumerState<HomeTab> {
+class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
   final _scrollController = ScrollController();
   final _fieldsSectionKey = GlobalKey();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final user = ref.read(authProvider).user;
+      if (user == null) return;
+      final key = UserSessionKey(client: ref.read(apiClientProvider), userId: user.id);
+      ref.invalidate(fieldsListProvider(key));
+    }
   }
 
   Future<void> _refresh(UserSessionKey key) async {
@@ -85,6 +103,12 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final user = ref.watch(authProvider).user;
     final key = watchSessionKey(ref);
     if (user == null || key == null) return const SizedBox.shrink();
+
+    ref.listen<int>(shellTabProvider, (prev, next) {
+      if (next == 0 && prev != null && prev != 0) {
+        ref.invalidate(fieldsListProvider(key));
+      }
+    });
 
     final l10n = context.l10n;
     final theme = Theme.of(context);
@@ -186,7 +210,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                         child: RefreshableEmptyState(
                           icon: Icons.cloud_off_rounded,
                           title: l10n.connectionLost,
-                          subtitle: l10n.noFieldsHint,
+                          subtitle: friendlyErrorMessage(fieldsAsync.error),
                           onRefresh: () => _refresh(key),
                         ),
                       )

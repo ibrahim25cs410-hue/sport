@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../theme/design_tokens.dart';
 import '../../theme/riyada_theme_extension.dart';
 
-/// ألوان الملعب والمرمى — تتبع الثيم الحالي تلقائياً.
+/// ألوان الملعب والمرمى — مظهر واقعي (سماء، عشب، مرمى).
 class PenaltyPalette {
   PenaltyPalette(BuildContext context)
       : c = context.colors,
@@ -16,38 +16,39 @@ class PenaltyPalette {
 
   Color get scaffold => c.background.withValues(alpha: 0.92);
 
-  Color get pitchTop => isDark ? c.primaryLight.withValues(alpha: 0.32) : DesignTokens.neonGreen.withValues(alpha: 0.22);
+  Color get skyTop => isDark ? const Color(0xFF0B1A2E) : const Color(0xFF6EC6FF);
+  Color get skyHorizon => isDark ? const Color(0xFF1A3A4A) : const Color(0xFFB8E0F5);
 
-  Color get pitchBottom => isDark ? c.primary.withValues(alpha: 0.82) : DesignTokens.primary.withValues(alpha: 0.5);
+  Color get grassLight => isDark ? const Color(0xFF1B5E20) : const Color(0xFF4CAF50);
+  Color get grassDark => isDark ? const Color(0xFF0D3B12) : const Color(0xFF2E7D32);
+  Color get grassDeep => isDark ? const Color(0xFF06280A) : const Color(0xFF1B5E20);
 
-  Color get goalPost => isDark ? c.onInverse : c.onSurface;
+  Color get pitchTop => grassLight;
+  Color get pitchBottom => grassDeep;
 
-  Color get goalNet => goalPost.withValues(alpha: isDark ? 0.18 : 0.12);
+  Color get lineWhite => Colors.white.withValues(alpha: isDark ? 0.55 : 0.75);
 
-  Color get ballFill => isDark ? c.onInverse : Colors.white;
+  Color get goalPost => isDark ? const Color(0xFFF5F5F5) : const Color(0xFFFAFAFA);
+  Color get goalPostShadow => Colors.black.withValues(alpha: 0.35);
+  Color get goalNet => Colors.white.withValues(alpha: isDark ? 0.22 : 0.28);
+  Color get goalNetBack => Colors.black.withValues(alpha: 0.18);
 
-  Color get ballIcon => isDark ? c.onSurface : c.primaryDark;
-
-  Color get ballBorder => c.outlineVariant;
+  Color get ballFill => Colors.white;
+  Color get ballIcon => const Color(0xFF212121);
+  Color get ballBorder => const Color(0xFF9E9E9E);
 
   Color get keeperBody => c.secondary;
 
-  Color get zoneHighlight => c.primary.withValues(alpha: 0.42);
-
-  Color get zoneTap => c.onSurface.withValues(alpha: isDark ? 0.07 : 0.05);
+  Color get zoneHighlight => DesignTokens.primaryTeal.withValues(alpha: 0.45);
+  Color get zoneTap => Colors.white.withValues(alpha: isDark ? 0.08 : 0.1);
 
   Color get scoreBoardBg => c.surfaceVariant.withValues(alpha: isDark ? 0.55 : 0.9);
-
   Color get scoreBoardBorder => c.outline.withValues(alpha: 0.35);
 
   Color get textPrimary => c.onSurface;
-
   Color get textMuted => c.onSurfaceVariant;
-
-  Color get accent => c.primary;
-
+  Color get accent => DesignTokens.primaryTeal;
   Color get overlayScrim => c.scrimHeavy;
-
   Color get summaryCard => c.surfaceElevated;
 }
 

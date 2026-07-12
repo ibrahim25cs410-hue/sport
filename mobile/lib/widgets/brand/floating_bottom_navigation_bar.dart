@@ -143,17 +143,24 @@ class _FloatingNavItem extends StatelessWidget {
                   AnimatedContainer(
                     duration: FloatingBottomNavigationBar._animDuration,
                     curve: Curves.easeOutCubic,
-                    padding: EdgeInsets.all(selected ? 6 : 2),
-                    decoration: selected
-                        ? BoxDecoration(
-                            color: activeColor.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                          )
-                        : null,
+                    padding: EdgeInsets.all(selected ? 8 : 4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? activeColor.withValues(alpha: 0.18) : Colors.transparent,
+                      boxShadow: selected
+                          ? [
+                              BoxShadow(
+                                color: activeColor.withValues(alpha: 0.22),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : null,
+                    ),
                     child: RiyadaNavIconWidget(
                       icon: icon,
                       color: color,
-                      selected: false,
+                      selected: selected,
                       size: 22,
                     ),
                   ),

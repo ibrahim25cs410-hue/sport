@@ -273,34 +273,96 @@ class _BallPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width * 0.5;
     final cy = size.height * 0.45;
+    final r = ballSize * 0.5;
 
+    // ظل على العشب
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(cx, cy + ballSize * 0.55), width: ballSize * 0.9, height: ballSize * 0.28),
-      Paint()..color = Colors.black.withValues(alpha: 0.18),
+      Rect.fromCenter(center: Offset(cx, cy + r * 1.05), width: ballSize * 0.95, height: ballSize * 0.28),
+      Paint()..color = Colors.black.withValues(alpha: 0.28),
     );
 
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(spin);
 
-    canvas.drawCircle(Offset.zero, ballSize * 0.5, Paint()..color = palette.ballFill);
-    canvas.drawCircle(Offset.zero, ballSize * 0.5, Paint()
-      ..color = palette.ballBorder
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5);
+    // جسم الكرة
+    final ballRect = Rect.fromCircle(center: Offset.zero, radius: r);
+    canvas.drawCircle(
+      Offset.zero,
+      r,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.4),
+          radius: 0.95,
+          colors: [
+            Colors.white,
+            palette.ballFill,
+            const Color(0xFFE8E8E8),
+          ],
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(ballRect),
+    );
 
-    final patch = Paint()..color = palette.ballIcon.withValues(alpha: 0.85);
+    // بقع خماسية كلاسيكية
+    final patch = Paint()..color = palette.ballIcon.withValues(alpha: 0.9);
+    final patchStroke = Paint()
+      ..color = palette.ballIcon.withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    // مركز
+    _drawPentagon(canvas, Offset.zero, r * 0.22, patch, patchStroke);
     for (var i = 0; i < 5; i++) {
-      final a = i * math.pi * 2 / 5 + spin;
-      canvas.drawCircle(Offset(math.cos(a) * ballSize * 0.22, math.sin(a) * ballSize * 0.22), ballSize * 0.11, patch);
+      final a = i * math.pi * 2 / 5 - math.pi / 2 + spin * 0.15;
+      final p = Offset(math.cos(a) * r * 0.48, math.sin(a) * r * 0.48);
+      _drawPentagon(canvas, p, r * 0.16, patch, patchStroke);
     }
+
+    // حدود ولمعان
+    canvas.drawCircle(
+      Offset.zero,
+      r,
+      Paint()
+        ..color = palette.ballBorder
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(-r * 0.15, -r * 0.2), radius: r * 0.55),
+      -math.pi * 0.9,
+      math.pi * 0.7,
+      false,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round,
+    );
+
+    canvas.restore();
+  }
+
+  void _drawPentagon(Canvas canvas, Offset center, double radius, Paint fill, Paint stroke) {
+    final path = Path();
+    for (var i = 0; i < 5; i++) {
+      final a = -math.pi / 2 + i * math.pi * 2 / 5;
+      final p = Offset(center.dx + math.cos(a) * radius, center.dy + math.sin(a) * radius);
+      if (i == 0) {
+        path.moveTo(p.dx, p.dy);
+      } else {
+        path.lineTo(p.dx, p.dy);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, fill);
+    canvas.drawPath(path, stroke);
   }
 
   @override
   bool shouldRepaint(covariant _BallPainter old) => old.spin != spin || old.ballSize != ballSize;
 }
 
-/// خطوط منطقة الجزاء بمنظور بسيط.
+/// خطوط منطقة الجزاء + عشب مخطط واقعي.
 class PenaltyPitchMarkings extends StatelessWidget {
   const PenaltyPitchMarkings({super.key, required this.palette});
 
@@ -322,17 +384,44 @@ class _PitchMarkingsPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // شرائط عشب متناوبة
+    final stripeH = size.height / 14;
+    for (var i = 0; i < 14; i++) {
+      final y = i * stripeH;
+      final paint = Paint()
+        ..color = i.isEven
+            ? palette.grassLight.withValues(alpha: 0.55)
+            : palette.grassDark.withValues(alpha: 0.65);
+      canvas.drawRect(Rect.fromLTWH(0, y, size.width, stripeH + 0.5), paint);
+    }
+
+    // تدرج عمق نحو المرمى
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            palette.grassDeep.withValues(alpha: 0.35),
+            Colors.transparent,
+            palette.grassDeep.withValues(alpha: 0.15),
+          ],
+          stops: const [0.0, 0.45, 1.0],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
+    );
+
     final line = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+      ..color = palette.lineWhite
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
 
     final goalW = size.width * 0.92;
     final goalLeft = (size.width - goalW) / 2;
     final goalTop = size.height * 0.08;
     final goalH = size.height * 0.55;
 
-    // خط منطقة الجزاء
     final boxTop = goalTop + goalH;
     final boxBottom = size.height * 0.82;
     final boxInset = goalW * 0.08;
@@ -343,19 +432,26 @@ class _PitchMarkingsPainter extends CustomPainter {
       ..lineTo(goalLeft + goalW - boxInset, boxTop);
     canvas.drawPath(box, line);
 
+    // قوس الجزاء
+    final arcRect = Rect.fromCenter(
+      center: Offset(size.width * 0.5, boxBottom),
+      width: goalW * 0.42,
+      height: size.height * 0.16,
+    );
+    canvas.drawArc(arcRect, math.pi, math.pi, false, line);
+
     // نقطة الجزاء
     final spotY = size.height * 0.76;
     final spotX = size.width * 0.5;
-    canvas.drawCircle(Offset(spotX, spotY), 5, Paint()..color = Colors.white.withValues(alpha: 0.55));
-    canvas.drawCircle(Offset(spotX, spotY), 5, line..strokeWidth = 1.5);
+    canvas.drawCircle(Offset(spotX, spotY), 4.5, Paint()..color = palette.lineWhite);
+    canvas.drawCircle(Offset(spotX, spotY), 4.5, line..strokeWidth = 1.5);
 
-    // خطوط عشب
-    final stripe = Paint()..color = Colors.black.withValues(alpha: 0.04);
-    for (var y = goalTop; y < size.height; y += 18) {
-      if ((y ~/ 18).isEven) {
-        canvas.drawRect(Rect.fromLTWH(0, y, size.width, 9), stripe);
-      }
-    }
+    // خط المرمى
+    canvas.drawLine(
+      Offset(goalLeft, goalTop + goalH),
+      Offset(goalLeft + goalW, goalTop + goalH),
+      line..strokeWidth = 2.5,
+    );
   }
 
   @override

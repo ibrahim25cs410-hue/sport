@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/design_tokens.dart';
 import '../../theme/riyada_theme_extension.dart';
+import '../brand/riyada_icon_badge.dart';
 
 bool _preferBlur(BuildContext context) {
   if (MediaQuery.disableAnimationsOf(context)) return false;
@@ -108,7 +109,6 @@ class GlassFeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     return GlassSurface(
       onTap: onTap,
       borderRadius: DesignTokens.radius2xl,
@@ -117,15 +117,9 @@ class GlassFeatureCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: DesignTokens.neonGradient,
-              boxShadow: DesignTokens.glowShadow(c.primary, subtle: true),
-            ),
-            child: Icon(icon, color: DesignTokens.onNeon, size: 24),
+          RiyadaIconBadge(
+            size: RiyadaIconBadgeSize.md,
+            child: Icon(icon),
           ),
           const SizedBox(height: DesignTokens.spaceSm),
           Text(

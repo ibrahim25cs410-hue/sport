@@ -728,13 +728,13 @@ abstract class AppLocalizations {
   /// No description provided for @bookingSent.
   ///
   /// In en, this message translates to:
-  /// **'Booking request sent successfully'**
+  /// **'Booking submitted — waiting for the owner to approve'**
   String get bookingSent;
 
   /// No description provided for @bookingSentRef.
   ///
   /// In en, this message translates to:
-  /// **'Sent — reference: {code}'**
+  /// **'Waiting for owner approval — reference: {code}'**
   String bookingSentRef(String code);
 
   /// No description provided for @selectTime.

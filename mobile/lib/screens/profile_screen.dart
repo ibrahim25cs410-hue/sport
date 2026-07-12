@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../providers/auth_provider.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
@@ -212,8 +213,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _infoCard(Icons.email_outlined, l10n.email, user.email, ltr: true),
               _infoCard(Icons.phone_outlined, l10n.phone, user.phone),
               _infoCard(Icons.map_outlined, l10n.province, user.province),
-              if (ownerField != null) ...[
+              if (user.isOwner) ...[
                 const SizedBox(height: DesignTokens.spaceMd),
+                if (ownerField != null) ...[
                 SectionHeader(
                   title: l10n.yourField,
                   trailing: IconButton(
@@ -275,6 +277,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ],
                           ),
                   ),
+                ),
+                ],
+                const SizedBox(height: DesignTokens.spaceSm),
+                OutlinedButton.icon(
+                  onPressed: () => context.goAddField(),
+                  icon: const Icon(Icons.add_business_rounded),
+                  label: Text(l10n.addNewField),
                 ),
               ],
             ],

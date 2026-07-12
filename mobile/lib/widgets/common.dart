@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
 import '../utils/l10n_extension.dart';
+import 'brand/riyada_icon_badge.dart';
 
 export '../theme/riyada_components.dart';
 export 'brand/riyada_logo.dart';
@@ -70,14 +71,12 @@ class EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-                border: Border.all(color: accent.withValues(alpha: 0.2)),
-              ),
-              child: Icon(icon, size: 52, color: accent),
+            RiyadaIconBadge(
+              size: RiyadaIconBadgeSize.lg,
+              gradient: false,
+              backgroundColor: accent.withValues(alpha: 0.12),
+              foregroundColor: accent,
+              child: Icon(icon, size: 28),
             ),
             const SizedBox(height: 20),
             Text(title, style: theme.textTheme.titleLarge, textAlign: TextAlign.center),

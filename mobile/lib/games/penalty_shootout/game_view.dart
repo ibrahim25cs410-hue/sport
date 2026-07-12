@@ -338,19 +338,50 @@ class _GoalPitch extends StatelessWidget {
         return Stack(
           clipBehavior: Clip.none,
           children: [
+            // سماء
             Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [palette.pitchTop, palette.pitchBottom],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [palette.skyTop, palette.skyHorizon, palette.grassLight],
+                      stops: const [0.0, 0.28, 0.42],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
                 ),
               ),
             ),
-            Positioned.fill(child: PenaltyPitchMarkings(palette: palette)),
+            // عشب + خطوط
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(DesignTokens.radiusXl),
+                child: PenaltyPitchMarkings(palette: palette),
+              ),
+            ),
+            // إضاءة ملعب خفيفة
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              height: h * 0.35,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0, -0.6),
+                      radius: 1.1,
+                      colors: [
+                        Colors.white.withValues(alpha: palette.isDark ? 0.06 : 0.18),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Positioned(
               left: goalLeft,
               top: goalTop,
@@ -528,24 +559,76 @@ class _GoalPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final post = Paint()
-      ..color = palette.goalPost
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke;
+    final inset = 6.0;
+    final frame = Rect.fromLTWH(inset, inset, size.width - inset * 2, size.height - inset * 2);
 
+    // ظل المرمى على العشب
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(frame.left + 6, frame.bottom - 4, frame.width - 12, 10),
+        const Radius.circular(4),
+      ),
+      Paint()..color = Colors.black.withValues(alpha: 0.25),
+    );
+
+    // عمق الشبكة (خلف)
+    final back = frame.deflate(10).shift(const Offset(0, 6));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(back, const Radius.circular(4)),
+      Paint()..color = palette.goalNetBack,
+    );
+
+    // شبكة
     final net = Paint()
       ..color = palette.goalNet
-      ..strokeWidth = 1;
-
-    final r = RRect.fromRectAndRadius(Rect.fromLTWH(2, 2, size.width - 4, size.height - 4), const Radius.circular(8));
-    canvas.drawRRect(r, post);
-
-    for (var x = 12.0; x < size.width; x += 14) {
-      canvas.drawLine(Offset(x, 8), Offset(x, size.height - 8), net);
+      ..strokeWidth = 1.1;
+    for (var x = frame.left + 14; x < frame.right - 8; x += 11) {
+      canvas.drawLine(Offset(x, frame.top + 8), Offset(x - 4, frame.bottom - 6), net);
     }
-    for (var y = 12.0; y < size.height; y += 14) {
-      canvas.drawLine(Offset(8, y), Offset(size.width - 8, y), net);
+    for (var y = frame.top + 14; y < frame.bottom - 8; y += 11) {
+      canvas.drawLine(Offset(frame.left + 8, y), Offset(frame.right - 8, y + 3), net);
     }
+
+    // قوائم المرمى (سمك واقعي)
+    final postFill = Paint()..color = palette.goalPost;
+    final postEdge = Paint()
+      ..color = palette.goalPostShadow
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    // قائم أيسر
+    final leftPost = RRect.fromRectAndRadius(
+      Rect.fromLTWH(frame.left - 3, frame.top - 3, 10, frame.height + 6),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(leftPost, postFill);
+    canvas.drawRRect(leftPost, postEdge);
+
+    // قائم أيمن
+    final rightPost = RRect.fromRectAndRadius(
+      Rect.fromLTWH(frame.right - 7, frame.top - 3, 10, frame.height + 6),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(rightPost, postFill);
+    canvas.drawRRect(rightPost, postEdge);
+
+    // العارضة
+    final bar = RRect.fromRectAndRadius(
+      Rect.fromLTWH(frame.left - 3, frame.top - 3, frame.width + 6, 10),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(bar, postFill);
+    canvas.drawRRect(bar, postEdge);
+
+    // لمعان خفيف على العارضة
+    canvas.drawLine(
+      Offset(frame.left + 8, frame.top + 1),
+      Offset(frame.right - 8, frame.top + 1),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.55)
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   @override
