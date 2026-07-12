@@ -76,6 +76,10 @@ android {
             useLegacyPackaging = true
         }
     }
+
+    androidResources {
+        noCompress += "bin"
+    }
 }
 
 flutter {
