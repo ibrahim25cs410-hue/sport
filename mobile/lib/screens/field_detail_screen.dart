@@ -343,7 +343,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
           } else {
             final msg = value.referenceCode != null ? l10n.bookingSentRef(value.referenceCode!) : l10n.bookingSent;
             showAppSnackBar(context, msg);
-            ref.read(shellTabProvider.notifier).select(2);
+            ref.read(shellTabProvider.notifier).select(1); // حجوزاتي
             context.popResult();
           }
         case BookingErr(:final failure):

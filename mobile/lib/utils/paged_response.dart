@@ -3,16 +3,26 @@ List<T> unwrapPagedList<T>(
   dynamic data,
   T Function(Map<String, dynamic> json) fromJson,
 ) {
+  List<dynamic> raw;
   if (data is List) {
-    return data.map((e) => fromJson(e as Map<String, dynamic>)).toList();
-  }
-  if (data is Map<String, dynamic>) {
+    raw = data;
+  } else if (data is Map<String, dynamic>) {
     final items = data['items'];
-    if (items is List) {
-      return items.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+    if (items is! List) return const [];
+    raw = items;
+  } else {
+    return const [];
+  }
+  final out = <T>[];
+  for (final e in raw) {
+    if (e is! Map) continue;
+    try {
+      out.add(fromJson(Map<String, dynamic>.from(e)));
+    } catch (_) {
+      // تخطّي عنصر تالف بدل إسقاط القائمة كاملة
     }
   }
-  return const [];
+  return out;
 }
 
 bool pagedHasNextPage(dynamic data) {

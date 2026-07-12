@@ -44,28 +44,41 @@ class Booking {
       paymentStatus != 'pay_at_venue' &&
       paymentMethod.toLowerCase() != 'cash';
 
-  factory Booking.fromJson(Map<String, dynamic> json) => Booking(
-        id: asInt(json['id']) ?? 0,
-        referenceCode: json['referenceCode'] as String?,
-        fieldName: json['fieldName'] as String? ?? '',
-        fieldPhone: json['fieldPhone'] as String? ?? '',
-        fieldImage: json['fieldImage'] as String?,
-        fieldAddress: json['fieldAddress'] as String? ?? '',
-        startTime: DateTime.parse(json['startTime'] as String),
-        endTime: DateTime.parse(json['endTime'] as String),
-        hours: asInt(json['hours']) ?? 1,
-        totalPrice: asInt(json['totalPrice']) ?? 0,
-        status: json['status'] as String? ?? 'pending',
-        paymentStatus: json['paymentStatus'] as String? ?? 'paid',
-        paymentMethod: json['paymentMethod'] as String? ?? 'online',
-        remainingHours: (json['remainingHours'] as num?)?.toDouble() ?? 0,
-        canCancel: json['canCancel'] as bool? ?? false,
-      );
+  factory Booking.fromJson(Map<String, dynamic> json) {
+    final startRaw = json['startTime'];
+    final endRaw = json['endTime'];
+    final start = startRaw is String && startRaw.isNotEmpty
+        ? (DateTime.tryParse(startRaw) ?? DateTime.fromMillisecondsSinceEpoch(0))
+        : DateTime.fromMillisecondsSinceEpoch(0);
+    final hours = asInt(json['hours']) ?? 1;
+    final end = endRaw is String && endRaw.isNotEmpty
+        ? (DateTime.tryParse(endRaw) ?? start.add(Duration(hours: hours)))
+        : start.add(Duration(hours: hours));
+    return Booking(
+      id: asInt(json['id']) ?? 0,
+      referenceCode: json['referenceCode'] as String?,
+      fieldName: json['fieldName'] as String? ?? '',
+      fieldPhone: json['fieldPhone'] as String? ?? '',
+      fieldImage: json['fieldImage'] as String?,
+      fieldAddress: json['fieldAddress'] as String? ?? '',
+      startTime: start,
+      endTime: end,
+      hours: hours,
+      totalPrice: asInt(json['totalPrice']) ?? 0,
+      status: json['status'] as String? ?? 'pending',
+      paymentStatus: json['paymentStatus'] as String? ?? 'unpaid',
+      paymentMethod: json['paymentMethod'] as String? ?? 'online',
+      remainingHours: (json['remainingHours'] as num?)?.toDouble() ?? 0,
+      canCancel: json['canCancel'] as bool? ?? false,
+    );
+  }
 }
 
 class OwnerBooking {
   final int id;
   final String? referenceCode;
+  final int fieldId;
+  final String fieldName;
   final String userName;
   final String userPhone;
   final String userEmail;
@@ -77,6 +90,8 @@ class OwnerBooking {
   const OwnerBooking({
     required this.id,
     this.referenceCode,
+    this.fieldId = 0,
+    this.fieldName = '',
     required this.userName,
     required this.userPhone,
     required this.userEmail,
@@ -97,6 +112,8 @@ class OwnerBooking {
     return OwnerBooking(
       id: asInt(json['id']) ?? 0,
       referenceCode: json['referenceCode'] as String?,
+      fieldId: asInt(json['fieldId']) ?? 0,
+      fieldName: json['fieldName'] as String? ?? '',
       userName: json['userName'] as String? ?? '',
       userPhone: json['userPhone'] as String? ?? '',
       userEmail: json['userEmail'] as String? ?? '',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/booking/booking_result.dart';
@@ -145,9 +147,28 @@ class BookingActions {
     );
 
     if (result.isOk) {
-      _ref.invalidate(userBookingsProvider(_session));
+      final created = result.valueOrNull!;
+      final confirmed = Booking(
+        id: created.id,
+        referenceCode: created.referenceCode,
+        fieldName: fieldName,
+        fieldAddress: fieldAddress,
+        fieldPhone: fieldPhone,
+        startTime: startTime,
+        endTime: endTime,
+        hours: hours,
+        totalPrice: created.totalPrice > 0 ? created.totalPrice : quote.total,
+        status: 'pending',
+        paymentStatus: created.paymentStatus,
+        paymentMethod: created.paymentMethod,
+        remainingHours: hours.toDouble(),
+        canCancel: BookingPolicy.canCancel(startTime: startTime, status: 'pending'),
+      );
+      _ref.read(userBookingsProvider(_session).notifier).confirmCreated(confirmed);
+      unawaited(_ref.read(userBookingsProvider(_session).notifier).refreshPreservingData());
       _ref.invalidate(userStatsProvider(_session));
     } else {
+      // أزل الحجز المؤقت عند الفشل
       _ref.invalidate(userBookingsProvider(_session));
     }
 
@@ -168,10 +189,10 @@ class BookingActions {
     return result;
   }
 
-  Future<void> approveBooking(int bookingId) async {
+  Future<void> approveBooking(int bookingId, {String? referenceCode}) async {
     _ref.read(ownerDashboardProvider(_session).notifier).optimisticUpdateBookingStatus(bookingId, 'approved');
     try {
-      await _repo.approveBooking(bookingId);
+      await _repo.approveBooking(bookingId, referenceCode: referenceCode);
       _ref.invalidate(ownerDashboardProvider(_session));
     } catch (e) {
       _ref.invalidate(ownerDashboardProvider(_session));
@@ -179,10 +200,10 @@ class BookingActions {
     }
   }
 
-  Future<void> rejectBooking(int bookingId) async {
+  Future<void> rejectBooking(int bookingId, {String? referenceCode}) async {
     _ref.read(ownerDashboardProvider(_session).notifier).optimisticUpdateBookingStatus(bookingId, 'rejected');
     try {
-      await _repo.rejectBooking(bookingId);
+      await _repo.rejectBooking(bookingId, referenceCode: referenceCode);
       _ref.invalidate(ownerDashboardProvider(_session));
     } catch (e) {
       _ref.invalidate(ownerDashboardProvider(_session));

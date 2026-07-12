@@ -48,7 +48,10 @@ function createMemoryStore() {
       return clone(rec);
     },
     async findById(col, id) {
-      return clone(data[col].find((r) => r.id === Number(id)) || null);
+      const n = Number(id);
+      return clone(
+        data[col].find((r) => r.id === n || String(r.id) === String(id)) || null,
+      );
     },
     async findOne(col, pred) {
       return clone(data[col].find(pred) || null);
@@ -57,7 +60,8 @@ function createMemoryStore() {
       return clone(pred ? data[col].filter(pred) : data[col]);
     },
     async update(col, id, patch) {
-      const rec = data[col].find((r) => r.id === Number(id));
+      const n = Number(id);
+      const rec = data[col].find((r) => r.id === n || String(r.id) === String(id));
       if (!rec) return null;
       Object.assign(rec, patch);
       return clone(rec);
@@ -66,6 +70,17 @@ function createMemoryStore() {
       const n = data[col].length;
       data[col] = [];
       return n;
+    },
+    async deleteWhere(col, pred) {
+      const before = data[col].length;
+      data[col] = data[col].filter((r) => !pred(r));
+      return before - data[col].length;
+    },
+    async resetCounters() {
+      seq.users = 0;
+      seq.fields = 0;
+      seq.bookings = 0;
+      seq.notifications = 0;
     },
   };
 }
@@ -101,7 +116,12 @@ async function createMongoStore(uri) {
       return out(await models[col].create({ id, ...doc }));
     },
     async findById(col, id) {
-      return out(await models[col].findOne({ id: Number(id) }));
+      const n = Number(id);
+      if (Number.isFinite(n)) {
+        const byNum = out(await models[col].findOne({ id: n }));
+        if (byNum) return byNum;
+      }
+      return out(await models[col].findOne({ id: String(id) }));
     },
     async findOne(col, query) {
       return out(await models[col].findOne(query));
@@ -110,11 +130,31 @@ async function createMongoStore(uri) {
       return (await models[col].find(query || {})).map(out);
     },
     async update(col, id, patch) {
-      return out(await models[col].findOneAndUpdate({ id: Number(id) }, patch, { new: true }));
+      const n = Number(id);
+      if (Number.isFinite(n)) {
+        const byNum = out(await models[col].findOneAndUpdate({ id: n }, patch, { new: true }));
+        if (byNum) return byNum;
+      }
+      return out(await models[col].findOneAndUpdate({ id: String(id) }, patch, { new: true }));
     },
     async deleteAll(col) {
       const result = await models[col].deleteMany({});
       return result.deletedCount || 0;
+    },
+    async deleteWhere(col, pred) {
+      const all = await models[col].find({});
+      let n = 0;
+      for (const doc of all) {
+        const o = out(doc);
+        if (o && pred(o)) {
+          await models[col].deleteOne({ _id: doc._id });
+          n += 1;
+        }
+      }
+      return n;
+    },
+    async resetCounters() {
+      await Counter.deleteMany({});
     },
   };
 }
@@ -259,7 +299,7 @@ function endTimeOf(startIso, hours) {
 
 function userBookingDto(b, field) {
   return {
-    id: b.id,
+    id: Number(b.id),
     referenceCode: b.referenceCode || null,
     fieldName: field?.name || b.fieldName || '',
     fieldPhone: field?.phone || '',
@@ -277,10 +317,15 @@ function userBookingDto(b, field) {
   };
 }
 
-function ownerBookingDto(b, user) {
+function ownerBookingDto(b, user, field) {
+  const fieldKey = field != null
+    ? publicNumericId(field)
+    : (Number(b.fieldId) || 0);
   return {
-    id: b.id,
+    id: Number(b.id),
     referenceCode: b.referenceCode || null,
+    fieldId: fieldKey,
+    fieldName: field?.name || b.fieldName || '',
     userName: user?.name || '',
     userPhone: user?.phone || '',
     userEmail: user?.email || '',
@@ -302,9 +347,45 @@ function paged(items, page, limit) {
 }
 
 async function notify(userId, title, message) {
+  const uid = Number(userId);
+  if (!Number.isFinite(uid) || uid <= 0) return;
   await store.insert('notifications', {
-    userId: Number(userId), title, message, isRead: false, createdAt: new Date().toISOString(),
+    userId: uid, title, message, isRead: false, createdAt: new Date().toISOString(),
   });
+}
+
+/** إيجاد حجز بالمعرّف الرقمي أو الرقم المرجعي. */
+async function resolveBooking(bookingId, referenceCode) {
+  const ref = String(referenceCode || '').trim().replace(/^#/, '');
+  if (ref) {
+    const all = await store.find('bookings');
+    const byRef = all.find((b) => String(b.referenceCode || '') === ref);
+    if (byRef) return byRef;
+  }
+  if (bookingId == null || bookingId === '' || bookingId === 0 || bookingId === '0') {
+    return null;
+  }
+  const byId = await store.findById('bookings', bookingId);
+  if (byId) return byId;
+  const all = await store.find('bookings');
+  const s = String(bookingId).trim().replace(/^#/, '');
+  return all.find((b) => sameId(b.id, bookingId) || String(b.referenceCode || '') === s) || null;
+}
+
+/** مفاتيح الملعب المحتملة (id الحقيقي + هاش Flutter). */
+function fieldKeys(field) {
+  const keys = new Set();
+  if (field == null) return keys;
+  if (field.id != null) keys.add(String(field.id));
+  const n = Number(field.id);
+  if (Number.isFinite(n) && n > 0) keys.add(String(n));
+  keys.add(String(publicNumericId(field)));
+  keys.add(String(flutterStableId(field)));
+  return keys;
+}
+
+function bookingBelongsToField(b, field) {
+  return fieldKeys(field).has(String(b.fieldId));
 }
 
 /* ================================================================== */
@@ -404,20 +485,55 @@ app.get('/api/fields', optionalAuth, async (req, res) => {
   res.json(paged(list, req.query.page, req.query.limit));
 });
 
-/** حذف كل الملاعب (طلب صريح من الإدارة) — يحتاج تأكيد في الجسم. */
+/** حذف كل الملاعب والحجوزات (طلب صريح من الإدارة). */
 app.post('/api/admin/clear-fields', auth, async (req, res) => {
   try {
     if (req.body?.confirm !== 'DELETE_ALL_FIELDS') {
       return res.status(400).json({ message: 'أرسل confirm: DELETE_ALL_FIELDS' });
     }
     const deleted = await store.deleteAll('fields');
-    // الحجوزات القديمة تبقى لكن بدون ملاعب ظاهرة
-    return res.json({ ok: true, deleted });
+    const deletedBookings = await store.deleteAll('bookings');
+    return res.json({ ok: true, deleted, deletedBookings });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: 'فشل حذف الملاعب' });
   }
 });
+
+/** مسح كامل للإطلاق: مستخدمين + ملاعب + حجوزات + إشعارات. */
+app.post('/api/admin/clear-all', async (req, res) => {
+  try {
+    const secret = process.env.LAUNCH_WIPE_SECRET || 'RIYADA_LAUNCH_WIPE';
+    if (req.body?.confirm !== 'CLEAR_ALL_LAUNCH' || req.body?.secret !== secret) {
+      return res.status(400).json({ message: 'تأكيد غير صحيح' });
+    }
+    const result = await wipeAllAppData('api');
+    return res.json({ ok: true, ...result });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: 'فشل المسح الكامل' });
+  }
+});
+
+async function wipeAllAppData(reason) {
+  const deletedBookings = await store.deleteAll('bookings');
+  const deletedFields = await store.deleteAll('fields');
+  const deletedUsers = await store.deleteAll('users');
+  const deletedNotifications = await store.deleteAll('notifications');
+  if (typeof store.resetCounters === 'function') {
+    await store.resetCounters();
+  }
+  await store.insert('notifications', {
+    userId: 0,
+    title: '__launch_clean_slate_v1__',
+    message: `wiped via ${reason}: users=${deletedUsers} fields=${deletedFields} bookings=${deletedBookings} notifs=${deletedNotifications}`,
+    isRead: true,
+  });
+  console.log(
+    `مسح الإطلاق (${reason}): users=${deletedUsers} fields=${deletedFields} bookings=${deletedBookings} notifications=${deletedNotifications}`,
+  );
+  return { deletedUsers, deletedFields, deletedBookings, deletedNotifications };
+}
 
 app.get('/api/fields/:id', auth, async (req, res) => {
   const f = await resolveField(req.params.id);
@@ -536,11 +652,17 @@ app.post('/api/bookings', auth, async (req, res) => {
     createdAt: new Date().toISOString(),
   });
   await notify(
-    field.ownerId,
+    Number(field.ownerId) || 0,
     'طلب حجز جديد',
     method === 'cash'
       ? `طلب حجز نقدي على ${field.name} — بانتظار موافقتك`
       : `طلب حجز على ${field.name}`,
+  );
+  // إشعار داخل التطبيق للمستخدم أيضاً
+  await notify(
+    req.user.id,
+    'تم إرسال طلب الحجز',
+    `حجزك على ${field.name} بانتظار موافقة صاحب الملعب`,
   );
 
   res.status(201).json({
@@ -556,35 +678,60 @@ app.post('/api/bookings', auth, async (req, res) => {
   });
 });
 
-app.get('/api/bookings/user/:userId', auth, async (req, res) => {
-  const list = await bookingsByUser(req.params.userId);
-  const active = list.filter((b) => b.status === 'pending' || b.status === 'approved');
-  const fieldsCache = {};
-  const items = [];
-  for (const b of active.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
-    fieldsCache[b.fieldId] ??= await store.findById('fields', b.fieldId);
-    items.push(userBookingDto(b, fieldsCache[b.fieldId]));
+async function listUserBookings(userId, { activeOnly = false, page, limit } = {}) {
+  let list = await bookingsByUser(userId);
+  if (activeOnly) {
+    list = list.filter((b) => b.status === 'pending' || b.status === 'approved');
   }
-  res.json(paged(items, req.query.page, req.query.limit));
-});
-
-app.get('/api/bookings/user/:userId/history', auth, async (req, res) => {
-  const list = await bookingsByUser(req.params.userId);
   const fieldsCache = {};
   const items = [];
   for (const b of list.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
-    fieldsCache[b.fieldId] ??= await store.findById('fields', b.fieldId);
+    if (!Number.isFinite(Number(b.id)) || Number(b.id) <= 0) continue;
+    fieldsCache[b.fieldId] ??= await store.findById('fields', b.fieldId)
+      ?? (await allFields()).find((f) => bookingBelongsToField(b, f))
+      ?? null;
     items.push(userBookingDto(b, fieldsCache[b.fieldId]));
   }
-  res.json(paged(items, req.query.page, req.query.limit));
+  return paged(items, page, limit);
+}
+
+app.get('/api/bookings/user/me', auth, async (req, res) => {
+  res.json(await listUserBookings(Number(req.user.id), {
+    activeOnly: true, page: req.query.page, limit: req.query.limit,
+  }));
+});
+
+app.get('/api/bookings/user/me/history', auth, async (req, res) => {
+  res.json(await listUserBookings(Number(req.user.id), {
+    page: req.query.page, limit: req.query.limit,
+  }));
+});
+
+app.get('/api/bookings/user/:userId', auth, async (req, res) => {
+  // دائماً من التوكن — يتجنب mismatch معرّف التطبيق (stableId)
+  const uid = (req.user.role === 'admin' && req.params.userId)
+    ? Number(req.params.userId)
+    : Number(req.user.id);
+  res.json(await listUserBookings(uid, {
+    activeOnly: true, page: req.query.page, limit: req.query.limit,
+  }));
+});
+
+app.get('/api/bookings/user/:userId/history', auth, async (req, res) => {
+  const uid = (req.user.role === 'admin' && req.params.userId)
+    ? Number(req.params.userId)
+    : Number(req.user.id);
+  res.json(await listUserBookings(uid, {
+    page: req.query.page, limit: req.query.limit,
+  }));
 });
 
 app.post('/api/bookings/cancel', auth, async (req, res) => {
-  const { bookingId } = req.body || {};
-  const b = await store.findById('bookings', bookingId);
+  const { bookingId, referenceCode } = req.body || {};
+  const b = await resolveBooking(bookingId, referenceCode);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
   if (!sameId(b.userId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
-  await store.update('bookings', bookingId, { status: 'cancelled' });
+  await store.update('bookings', b.id, { status: 'cancelled' });
   await notify(b.ownerId, 'إلغاء حجز', 'قام المستخدم بإلغاء حجز');
   res.json({ message: 'تم الإلغاء', tier: 'free', penaltyIqd: 0, ownerShareIqd: 0, platformShareIqd: 0 });
 });
@@ -592,15 +739,30 @@ app.post('/api/bookings/cancel', auth, async (req, res) => {
 async function buildOwnerDashboard(ownerId) {
   const owned = await fieldsByOwner(ownerId);
   const field = owned[0] || null;
-  const list = await bookingsByOwner(ownerId);
+  // فقط حجوزات ملاعب هذا المالك — لا تُدمج حجوزات ملاعب أخرى / يتيمة
+  const allBookings = await store.find('bookings');
+  const list = allBookings.filter((b) => {
+    if (!Number.isFinite(Number(b.id)) || Number(b.id) <= 0) return false;
+    // فقط حجوزات ملاعب هذا المالك — لا حجوزات ملاعب أخرى أو يتيمة
+    return owned.some((f) => bookingBelongsToField(b, f));
+  });
   const usersCache = {};
   const bookings = [];
+  const byField = owned.map((f) => ({
+    field: publicField(f),
+    bookings: [],
+  }));
   let totalRevenue = 0;
   let pendingCount = 0;
   for (const b of list.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
     try {
+      const f = owned.find((of) => bookingBelongsToField(b, of));
       usersCache[b.userId] ??= await store.findById('users', b.userId);
-      bookings.push(ownerBookingDto(b, usersCache[b.userId]));
+      const dto = ownerBookingDto(b, usersCache[b.userId], f);
+      bookings.push(dto);
+      const bucket = byField.find((x) => sameId(x.field.id, dto.fieldId)
+        || (f && sameId(x.field.id, publicNumericId(f))));
+      if (bucket) bucket.bookings.push(dto);
       if (b.status === 'approved') totalRevenue += Number(b.totalPrice) || 0;
       if (b.status === 'pending') pendingCount++;
     } catch (e) {
@@ -610,6 +772,7 @@ async function buildOwnerDashboard(ownerId) {
   const appCommission = Math.round(totalRevenue * COMMISSION_RATE);
   return {
     field: field ? publicField(field) : null,
+    fields: byField,
     bookings,
     totalRevenue,
     appCommission,
@@ -652,11 +815,14 @@ app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
 });
 
 app.post('/api/bookings/approve', auth, async (req, res) => {
-  const { bookingId } = req.body || {};
-  const b = await store.findById('bookings', bookingId);
+  const { bookingId, referenceCode } = req.body || {};
+  const b = await resolveBooking(bookingId, referenceCode);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
-  if (!sameId(b.ownerId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
-  await store.update('bookings', bookingId, { status: 'approved' });
+  const owned = await fieldsByOwner(req.user.id);
+  const ownsBooking = owned.some((f) => bookingBelongsToField(b, f))
+    || sameId(b.ownerId, req.user.id);
+  if (!ownsBooking) return res.status(403).json({ message: 'غير مصرح' });
+  await store.update('bookings', b.id, { status: 'approved', ownerId: Number(req.user.id) });
   await notify(
     b.userId,
     'تمت الموافقة على حجزك',
@@ -668,11 +834,14 @@ app.post('/api/bookings/approve', auth, async (req, res) => {
 });
 
 app.post('/api/bookings/reject', auth, async (req, res) => {
-  const { bookingId } = req.body || {};
-  const b = await store.findById('bookings', bookingId);
+  const { bookingId, referenceCode } = req.body || {};
+  const b = await resolveBooking(bookingId, referenceCode);
   if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
-  if (!sameId(b.ownerId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
-  await store.update('bookings', bookingId, { status: 'rejected' });
+  const owned = await fieldsByOwner(req.user.id);
+  const ownsBooking = owned.some((f) => bookingBelongsToField(b, f))
+    || sameId(b.ownerId, req.user.id);
+  if (!ownsBooking) return res.status(403).json({ message: 'غير مصرح' });
+  await store.update('bookings', b.id, { status: 'rejected', ownerId: Number(req.user.id) });
   await notify(b.userId, 'تم الرفض', 'عذراً، تم رفض حجزك');
   res.json({ ok: true });
 });
@@ -690,8 +859,11 @@ app.post('/api/bookings/pay/verify', auth, (_req, res) => {
 /* ================================================================== */
 
 app.get('/api/stats/user/:userId', auth, async (req, res) => {
-  const list = await bookingsByUser(req.params.userId);
-  const notifs = await notificationsByUser(req.params.userId);
+  const uid = (req.user.role === 'admin' && req.params.userId)
+    ? Number(req.params.userId)
+    : Number(req.user.id);
+  const list = await bookingsByUser(uid);
+  const notifs = await notificationsByUser(uid);
   const now = new Date();
   res.json({
     upcomingBookings: list.filter((b) => b.status === 'approved' && new Date(b.startTime) > now).length,
@@ -701,8 +873,20 @@ app.get('/api/stats/user/:userId', auth, async (req, res) => {
   });
 });
 
+app.get('/api/notifications/me', auth, async (req, res) => {
+  const list = (await notificationsByUser(Number(req.user.id)))
+    .filter((n) => !String(n.title || '').startsWith('__'))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map((n) => ({ id: n.id, title: n.title, message: n.message, isRead: n.isRead, createdAt: n.createdAt }));
+  res.json(paged(list, req.query.page, req.query.limit));
+});
+
 app.get('/api/notifications/:userId', auth, async (req, res) => {
-  const list = (await notificationsByUser(req.params.userId))
+  const uid = (req.user.role === 'admin' && req.params.userId)
+    ? Number(req.params.userId)
+    : Number(req.user.id);
+  const list = (await notificationsByUser(uid))
+    .filter((n) => !String(n.title || '').startsWith('__'))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .map((n) => ({ id: n.id, title: n.title, message: n.message, isRead: n.isRead, createdAt: n.createdAt }));
   res.json(paged(list, req.query.page, req.query.limit));
@@ -805,23 +989,17 @@ async function start() {
   if (MONGODB_URI) { store = await createMongoStore(MONGODB_URI); console.log('التخزين: MongoDB'); }
   else { store = createMemoryStore(); console.log('التخزين: في الذاكرة (in-memory)'); }
 
-  // حذف لمرة واحدة للملاعب التجريبية الحالية عند أول تشغيل بعد هذا التحديث
+  // مسح كامل لمرة واحدة قبل الإطلاق — يحذف المستخدمين الوهميين والملاعب والحجوزات
+  // بعدها يمكن التسجيل من جديد بنفس البريد دون «الحساب موجود»
   try {
     const flag = isMongo()
-      ? await store.findOne('notifications', { title: '__cleared_all_fields_v1__' })
-      : await store.findOne('notifications', (n) => n.title === '__cleared_all_fields_v1__');
+      ? await store.findOne('notifications', { title: '__launch_clean_slate_v1__' })
+      : await store.findOne('notifications', (n) => n.title === '__launch_clean_slate_v1__');
     if (!flag) {
-      const deleted = await store.deleteAll('fields');
-      await store.insert('notifications', {
-        userId: 0,
-        title: '__cleared_all_fields_v1__',
-        message: `deleted ${deleted} fields`,
-        isRead: true,
-      });
-      console.log(`تم حذف ${deleted} ملعب من قاعدة البيانات`);
+      await wipeAllAppData('startup');
     }
   } catch (e) {
-    console.error('تحذير: فشل تنظيف الملاعب:', e.message || e);
+    console.error('تحذير: فشل مسح الإطلاق:', e.message || e);
   }
 
   app.listen(PORT, () => console.log(`الخادم يعمل على المنفذ ${PORT}`));

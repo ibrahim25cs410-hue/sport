@@ -80,6 +80,15 @@ class OwnerBookingCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (booking.fieldName.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            booking.fieldName,
+                            style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                         const SizedBox(height: 2),
                         Row(
                           children: [

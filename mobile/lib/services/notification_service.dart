@@ -7,7 +7,7 @@ class NotificationService {
   final ApiClient _client;
 
   Future<List<AppNotification>> getForUser(int userId, {int page = 1, int limit = 30}) async {
-    final res = await _client.dio.get('/notifications/$userId', queryParameters: {'page': page, 'limit': limit});
+    final res = await _client.dio.get('/notifications/me', queryParameters: {'page': page, 'limit': limit});
     return unwrapPagedList(res.data, AppNotification.fromJson);
   }
 

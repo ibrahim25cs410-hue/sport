@@ -65,7 +65,7 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
         _ => dash.bookings.where((b) => b.status == 'pending' || b.status == 'approved').toList(),
       };
 
-  Future<void> _onAction(int id, bool approve) async {
+  Future<void> _onAction(OwnerBooking booking, bool approve) async {
     if (!approve) {
       final l10n = context.l10n;
       final ok = await showDialog<bool>(
@@ -89,14 +89,14 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
     final key = watchSessionKey(ref);
     if (key == null) return;
 
-    setState(() => _actionBookingId = id);
+    setState(() => _actionBookingId = booking.id);
     final l10n = context.l10n;
     try {
       final actions = ref.read(bookingActionsProvider(key));
       if (approve) {
-        await actions.approveBooking(id);
+        await actions.approveBooking(booking.id, referenceCode: booking.referenceCode);
       } else {
-        await actions.rejectBooking(id);
+        await actions.rejectBooking(booking.id, referenceCode: booking.referenceCode);
       }
       if (!mounted) return;
       showAppSnackBar(context, approve ? l10n.bookingApprovedSnack : l10n.bookingRejectedSnack);
@@ -207,8 +207,8 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                         child: OwnerBookingsList(
                           bookings: filtered,
                           actionBookingId: _actionBookingId,
-                          onApprove: (id) => _onAction(id, true),
-                          onReject: (id) => _onAction(id, false),
+                          onApprove: (b) => _onAction(b, true),
+                          onReject: (b) => _onAction(b, false),
                           refreshColor: c.primary,
                           onRefresh: () async => ref.invalidate(ownerDashboardProvider(key)),
                           emptyWidget: EmptyState(

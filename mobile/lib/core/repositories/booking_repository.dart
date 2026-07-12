@@ -94,9 +94,11 @@ class BookingRepository {
 
   Future<OwnerDashboard> getOwnerDashboard(int ownerId) => _remote.getOwnerDashboard(ownerId);
 
-  Future<void> approveBooking(int bookingId) => _remote.approveBooking(bookingId);
+  Future<void> approveBooking(int bookingId, {String? referenceCode}) =>
+      _remote.approveBooking(bookingId, referenceCode: referenceCode);
 
-  Future<void> rejectBooking(int bookingId) => _remote.rejectBooking(bookingId);
+  Future<void> rejectBooking(int bookingId, {String? referenceCode}) =>
+      _remote.rejectBooking(bookingId, referenceCode: referenceCode);
 
   Future<UserStats> getUserStats(int userId) => _remote.getUserStats(userId);
 

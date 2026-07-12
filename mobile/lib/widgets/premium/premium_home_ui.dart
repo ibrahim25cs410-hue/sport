@@ -197,75 +197,135 @@ class _PremiumHeroBannerState extends State<PremiumHeroBanner> {
       (l10n.heroBookSeconds, l10n.heroSlide1Subtitle, DesignTokens.stadiumNightGradient),
       (l10n.heroSlide2Title, l10n.heroSlide2Subtitle, DesignTokens.fieldGradients[1]),
     ];
+    const radius = DesignTokens.radiusXl; // 24
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(DesignTokens.spaceLg, DesignTokens.spaceLg, DesignTokens.spaceLg, DesignTokens.spaceSm),
       child: SizedBox(
-        height: 200,
+        height: 212,
         child: Stack(
+          clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
           children: [
             PageView.builder(
               controller: _page,
+              clipBehavior: Clip.none,
               onPageChanged: (i) => setState(() => _index = i),
               itemCount: slides.length,
               itemBuilder: (context, i) {
                 final (title, subtitle, colors) = slides[i];
-                const radius = DesignTokens.radiusXl; // 24 — smooth modern card corners
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(radius),
-                    boxShadow: DesignTokens.glowShadow(DesignTokens.primaryTeal, elevated: true),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(radius),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [colors[0], colors[1]],
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(radius),
+                      boxShadow: [
+                        BoxShadow(
+                          color: DesignTokens.primaryTeal.withValues(alpha: 0.28),
+                          blurRadius: 28,
+                          offset: const Offset(0, 12),
+                        ),
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.22),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(radius),
+                        side: BorderSide(
+                          color: DesignTokens.primaryTeal.withValues(alpha: 0.45),
+                          width: 1.4,
                         ),
                       ),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          CustomPaint(painter: _StadiumNightPainter()),
-                          Padding(
-                            padding: const EdgeInsets.all(DesignTokens.spaceXl),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.15),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  subtitle,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 13, height: 1.35),
-                                ),
-                                const Spacer(),
-                                FilledButton(
-                                  onPressed: widget.onBook,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: DesignTokens.primaryTeal,
-                                    foregroundColor: DesignTokens.onNeon,
-                                    minimumSize: const Size(0, 44),
-                                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusLg)),
-                                  ),
-                                  child: Text(l10n.bookNow, style: const TextStyle(fontWeight: FontWeight.w800)),
-                                ),
-                              ],
-                            ),
+                      clipBehavior: Clip.antiAlias,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [colors[0], colors[1]],
                           ),
-                        ],
+                        ),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            CustomPaint(painter: _StadiumNightPainter()),
+                            // هالة ناعمة دائرية خلف زر الحجز (اتجاه البداية RTL/LTR)
+                            PositionedDirectional(
+                              start: -28,
+                              bottom: -40,
+                              child: IgnorePointer(
+                                child: Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        DesignTokens.primaryTeal.withValues(alpha: 0.42),
+                                        DesignTokens.primaryTeal.withValues(alpha: 0.12),
+                                        DesignTokens.primaryTeal.withValues(alpha: 0),
+                                      ],
+                                      stops: const [0.0, 0.45, 1.0],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(DesignTokens.spaceXl),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    subtitle,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.88),
+                                      fontSize: 13,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  FilledButton(
+                                    onPressed: widget.onBook,
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: DesignTokens.primaryTeal,
+                                      foregroundColor: DesignTokens.onNeon,
+                                      minimumSize: const Size(0, 44),
+                                      padding: const EdgeInsets.symmetric(horizontal: 26),
+                                      elevation: 0,
+                                      shadowColor: DesignTokens.primaryTeal.withValues(alpha: 0.5),
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    child: Text(
+                                      l10n.bookNow,
+                                      style: const TextStyle(fontWeight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -284,7 +344,14 @@ class _PremiumHeroBannerState extends State<PremiumHeroBanner> {
                   decoration: BoxDecoration(
                     color: active ? DesignTokens.primaryTeal : Colors.white.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(4),
-                    boxShadow: active ? DesignTokens.glowShadow(DesignTokens.primaryTeal, subtle: true) : null,
+                    boxShadow: active
+                        ? [
+                            BoxShadow(
+                              color: DesignTokens.primaryTeal.withValues(alpha: 0.45),
+                              blurRadius: 8,
+                            ),
+                          ]
+                        : null,
                   ),
                 );
               }),
@@ -299,20 +366,30 @@ class _PremiumHeroBannerState extends State<PremiumHeroBanner> {
 class _StadiumNightPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final flood = Paint()..color = Colors.white.withValues(alpha: 0.06);
-    for (var x = 0.0; x < size.width; x += 28) {
-      canvas.drawLine(Offset(x, 0), Offset(x + 14, size.height * 0.45), flood);
+    final flood = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    for (var x = 0.0; x < size.width; x += 32) {
+      canvas.drawLine(Offset(x, 0), Offset(x + 18, size.height * 0.42), flood);
     }
-    final pitch = Paint()..color = Colors.black.withValues(alpha: 0.25);
+    final pitch = Paint()..color = Colors.black.withValues(alpha: 0.22);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.15, size.height * 0.35, size.width * 0.7, size.height * 0.45),
-        const Radius.circular(16),
+        Rect.fromLTWH(size.width * 0.14, size.height * 0.34, size.width * 0.72, size.height * 0.46),
+        const Radius.circular(20),
       ),
       pitch,
     );
-    final ball = Paint()..color = Colors.white.withValues(alpha: 0.12);
-    canvas.drawCircle(Offset(size.width * 0.78, size.height * 0.72), 36, ball);
+    // دائرة ضوء عامة ناعمة في الأسفل — بدون إطار حاد
+    final glow = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF2EE6A6).withValues(alpha: 0.16),
+          const Color(0xFF2EE6A6).withValues(alpha: 0),
+        ],
+      ).createShader(Rect.fromCircle(center: Offset(size.width * 0.5, size.height * 0.92), radius: 90));
+    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.92), 90, glow);
   }
 
   @override

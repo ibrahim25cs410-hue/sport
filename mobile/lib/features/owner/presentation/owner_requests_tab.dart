@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/booking_actions_provider.dart';
 import '../../../core/utils/session_key_helper.dart';
+import '../../../models/booking.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/riyada_theme_extension.dart';
@@ -26,17 +27,17 @@ class _OwnerRequestsTabState extends ConsumerState<OwnerRequestsTab> with Automa
   @override
   bool get wantKeepAlive => true;
 
-  Future<void> _action(int id, bool approve) async {
+  Future<void> _action(OwnerBooking booking, bool approve) async {
     final key = watchSessionKey(ref);
     if (key == null) return;
-    setState(() => _busyId = id);
+    setState(() => _busyId = booking.id);
     final l10n = context.l10n;
     try {
       final actions = ref.read(bookingActionsProvider(key));
       if (approve) {
-        await actions.approveBooking(id);
+        await actions.approveBooking(booking.id, referenceCode: booking.referenceCode);
       } else {
-        await actions.rejectBooking(id);
+        await actions.rejectBooking(booking.id, referenceCode: booking.referenceCode);
       }
       if (mounted) showAppSnackBar(context, approve ? l10n.bookingApprovedSnack : l10n.bookingRejectedSnack);
     } catch (e) {
@@ -75,8 +76,8 @@ class _OwnerRequestsTabState extends ConsumerState<OwnerRequestsTab> with Automa
               : OwnerBookingsList(
               bookings: pending,
               actionBookingId: _busyId,
-              onApprove: (id) => _action(id, true),
-              onReject: (id) => _action(id, false),
+              onApprove: (b) => _action(b, true),
+              onReject: (b) => _action(b, false),
               refreshColor: c.primary,
               onRefresh: refresh,
               emptyWidget: ListView(

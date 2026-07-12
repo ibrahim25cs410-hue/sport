@@ -115,7 +115,7 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
     _invalidateData();
   }
 
-  Future<void> _action(int id, bool approve) async {
+  Future<void> _action(OwnerBooking booking, bool approve) async {
     if (!approve) {
       final l10n = context.l10n;
       final ok = await showDialog<bool>(
@@ -136,16 +136,16 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
       if (ok != true || !mounted) return;
     }
 
-    setState(() => _actionBookingId = id);
+    setState(() => _actionBookingId = booking.id);
     final l10n = context.l10n;
     final key = _sessionKey;
     if (key == null) return;
     try {
       final actions = ref.read(bookingActionsProvider(key));
       if (approve) {
-        await actions.approveBooking(id);
+        await actions.approveBooking(booking.id, referenceCode: booking.referenceCode);
       } else {
-        await actions.rejectBooking(id);
+        await actions.rejectBooking(booking.id, referenceCode: booking.referenceCode);
       }
       if (!mounted) return;
       showAppSnackBar(context, approve ? l10n.bookingApprovedSnack : l10n.bookingRejectedSnack);
@@ -317,8 +317,8 @@ class _OwnerHomeScreenState extends ConsumerState<OwnerHomeScreen> with WidgetsB
                   return OwnerBookingCard(
                     booking: b,
                     busy: busy,
-                    onApprove: () => _action(b.id, true),
-                    onReject: () => _action(b.id, false),
+                    onApprove: () => _action(b, true),
+                    onReject: () => _action(b, false),
                   );
                 },
                 childCount: filtered.length,

@@ -51,8 +51,18 @@ class UserBookingsNotifier extends FamilyAsyncNotifier<List<Booking>, UserSessio
 
   void optimisticPrepend(Booking booking) {
     final current = state.valueOrNull;
-    if (current == null) return;
+    if (current == null) {
+      state = AsyncData([booking]);
+      return;
+    }
     state = AsyncData([booking, ...current]);
+  }
+
+  /// بعد نجاح الإنشاء: استبدال الحجوزات المؤقتة بالحجز الحقيقي دون مسح القائمة.
+  void confirmCreated(Booking booking) {
+    final current = state.valueOrNull ?? <Booking>[];
+    final cleaned = current.where((b) => b.id > 0 && b.id != booking.id).toList();
+    state = AsyncData([booking, ...cleaned]);
   }
 
   void optimisticUpdateStatus(int bookingId, String status) {
@@ -72,7 +82,13 @@ class UserBookingsNotifier extends FamilyAsyncNotifier<List<Booking>, UserSessio
           .read(bookingRepositoryProvider(arg.client))
           .getUserBookings(arg.userId, page: 1, limit: defaultPageSize);
       _hasMore = inferHasMore(data.length, defaultPageSize);
-      state = AsyncData(data);
+      // إن رجع الخادم فارغاً وما زال عندنا حجوزات مؤكدة محلياً — لا تمسحها
+      // (يحمي من سباق /me قبل اكتمال النشر أو تأخير قاعدة البيانات)
+      if (data.isEmpty && previous != null && previous.any((b) => b.id > 0)) {
+        state = AsyncData(previous.where((b) => b.id > 0).toList());
+      } else {
+        state = AsyncData(data);
+      }
     } catch (e, st) {
       if (previous != null) {
         state = AsyncData(previous);

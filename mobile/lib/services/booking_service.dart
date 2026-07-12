@@ -60,12 +60,12 @@ class BookingService {
   }
 
   Future<List<Booking>> getUserBookings(int userId, {int page = 1, int limit = defaultPageSize}) async {
-    final res = await _api.dio.get('/bookings/user/$userId', queryParameters: {'page': page, 'limit': limit});
+    final res = await _api.dio.get('/bookings/user/me', queryParameters: {'page': page, 'limit': limit});
     return unwrapPagedList(res.data, Booking.fromJson);
   }
 
   Future<List<Booking>> getBookingHistory(int userId, {int page = 1, int limit = defaultPageSize}) async {
-    final res = await _api.dio.get('/bookings/user/$userId/history', queryParameters: {'page': page, 'limit': limit});
+    final res = await _api.dio.get('/bookings/user/me/history', queryParameters: {'page': page, 'limit': limit});
     return unwrapPagedList(res.data, Booking.fromJson);
   }
 
@@ -131,12 +131,18 @@ class BookingService {
     return OwnerDashboard.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<void> approveBooking(int bookingId) async {
-    await _api.dio.post('/bookings/approve', data: {'bookingId': bookingId});
+  Future<void> approveBooking(int bookingId, {String? referenceCode}) async {
+    await _api.dio.post('/bookings/approve', data: {
+      'bookingId': bookingId,
+      if (referenceCode != null && referenceCode.isNotEmpty) 'referenceCode': referenceCode,
+    });
   }
 
-  Future<void> rejectBooking(int bookingId) async {
-    await _api.dio.post('/bookings/reject', data: {'bookingId': bookingId});
+  Future<void> rejectBooking(int bookingId, {String? referenceCode}) async {
+    await _api.dio.post('/bookings/reject', data: {
+      'bookingId': bookingId,
+      if (referenceCode != null && referenceCode.isNotEmpty) 'referenceCode': referenceCode,
+    });
   }
 
   Future<UserStats> getUserStats(int userId) async {

@@ -87,7 +87,7 @@ class _NewBookingTabState extends ConsumerState<NewBookingTab> with AutomaticKee
             _step = 0;
             _slot = null;
           });
-          ref.read(shellTabProvider.notifier).select(2);
+          ref.read(shellTabProvider.notifier).select(1); // حجوزاتي
         case BookingErr(:final failure):
           showAppWarningSnackBar(context, bookingFailureMessage(l10n, failure));
       }
