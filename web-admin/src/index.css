@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f2f8f3;
+  --ink: #0c1f13;
+  --muted: #4a6354;
+  --line: #c2dec8;
+  --panel: #ffffff;
+  --accent: #2d6a3e;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans Arabic', Tahoma, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgba(61, 133, 80, 0.16), transparent 55%),
+    radial-gradient(900px 420px at 0% 100%, rgba(220, 207, 184, 0.45), transparent 50%),
+    var(--bg);
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-pitch-200/80 bg-white/90 shadow-panel;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-pitch-700 text-white hover:bg-pitch-800;
+  }
+  .btn-ghost {
+    @apply btn bg-pitch-50 text-pitch-800 hover:bg-pitch-100;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-warn {
+    @apply btn bg-amber-500 text-white hover:bg-amber-600;
+  }
+  .input {
+    @apply w-full rounded-xl border border-pitch-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-pitch-500 focus:ring-2 focus:ring-pitch-200;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-semibold text-pitch-800/70;
+  }
+}

@@ -1713,14 +1713,142 @@ app.get('/api/admin/financials', auth, requireAdmin, async (_req, res) => {
 app.get('/api/admin/owners', auth, requireAdmin, async (_req, res) => {
   const users = await store.find('users');
   const fields = await allFields({ includeInactive: true });
-  const owners = users.filter((u) => u.role === 'owner').map((o) => ({
-    id: Number(o.id),
-    name: o.name,
-    email: o.email,
-    phone: o.phone || '',
-    fieldCount: fields.filter((f) => sameId(f.ownerId, o.id)).length,
-  }));
+  const owners = [];
+  for (const o of users.filter((u) => u.role === 'owner')) {
+    const wallet = await walletDetailDto(o.id);
+    owners.push({
+      id: Number(o.id),
+      name: o.name,
+      email: o.email,
+      phone: o.phone || '',
+      fieldCount: fields.filter((f) => sameId(f.ownerId, o.id)).length,
+      walletBalance: wallet?.balance ?? 0,
+      walletStatus: wallet?.status || 'active',
+    });
+  }
   res.json(owners);
+});
+
+app.get('/api/admin/owners/:ownerId', auth, requireAdmin, async (req, res) => {
+  const ownerId = Number(req.params.ownerId);
+  const owner = await store.findById('users', ownerId);
+  if (!owner || owner.role !== 'owner') return safeError(res, 404, 'المالك غير موجود');
+  const dash = await buildOwnerDashboard(ownerId);
+  const wallet = await walletDetailDto(ownerId);
+  const payments = {
+    outstandingAmount: dash.appCommission,
+    totalPaid: Math.max(0, dash.totalRevenue - dash.appCommission),
+  };
+  res.json({
+    owner: {
+      id: Number(owner.id),
+      name: owner.name,
+      email: owner.email,
+      phone: owner.phone || '',
+      province: owner.province || 'نينوى',
+    },
+    dashboard: dash,
+    wallet,
+    payments,
+  });
+});
+
+app.get('/api/admin/owners/:ownerId/wallet', auth, requireAdmin, async (req, res) => {
+  const ownerId = Number(req.params.ownerId);
+  const owner = await store.findById('users', ownerId);
+  if (!owner || owner.role !== 'owner') return safeError(res, 404, 'المالك غير موجود');
+  const detail = await walletDetailDto(ownerId);
+  res.json(detail);
+});
+
+app.patch('/api/admin/owners/:ownerId/wallet-status', auth, requireAdmin, async (req, res) => {
+  const ownerId = Number(req.params.ownerId);
+  const owner = await store.findById('users', ownerId);
+  if (!owner || owner.role !== 'owner') return safeError(res, 404, 'المالك غير موجود');
+  const status = String(req.body?.status || '').toLowerCase() === 'blocked' ? 'blocked' : 'active';
+  await store.update('users', ownerId, { walletStatus: status });
+  const detail = await walletDetailDto(ownerId);
+  res.json(detail);
+});
+
+app.get('/api/admin/users', auth, requireAdmin, async (req, res) => {
+  const role = String(req.query.role || '').trim().toLowerCase();
+  const q = String(req.query.q || '').trim().toLowerCase();
+  let users = await store.find('users');
+  if (role === 'user' || role === 'owner' || role === 'admin') {
+    users = users.filter((u) => u.role === role);
+  }
+  if (q) {
+    users = users.filter((u) => {
+      const hay = `${u.name || ''} ${u.email || ''} ${u.phone || ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
+  const items = users
+    .sort((a, b) => Number(b.id) - Number(a.id))
+    .map((u) => ({
+      id: Number(u.id),
+      name: u.name,
+      email: u.email,
+      phone: u.phone || '',
+      province: u.province || 'نينوى',
+      role: u.role,
+      loyaltyPoints: u.loyaltyPoints || 0,
+    }));
+  res.json(paged(items, req.query.page, req.query.limit));
+});
+
+app.get('/api/admin/users/:userId', auth, requireAdmin, async (req, res) => {
+  const user = await store.findById('users', req.params.userId);
+  if (!user) return safeError(res, 404, 'المستخدم غير موجود');
+  const stats = await bookingsByUser(user.id);
+  const now = new Date();
+  res.json({
+    user: publicUser(user),
+    stats: {
+      upcomingBookings: stats.filter((b) => b.status === 'approved' && new Date(b.startTime) > now).length,
+      pendingBookings: stats.filter((b) => b.status === 'pending').length,
+      totalBookings: stats.length,
+      totalHoursBooked: stats.filter((b) => b.status === 'approved').reduce((s, b) => s + (b.hours || 0), 0),
+    },
+  });
+});
+
+app.get('/api/admin/bookings', auth, requireAdmin, async (req, res) => {
+  const status = String(req.query.status || '').trim().toLowerCase();
+  const q = String(req.query.q || '').trim().toLowerCase();
+  let bookings = await store.find('bookings');
+  if (status && status !== 'all') {
+    bookings = bookings.filter((b) => String(b.status) === status);
+  }
+  const items = [];
+  for (const b of bookings.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
+    const user = await store.findById('users', b.userId);
+    const field = await store.findById('fields', b.fieldId)
+      ?? (await allFields({ includeInactive: true })).find((f) => bookingBelongsToField(b, f));
+    const row = {
+      id: Number(b.id),
+      referenceCode: b.referenceCode || null,
+      fieldId: Number(b.fieldPublicId || b.fieldId) || 0,
+      fieldName: field?.name || b.fieldName || '',
+      ownerId: Number(b.ownerId) || Number(field?.ownerId) || 0,
+      userId: Number(b.userId) || 0,
+      userName: user?.name || '',
+      userPhone: user?.phone || '',
+      startTime: b.startTime,
+      hours: b.hours,
+      totalPrice: b.totalPrice,
+      status: b.status,
+      paymentStatus: b.paymentStatus || 'unpaid',
+      paymentMethod: b.paymentMethod || 'online',
+    };
+    if (q) {
+      const hay = `${row.fieldName} ${row.userName} ${row.referenceCode || ''} ${row.id}`.toLowerCase();
+      if (!hay.includes(q)) continue;
+    }
+    items.push(row);
+  }
+  res.json(paged(items, req.query.page, req.query.limit));
 });
 
 app.get('/api/admin/bookings/pending', auth, requireAdmin, async (_req, res) => {

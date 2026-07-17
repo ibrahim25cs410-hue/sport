@@ -16,14 +16,15 @@ Riyada is a sports field booking system for Ninawa (Iraq). It supports **users**
 ```
 sport/
 ├── server.js         # Production API on Render (HTTP + Socket.io)
+├── web-admin/        # Desktop admin console (connected to live API)
 ├── node-backend/     # Alternate Express API (not the live Render process)
 ├── mobile/           # Flutter app (Android, iOS, Windows, Web)
-├── web/              # React web client
+├── web/              # React web client (users/owners)
 └── SportsApp/        # Legacy .NET API (not used by current clients)
 ```
 
 **Live API:** `https://sports-x7v7.onrender.com/api`  
-Env: `MONGODB_URI` (required), `JWT_SECRET` (recommended; otherwise derived from Mongo URI), `NODE_ENV=production`.
+**Admin console:** `web-admin/` — run `npm run dev` inside that folder.
 
 ---
 
