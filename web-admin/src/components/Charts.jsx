@@ -10,7 +10,7 @@ export function BarChart({ data, height = 180, valueKey = 'value', labelKey = 'l
   const innerH = height - padY * 2;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" role="img" aria-label="مخطط أعمدة">
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto text-pitch-800 dark:text-pitch-200" role="img" aria-label="bar chart">
       {data.map((d, i) => {
         const v = Number(d[valueKey]) || 0;
         const h = (v / max) * innerH;
@@ -19,10 +19,10 @@ export function BarChart({ data, height = 180, valueKey = 'value', labelKey = 'l
         return (
           <g key={d[labelKey] || i}>
             <rect x={x} y={y} width={barW} height={Math.max(h, 2)} rx="8" fill={color} opacity={0.85 + (i % 3) * 0.05} />
-            <text x={x + barW / 2} y={height - 6} textAnchor="middle" className="fill-pitch-600" style={{ fontSize: 10 }}>
+            <text x={x + barW / 2} y={height - 6} textAnchor="middle" fill="currentColor" opacity="0.65" style={{ fontSize: 10 }}>
               {d[labelKey]}
             </text>
-            <text x={x + barW / 2} y={y - 6} textAnchor="middle" className="fill-pitch-800" style={{ fontSize: 11, fontWeight: 700 }}>
+            <text x={x + barW / 2} y={y - 6} textAnchor="middle" fill="currentColor" style={{ fontSize: 11, fontWeight: 700 }}>
               {v}
             </text>
           </g>

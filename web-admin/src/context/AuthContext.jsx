@@ -14,14 +14,15 @@ export function AuthProvider({ children }) {
     try {
       const data = await api.login(email, password);
       if (data.user?.role !== 'admin') {
-        throw new Error('هذا الحساب ليس أدمن — استخدم حساب الإدارة');
+        const err = new Error('NOT_ADMIN');
+        throw err;
       }
       const next = { token: data.token, user: data.user };
       setSession(next);
       setSessionState(next);
       return next;
     } catch (e) {
-      setError(e.message || 'فشل تسجيل الدخول');
+      setError(e.message === 'NOT_ADMIN' ? 'NOT_ADMIN' : (e.message || 'LOGIN_FAILED'));
       throw e;
     } finally {
       setBusy(false);

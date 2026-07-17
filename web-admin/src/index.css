@@ -5,42 +5,67 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f2f8f3;
+  --bg: #eef5f0;
+  --bg-accent: rgba(61, 133, 80, 0.12);
   --ink: #0c1f13;
   --muted: #4a6354;
-  --line: #c2dec8;
-  --panel: #ffffff;
+  --line: #c8dbc2;
+  --panel: rgba(255, 255, 255, 0.92);
+  --panel-solid: #ffffff;
+  --sidebar: #0c1f13;
+  --sidebar-text: #e8f2eb;
   --accent: #2d6a3e;
+}
+
+html.dark {
+  --bg: #0a140e;
+  --bg-accent: rgba(94, 163, 111, 0.12);
+  --ink: #e8f2eb;
+  --muted: #9bb5a4;
+  --line: #24362b;
+  --panel: rgba(18, 32, 24, 0.92);
+  --panel-solid: #121f18;
+  --sidebar: #07110c;
+  --sidebar-text: #dceadf;
+  --accent: #5fa36f;
 }
 
 * { box-sizing: border-box; }
 
-html, body, #root {
-  min-height: 100%;
-}
+html, body, #root { min-height: 100%; }
 
 body {
   margin: 0;
   font-family: 'IBM Plex Sans Arabic', Tahoma, sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(1200px 500px at 100% -10%, rgba(61, 133, 80, 0.16), transparent 55%),
-    radial-gradient(900px 420px at 0% 100%, rgba(220, 207, 184, 0.45), transparent 50%),
+    radial-gradient(1100px 480px at 100% -10%, var(--bg-accent), transparent 55%),
+    radial-gradient(800px 380px at 0% 100%, rgba(220, 207, 184, 0.22), transparent 50%),
+    var(--bg);
+  transition: background 0.25s ease, color 0.2s ease;
+}
+
+html.dark body {
+  background:
+    radial-gradient(1100px 480px at 100% -10%, rgba(94, 163, 111, 0.14), transparent 55%),
+    radial-gradient(800px 380px at 0% 110%, rgba(20, 40, 28, 0.8), transparent 50%),
     var(--bg);
 }
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-pitch-200/80 bg-white/90 shadow-panel;
+    @apply rounded-2xl border border-pitch-200/80 bg-white/90 shadow-panel
+           dark:border-pitch-800 dark:bg-pitch-950/80 dark:shadow-panel-dark;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-pitch-700 text-white hover:bg-pitch-800;
+    @apply btn bg-pitch-700 text-white hover:bg-pitch-800 dark:bg-pitch-600 dark:hover:bg-pitch-500;
   }
   .btn-ghost {
-    @apply btn bg-pitch-50 text-pitch-800 hover:bg-pitch-100;
+    @apply btn bg-pitch-50 text-pitch-800 hover:bg-pitch-100
+           dark:bg-pitch-900 dark:text-pitch-100 dark:hover:bg-pitch-800;
   }
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700;
@@ -49,9 +74,20 @@ body {
     @apply btn bg-amber-500 text-white hover:bg-amber-600;
   }
   .input {
-    @apply w-full rounded-xl border border-pitch-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-pitch-500 focus:ring-2 focus:ring-pitch-200;
+    @apply w-full rounded-xl border border-pitch-200 bg-white px-3 py-2.5 text-sm outline-none
+           focus:border-pitch-500 focus:ring-2 focus:ring-pitch-200
+           dark:border-pitch-700 dark:bg-pitch-950 dark:text-pitch-50 dark:focus:border-pitch-400 dark:focus:ring-pitch-800;
   }
   .label {
-    @apply mb-1.5 block text-xs font-semibold text-pitch-800/70;
+    @apply mb-1.5 block text-xs font-semibold text-pitch-800/70 dark:text-pitch-300;
+  }
+  .table-head {
+    @apply bg-pitch-50/90 text-pitch-700 dark:bg-pitch-900/80 dark:text-pitch-300;
+  }
+  .table-row {
+    @apply border-t border-pitch-100 dark:border-pitch-800;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold;
   }
 }
