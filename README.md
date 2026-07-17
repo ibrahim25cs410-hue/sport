@@ -15,54 +15,46 @@ Riyada is a sports field booking system for Ninawa (Iraq). It supports **users**
 
 ```
 sport/
-├── node-backend/     # REST API + Socket.io server
+├── server.js         # Production API on Render (HTTP + Socket.io)
+├── node-backend/     # Alternate Express API (not the live Render process)
 ├── mobile/           # Flutter app (Android, iOS, Windows, Web)
 ├── web/              # React web client
 └── SportsApp/        # Legacy .NET API (not used by current clients)
 ```
 
+**Live API:** `https://sports-x7v7.onrender.com/api`  
+Env: `MONGODB_URI` (required), `JWT_SECRET` (recommended; otherwise derived from Mongo URI), `NODE_ENV=production`.
+
 ---
 
-## Backend (`node-backend`)
+## Backend (production: root `server.js`)
 
 ### Environment variables
 
 Copy the example file and edit values:
 
 ```powershell
-cd node-backend
 copy .env.example .env
 ```
 
 | Variable | Required in production | Description |
 |----------|------------------------|-------------|
 | `MONGODB_URI` | Yes | MongoDB Atlas connection string |
-| `JWT_SECRET` | Yes | Long random string (32+ characters) |
-| `NODE_ENV` | Yes | Set to `production` on Render/VPS |
-| `PORT` | No | HTTP port (default `3000`) |
+| `JWT_SECRET` | Recommended | Long random string (32+ characters) |
+| `NODE_ENV` | Yes | Set to `production` on Render |
+| `PORT` | No | HTTP port (Render sets this) |
+| `ALLOWED_ORIGINS` | No | Comma-separated web origins for CORS |
 
-**Development:** If `MONGODB_URI` is omitted, data is stored in memory and cleared on restart. A dev `JWT_SECRET` is used with a console warning.
-
-**Production:** `validateConfig()` exits if `MONGODB_URI` or `JWT_SECRET` is missing when `NODE_ENV=production`.
+**Development:** If `MONGODB_URI` is omitted, data is stored in memory and cleared on restart.
 
 ### Run locally
 
 ```powershell
-cd node-backend
 npm install
-npm run dev
+npm start
 ```
 
 Health check: `http://localhost:3000/api/health`
-
-### Tests
-
-```powershell
-npm run test:sockets
-npm run test:bookings
-npm run test:stadiums
-npm test
-```
 
 ### Socket.io events
 
@@ -76,11 +68,32 @@ Connect with JWT: `auth: { token: "<jwt>" }` to the server origin (no `/api` suf
 
 ---
 
+## Alternate backend (`node-backend`)
+
+Modular Express API kept in-repo for migration work. The live Render service runs root `server.js`, not this folder.
+
+```powershell
+cd node-backend
+npm install
+npm run dev
+```
+
+### Tests (`node-backend`)
+
+```powershell
+npm run test:sockets
+npm run test:bookings
+npm run test:stadiums
+npm test
+```
+
+---
+
 ## Flutter mobile (`mobile`)
 
 ### API configuration
 
-Production builds default to `https://api.riyada.iq/api`. Override for local or staging:
+Production builds default to `https://sports-x7v7.onrender.com/api`. Override for local or staging:
 
 ```powershell
 cd mobile
@@ -114,7 +127,7 @@ After login or registration, `AuthNotifier` connects Socket.io automatically.
 ```powershell
 cd mobile
 flutter build apk --release `
-  --dart-define=API_BASE_URL=https://api.riyada.iq/api
+  --dart-define=API_BASE_URL=https://sports-x7v7.onrender.com/api
 ```
 
 Output: `mobile/build/app/outputs/flutter-apk/app-release.apk`
@@ -123,7 +136,7 @@ Output: `mobile/build/app/outputs/flutter-apk/app-release.apk`
 
 ```powershell
 flutter build windows --release `
-  --dart-define=API_BASE_URL=https://api.riyada.iq/api
+  --dart-define=API_BASE_URL=https://sports-x7v7.onrender.com/api
 ```
 
 ---

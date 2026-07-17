@@ -1,6 +1,6 @@
 {
   "name": "riyada-node-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "باك إند حجز الملاعب — Node.js + Express (تخزين في الذاكرة أو MongoDB)",
   "main": "server.js",
   "scripts": {
@@ -12,9 +12,14 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.5.1"
+    "mongoose": "^8.5.1",
+    "socket.io": "^4.8.3"
   }
 }

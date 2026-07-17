@@ -9,36 +9,212 @@
  * والتواريخ بصيغة ISO 8601. المصادقة عبر JWT (Bearer) عدا التسجيل/الدخول.
  */
 
+require('dotenv').config();
+
+const http = require('http');
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { Server: SocketServer } = require('socket.io');
 
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const IS_PROD = NODE_ENV === 'production';
 const MONGODB_URI = process.env.MONGODB_URI || '';
-const COMMISSION_RATE = 0.10; // عمولة التطبيق
+const COMMISSION_RATE = 0.10;
+const MIN_PASSWORD_LENGTH = 6;
+const SLOT_HOLD_TTL_MS = 5 * 60 * 1000;
+const PENDING_PAYMENT_TTL_MS = 15 * 60 * 1000;
 
-const app = express();
-app.set('trust proxy', 1); // خلف بروكسي Render (لعناوين IP و https الصحيحة)
-app.use(cors());
-app.use(express.json({ limit: '8mb' })); // صور base64
-app.use(express.static(path.join(__dirname, 'public')));
+const JWT_SECRET = process.env.JWT_SECRET || '';
 
-if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-change-me') {
-  console.warn('⚠️  تحذير: JWT_SECRET غير مضبوط! اضبط متغيّر البيئة JWT_SECRET في Render.');
+function resolveJwtSecret() {
+  if (JWT_SECRET && JWT_SECRET.length >= 32 && JWT_SECRET !== 'dev-secret-change-me') {
+    return JWT_SECRET;
+  }
+  if (IS_PROD) {
+    if (!MONGODB_URI) {
+      console.error('FATAL: اضبط JWT_SECRET أو MONGODB_URI في متغيرات بيئة Render.');
+      process.exit(1);
+    }
+    // سر ثابت مشتق من Mongo — أفضل من السر الافتراضي الضعيف؛ يُفضّل ضبط JWT_SECRET يدوياً
+    const derived = crypto.createHmac('sha256', 'riyada-jwt-v1').update(MONGODB_URI).digest('hex');
+    console.warn('تحذير: JWT_SECRET غير مضبوط — استخدام سر مشتق من MONGODB_URI. اضبط JWT_SECRET في Render.');
+    return derived;
+  }
+  console.warn('تحذير تطوير: JWT_SECRET غير مضبوط — لا تستخدم هذا السر في الإنتاج.');
+  return JWT_SECRET || 'dev-secret-change-me';
 }
 
+const EFFECTIVE_JWT_SECRET = resolveJwtSecret();
+
+const ALLOWED_ORIGINS = String(process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const app = express();
+const server = http.createServer(app);
+
+app.set('trust proxy', 1);
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+app.use(compression());
+app.use(cors({
+  origin(origin, cb) {
+    // تطبيقات الموبايل وطلبات السيرفر غالباً بلا Origin
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.length === 0) {
+      if (IS_PROD) {
+        // مؤقتاً مسموح — يُفضّل ضبط ALLOWED_ORIGINS في Render
+        return cb(null, true);
+      }
+      return cb(null, true);
+    }
+    if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
+      return cb(null, true);
+    }
+    return cb(null, false);
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'طلبات كثيرة — حاول لاحقاً' },
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'محاولات دخول كثيرة — انتظر قليلاً' },
+});
+const bookingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'طلبات حجز كثيرة — حاول لاحقاً' },
+});
+
+app.use('/api', globalLimiter);
+
 /* ================================================================== */
-/* طبقة التخزين — بدائل CRUD عامة (نفس المنطق للذاكرة و MongoDB)        */
+/* Socket.io                                                            */
+/* ================================================================== */
+
+const io = new SocketServer(server, {
+  cors: {
+    origin(origin, cb) {
+      if (!origin) return cb(null, true);
+      if (ALLOWED_ORIGINS.length === 0) return cb(null, true);
+      if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
+        return cb(null, true);
+      }
+      return cb(null, false);
+    },
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+});
+
+/** @type {Map<number, Set<string>>} */
+const userSockets = new Map();
+
+function fieldRoom(fieldId) {
+  return `field:${Number(fieldId)}`;
+}
+
+function registerSocket(userId, socketId) {
+  const id = Number(userId);
+  if (!Number.isFinite(id)) return;
+  if (!userSockets.has(id)) userSockets.set(id, new Set());
+  userSockets.get(id).add(socketId);
+}
+
+function unregisterSocket(userId, socketId) {
+  const id = Number(userId);
+  const set = userSockets.get(id);
+  if (!set) return;
+  set.delete(socketId);
+  if (set.size === 0) userSockets.delete(id);
+}
+
+function emitToUser(userId, event, payload) {
+  const set = userSockets.get(Number(userId));
+  if (!set || set.size === 0) return false;
+  for (const socketId of set) io.to(socketId).emit(event, payload);
+  return true;
+}
+
+function emitToField(fieldId, event, payload) {
+  io.to(fieldRoom(fieldId)).emit(event, payload);
+}
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+  if (!token) return next(new Error('Authentication required'));
+  try {
+    const payload = jwt.verify(token, EFFECTIVE_JWT_SECRET);
+    socket.user = { ...payload, id: Number(payload.id) };
+    if (!Number.isFinite(socket.user.id)) return next(new Error('Invalid token'));
+    return next();
+  } catch {
+    return next(new Error('Invalid or expired token'));
+  }
+});
+
+io.on('connection', (socket) => {
+  const userId = Number(socket.user.id);
+  registerSocket(userId, socket.id);
+  socket.emit('connected', { userId, socketId: socket.id });
+
+  socket.on('joinField', (fieldId) => {
+    socket.join(fieldRoom(fieldId));
+    socket.data.joinedFieldId = Number(fieldId);
+  });
+  socket.on('leaveField', (fieldId) => {
+    socket.leave(fieldRoom(fieldId));
+    if (socket.data.joinedFieldId === Number(fieldId)) socket.data.joinedFieldId = null;
+  });
+  socket.on('joinStadium', (stadiumId) => {
+    socket.join(fieldRoom(stadiumId));
+    socket.data.joinedStadiumId = Number(stadiumId);
+  });
+  socket.on('leaveStadium', (stadiumId) => {
+    socket.leave(fieldRoom(stadiumId));
+    if (socket.data.joinedStadiumId === Number(stadiumId)) socket.data.joinedStadiumId = null;
+  });
+  socket.on('disconnect', () => unregisterSocket(userId, socket.id));
+});
+
+/* ================================================================== */
+/* طبقة التخزين                                                         */
 /* ================================================================== */
 
 let store;
 
 function createMemoryStore() {
-  const data = { users: [], fields: [], bookings: [], notifications: [] };
-  const seq = { users: 0, fields: 0, bookings: 0, notifications: 0 };
+  const data = {
+    users: [], fields: [], bookings: [], notifications: [], reviews: [], walletTransactions: [],
+  };
+  const seq = {
+    users: 0, fields: 0, bookings: 0, notifications: 0, reviews: 0, walletTransactions: 0,
+  };
   const clone = (o) => (o ? JSON.parse(JSON.stringify(o)) : o);
   return {
     kind: 'memory',
@@ -49,9 +225,7 @@ function createMemoryStore() {
     },
     async findById(col, id) {
       const n = Number(id);
-      return clone(
-        data[col].find((r) => r.id === n || String(r.id) === String(id)) || null,
-      );
+      return clone(data[col].find((r) => r.id === n || String(r.id) === String(id)) || null);
     },
     async findOne(col, pred) {
       return clone(data[col].find(pred) || null);
@@ -77,10 +251,7 @@ function createMemoryStore() {
       return before - data[col].length;
     },
     async resetCounters() {
-      seq.users = 0;
-      seq.fields = 0;
-      seq.bookings = 0;
-      seq.notifications = 0;
+      Object.keys(seq).forEach((k) => { seq[k] = 0; });
     },
   };
 }
@@ -89,15 +260,14 @@ async function createMongoStore(uri) {
   const mongoose = require('mongoose');
   await mongoose.connect(uri);
   const { Schema } = mongoose;
-
-  // id: false — مهم جداً: بدونها Mongoose يستبدل حقل id الرقمي بـ virtual من _id
-  // فيصبح Number(user.id) = NaN و ownerId=0 والحجوزات تختفي من القوائم
   const schemaOpts = { strict: false, timestamps: true, id: false };
   const models = {
     users: mongoose.model('User', new Schema({}, schemaOpts)),
     fields: mongoose.model('Field', new Schema({}, schemaOpts)),
     bookings: mongoose.model('Booking', new Schema({}, schemaOpts)),
     notifications: mongoose.model('Notification', new Schema({}, schemaOpts)),
+    reviews: mongoose.model('Review', new Schema({}, schemaOpts)),
+    walletTransactions: mongoose.model('WalletTransaction', new Schema({}, schemaOpts)),
   };
   const Counter = mongoose.model('Counter', new Schema({ _id: String, n: Number }));
 
@@ -107,13 +277,10 @@ async function createMongoStore(uri) {
   }
   const out = (doc) => {
     if (!doc) return null;
-    // virtuals: false حتى لا يغطي ObjectId على id الرقمي المخزّن
     const o = doc.toObject ? doc.toObject({ virtuals: false }) : { ...doc };
     const rawId = doc.get ? doc.get('id', null, { getters: false }) : o.id;
     delete o._id; delete o.__v; delete o.createdAt; delete o.updatedAt;
-    if (rawId != null && Number.isFinite(Number(rawId))) {
-      o.id = Number(rawId);
-    }
+    if (rawId != null && Number.isFinite(Number(rawId))) o.id = Number(rawId);
     return o;
   };
 
@@ -123,7 +290,6 @@ async function createMongoStore(uri) {
       const id = await nextId(col);
       const created = await models[col].create({ ...doc, id });
       const mapped = out(created);
-      // ضمان أن الإدخال الجديد يحمل id رقمياً دائماً
       if (!mapped || !Number.isFinite(Number(mapped.id)) || Number(mapped.id) <= 0) {
         throw new Error(`فشل إنشاء سجل في ${col}: id رقمي مفقود`);
       }
@@ -173,77 +339,110 @@ async function createMongoStore(uri) {
   };
 }
 
-// طبقة موحّدة: دوال تصفية للذاكرة وكائنات استعلام للـ Mongo.
 const isMongo = () => store.kind === 'mongodb';
 
 async function findUserByEmail(email) {
   const norm = String(email || '').trim().toLowerCase();
   if (!norm) return null;
-  // مطابقة حرفية كاملة فقط — ibrahem@gmail.com ≠ ibrah2007@gmail.com
   return isMongo()
     ? store.findOne('users', { email: norm })
     : store.findOne('users', (u) => String(u.email || '').trim().toLowerCase() === norm);
 }
-async function fieldsByOwner(ownerId) {
+async function fieldsByOwner(ownerId, { includeInactive = true } = {}) {
   const all = await store.find('fields');
-  return all.filter((f) => sameId(f.ownerId, ownerId));
+  return all.filter((f) => {
+    if (!sameId(f.ownerId, ownerId)) return false;
+    if (!includeInactive && f.isActive === false) return false;
+    return true;
+  });
+}
+async function allFields({ includeInactive = false } = {}) {
+  const all = await store.find('fields');
+  return includeInactive ? all : all.filter((f) => f.isActive !== false);
 }
 async function bookingsByUser(userId) {
   const all = await store.find('bookings');
   return all.filter((b) => sameId(b.userId, userId));
 }
-async function bookingsByOwner(ownerId) {
-  const all = await store.find('bookings');
-  return all.filter((b) => sameId(b.ownerId, ownerId));
-}
 async function bookingsByField(fieldId) {
   const all = await store.find('bookings');
-  return all.filter((b) => sameId(b.fieldId, fieldId));
+  return all.filter((b) => sameId(b.fieldId, fieldId) || sameId(b.fieldPublicId, fieldId));
 }
 async function notificationsByUser(userId) {
   const all = await store.find('notifications');
   return all.filter((n) => sameId(n.userId, userId));
 }
-async function allFields() {
-  return store.find('fields');
+async function reviewsByField(fieldId) {
+  const all = await store.find('reviews');
+  return all.filter((r) => sameId(r.fieldId, fieldId) || sameId(r.fieldPublicId, fieldId));
+}
+async function walletTxByOwner(ownerId) {
+  const all = await store.find('walletTransactions');
+  return all
+    .filter((t) => sameId(t.ownerId, ownerId))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
 /* ================================================================== */
-/* أدوات المصادقة                                                      */
+/* أدوات المصادقة                                                       */
 /* ================================================================== */
 
 function sign(user) {
-  return jwt.sign({ id: Number(user.id), role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
+  return jwt.sign(
+    { id: Number(user.id), role: user.role, name: user.name },
+    EFFECTIVE_JWT_SECRET,
+    { expiresIn: '30d' },
+  );
 }
+
 function auth(req, res, next) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : null;
   if (!token) return res.status(401).json({ message: 'مطلوب تسجيل الدخول' });
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, EFFECTIVE_JWT_SECRET);
     req.user = { ...payload, id: Number(payload.id) };
     if (!Number.isFinite(req.user.id)) {
       return res.status(401).json({ message: 'انتهت الجلسة' });
     }
-    next();
+    return next();
   } catch {
     return res.status(401).json({ message: 'انتهت الجلسة' });
   }
 }
+
 function optionalAuth(req, _res, next) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : null;
   if (token) {
     try {
-      const payload = jwt.verify(token, JWT_SECRET);
+      const payload = jwt.verify(token, EFFECTIVE_JWT_SECRET);
       req.user = { ...payload, id: Number(payload.id) };
     } catch { /* تجاهل */ }
   }
   next();
 }
 
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ message: 'غير مصرح — للمدير فقط' });
+  }
+  return next();
+}
+
+function requireOwnerOrAdmin(req, res, next) {
+  if (req.user?.role !== 'owner' && req.user?.role !== 'admin') {
+    return res.status(403).json({ message: 'غير مصرح' });
+  }
+  return next();
+}
+
+function safeError(res, status, message) {
+  return res.status(status).json({ message });
+}
+
 /* ================================================================== */
-/* أدوات التسلسل (DTO)                                                 */
+/* أدوات التسلسل (DTO)                                                  */
 /* ================================================================== */
 
 const publicUser = (u) => ({
@@ -252,7 +451,6 @@ const publicUser = (u) => ({
   role: u.role, loyaltyPoints: u.loyaltyPoints || 0,
 });
 
-/** نفس خوارزمية Field._stableId في Flutter (seed: name|phone|address). */
 function flutterStableId(field) {
   const seed = `${field.name || ''}|${field.phone || ''}|${field.address || ''}`;
   let h = 0;
@@ -280,15 +478,15 @@ const publicField = (f) => ({
   image: f.image || null, pricePerHour: f.pricePerHour || 0, ownerId: Number(f.ownerId) || 0,
   averageRating: f.averageRating || 0, reviewCount: f.reviewCount || 0,
   latitude: f.latitude ?? null, longitude: f.longitude ?? null,
+  isActive: f.isActive !== false,
 });
 
-/** إيجاد ملعب بالمعرّف الحقيقي أو هاش Flutter الاحتياطي. */
 async function resolveField(publicId) {
   const n = Number(publicId);
   if (!Number.isFinite(n) || n <= 0) return null;
   const byId = await store.findById('fields', n);
   if (byId) return byId;
-  const all = await allFields();
+  const all = await allFields({ includeInactive: true });
   return all.find((f) => publicNumericId(f) === n || flutterStableId(f) === n) || null;
 }
 
@@ -302,7 +500,6 @@ function sameId(a, b) {
   return Number.isFinite(na) && Number.isFinite(nb) && na === nb;
 }
 
-/** معرّف المالك من التوكن — يتجاهل أي id خاطئ من التطبيق. */
 function authedOwnerId(req) {
   return Number(req.user.id);
 }
@@ -332,9 +529,7 @@ function userBookingDto(b, field) {
 }
 
 function ownerBookingDto(b, user, field) {
-  const fieldKey = field != null
-    ? publicNumericId(field)
-    : (Number(b.fieldId) || 0);
+  const fieldKey = field != null ? publicNumericId(field) : (Number(b.fieldId) || 0);
   return {
     id: Number(b.id),
     referenceCode: b.referenceCode || null,
@@ -351,24 +546,41 @@ function ownerBookingDto(b, user, field) {
 }
 
 function paged(items, page, limit) {
+  const p = Math.max(1, Number(page) || 1);
+  const l = Math.min(100, Math.max(1, Number(limit) || 20));
+  const start = (p - 1) * l;
+  const slice = items.slice(start, start + l);
   return {
-    items,
-    page: Number(page) || 1,
-    limit: Number(limit) || items.length,
+    items: slice,
+    page: p,
+    limit: l,
     totalCount: items.length,
-    hasNextPage: false,
+    hasNextPage: start + l < items.length,
   };
 }
 
 async function notify(userId, title, message) {
   const uid = Number(userId);
-  if (!Number.isFinite(uid) || uid <= 0) return;
-  await store.insert('notifications', {
+  if (!Number.isFinite(uid) || uid <= 0) return null;
+  const n = await store.insert('notifications', {
     userId: uid, title, message, isRead: false, createdAt: new Date().toISOString(),
+  });
+  emitToUser(uid, 'notification', {
+    id: n.id, title: n.title, message: n.message, isRead: false, createdAt: n.createdAt,
+  });
+  return n;
+}
+
+function emitBookingUpdated(userId, booking, titleKey, messageKey, messageArgs = {}) {
+  emitToUser(userId, 'bookingUpdated', {
+    bookingId: Number(booking.id),
+    status: booking.status,
+    titleKey,
+    messageKey,
+    messageArgs,
   });
 }
 
-/** إيجاد حجز بالمعرّف الرقمي أو الرقم المرجعي. */
 async function resolveBooking(bookingId, referenceCode) {
   const ref = String(referenceCode || '').trim().replace(/^#/, '');
   if (ref) {
@@ -376,9 +588,7 @@ async function resolveBooking(bookingId, referenceCode) {
     const byRef = all.find((b) => String(b.referenceCode || '') === ref);
     if (byRef) return byRef;
   }
-  if (bookingId == null || bookingId === '' || bookingId === 0 || bookingId === '0') {
-    return null;
-  }
+  if (bookingId == null || bookingId === '' || bookingId === 0 || bookingId === '0') return null;
   const byId = await store.findById('bookings', bookingId);
   if (byId) return byId;
   const all = await store.find('bookings');
@@ -386,7 +596,6 @@ async function resolveBooking(bookingId, referenceCode) {
   return all.find((b) => sameId(b.id, bookingId) || String(b.referenceCode || '') === s) || null;
 }
 
-/** مفاتيح الملعب المحتملة (id الحقيقي + هاش Flutter). */
 function fieldKeys(field) {
   const keys = new Set();
   if (field == null) return keys;
@@ -412,61 +621,218 @@ function bookingBelongsToOwner(b, ownerId, ownedFields) {
 }
 
 /* ================================================================== */
-/* المسارات — Auth                                                     */
+/* Slot holds + pending payments                                        */
 /* ================================================================== */
 
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', storage: store.kind }));
+/** @type {Map<string, { fieldId: number, userId: number, startTime: string, hours: number, expiresAt: string }>} */
+const slotHolds = new Map();
+/** @type {Map<string, { bookingId: number, userId: number, amount: number, expiresAt: number }>} */
+const pendingPayments = new Map();
 
-app.post('/api/register-user', async (req, res) => {
+function holdKey(fieldId, startTime, hours) {
+  const start = new Date(startTime).toISOString();
+  return `${fieldId}:${start.slice(0, 13)}:${hours || 1}`;
+}
+
+function purgeExpiredHolds() {
+  const now = Date.now();
+  for (const [key, hold] of slotHolds.entries()) {
+    if (new Date(hold.expiresAt).getTime() <= now) slotHolds.delete(key);
+  }
+}
+
+function getActiveHold(fieldId, startIso) {
+  purgeExpiredHolds();
+  const hourKey = new Date(startIso).toISOString().slice(0, 13);
+  for (const hold of slotHolds.values()) {
+    if (Number(hold.fieldId) === Number(fieldId)
+      && new Date(hold.startTime).toISOString().slice(0, 13) === hourKey) {
+      return hold;
+    }
+  }
+  return null;
+}
+
+function purgeExpiredPayments() {
+  const now = Date.now();
+  for (const [token, p] of pendingPayments.entries()) {
+    if (p.expiresAt <= now) pendingPayments.delete(token);
+  }
+}
+
+/* ================================================================== */
+/* Wallet helpers                                                       */
+/* ================================================================== */
+
+async function ensureOwnerWallet(ownerId) {
+  const user = await store.findById('users', ownerId);
+  if (!user) return null;
+  if (user.walletBalance == null) {
+    return store.update('users', ownerId, { walletBalance: 0, walletStatus: 'active' });
+  }
+  return user;
+}
+
+async function addWalletTx({ ownerId, amount, type, typeLabel, description, bookingId, bookingReference, adminNote }) {
+  const user = await ensureOwnerWallet(ownerId);
+  if (!user) throw new Error('المالك غير موجود');
+  const balance = Number(user.walletBalance || 0) + Number(amount);
+  const status = user.walletStatus || 'active';
+  await store.update('users', ownerId, { walletBalance: balance, walletStatus: status });
+  const tx = await store.insert('walletTransactions', {
+    ownerId: Number(ownerId),
+    amount: Number(amount),
+    type,
+    typeLabel,
+    description,
+    bookingId: bookingId != null ? Number(bookingId) : null,
+    bookingReference: bookingReference || null,
+    adminNote: adminNote || null,
+    createdAt: new Date().toISOString(),
+  });
+  return { user: await store.findById('users', ownerId), tx };
+}
+
+async function walletDetailDto(ownerId) {
+  const user = await ensureOwnerWallet(ownerId);
+  if (!user) return null;
+  const transactions = (await walletTxByOwner(ownerId)).map((t) => ({
+    id: Number(t.id),
+    amount: Number(t.amount),
+    type: t.type,
+    typeLabel: t.typeLabel || t.type,
+    description: t.description || '',
+    bookingId: t.bookingId != null ? Number(t.bookingId) : null,
+    bookingReference: t.bookingReference || null,
+    adminNote: t.adminNote || null,
+    createdAt: t.createdAt,
+  }));
+  return {
+    walletId: Number(ownerId),
+    ownerId: Number(ownerId),
+    balance: Number(user.walletBalance || 0),
+    status: user.walletStatus || 'active',
+    lastUpdated: new Date().toISOString(),
+    transactions,
+  };
+}
+
+async function creditOwnerForApprovedBooking(booking) {
+  if (!booking?.ownerId || booking.walletCredited) return;
+  const total = Number(booking.totalPrice) || 0;
+  const commission = Math.round(total * COMMISSION_RATE);
+  if (total > 0) {
+    await addWalletTx({
+      ownerId: booking.ownerId,
+      amount: total,
+      type: 'booking_credit',
+      typeLabel: 'إيراد حجز',
+      description: `إيراد حجز ${booking.referenceCode || booking.id}`,
+      bookingId: booking.id,
+      bookingReference: booking.referenceCode,
+    });
+  }
+  if (commission > 0) {
+    await addWalletTx({
+      ownerId: booking.ownerId,
+      amount: -commission,
+      type: 'commission_debit',
+      typeLabel: 'عمولة المنصة',
+      description: `عمولة 10% على حجز ${booking.referenceCode || booking.id}`,
+      bookingId: booking.id,
+      bookingReference: booking.referenceCode,
+    });
+  }
+  await store.update('bookings', booking.id, { walletCredited: true });
+}
+
+async function refreshFieldRatings(field) {
+  const list = await reviewsByField(publicNumericId(field));
+  const reviewCount = list.length;
+  const averageRating = reviewCount
+    ? Math.round((list.reduce((s, r) => s + Number(r.rating || 0), 0) / reviewCount) * 10) / 10
+    : 0;
+  if (field.id != null) {
+    await store.update('fields', field.id, { averageRating, reviewCount });
+  }
+  return { averageRating, reviewCount };
+}
+
+/* ================================================================== */
+/* المسارات — Auth                                                      */
+/* ================================================================== */
+
+app.get('/api/health', (_req, res) => res.json({
+  status: 'ok',
+  storage: store?.kind || 'starting',
+  realtime: true,
+  env: IS_PROD ? 'production' : 'development',
+}));
+
+app.post('/api/register-user', authLimiter, async (req, res) => {
   try {
     const { name, email, password, phone, province, image } = req.body || {};
-    if (!name || !email || !password) return res.status(400).json({ message: 'الاسم والبريد وكلمة المرور مطلوبة' });
+    if (!name || !email || !password) return safeError(res, 400, 'الاسم والبريد وكلمة المرور مطلوبة');
+    if (String(password).length < MIN_PASSWORD_LENGTH) {
+      return safeError(res, 400, `كلمة المرور يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل`);
+    }
     const normEmail = String(email).trim().toLowerCase();
-    if (await findUserByEmail(normEmail)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
+    if (await findUserByEmail(normEmail)) return safeError(res, 409, 'البريد مستخدم مسبقاً');
     const hashed = await bcrypt.hash(password, 10);
     const user = await store.insert('users', {
       name, email: normEmail, password: hashed, phone: phone || '', province: province || 'نينوى',
-      image: image || null, role: 'user', loyaltyPoints: 0,
+      image: image || null, role: 'user', loyaltyPoints: 0, walletBalance: 0, walletStatus: 'active',
     });
     res.status(201).json({ token: sign(user), user: publicUser(user) });
-  } catch (e) { res.status(500).json({ message: 'خطأ في الخادم', error: String(e) }); }
+  } catch (e) {
+    console.error('register-user:', e);
+    return safeError(res, 500, 'خطأ في الخادم');
+  }
 });
 
-app.post('/api/register-owner', async (req, res) => {
+app.post('/api/register-owner', authLimiter, async (req, res) => {
   try {
-    const { name, email, password, phone, stadiumName, stadiumAddress, stadiumPhone, pricePerHour, stadiumImage } = req.body || {};
-    if (!name || !email || !password || !stadiumName) return res.status(400).json({ message: 'بيانات ناقصة' });
+    const {
+      name, email, password, phone, stadiumName, stadiumAddress, stadiumPhone, pricePerHour, stadiumImage,
+    } = req.body || {};
+    if (!name || !email || !password || !stadiumName) return safeError(res, 400, 'بيانات ناقصة');
+    if (String(password).length < MIN_PASSWORD_LENGTH) {
+      return safeError(res, 400, `كلمة المرور يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل`);
+    }
     const normEmail = String(email).trim().toLowerCase();
-    if (await findUserByEmail(normEmail)) return res.status(409).json({ message: 'البريد مستخدم مسبقاً' });
+    if (await findUserByEmail(normEmail)) return safeError(res, 409, 'البريد مستخدم مسبقاً');
     const hashed = await bcrypt.hash(password, 10);
     const user = await store.insert('users', {
       name, email: normEmail, password: hashed, phone: phone || '', province: 'نينوى',
-      image: null, role: 'owner', loyaltyPoints: 0,
+      image: null, role: 'owner', loyaltyPoints: 0, walletBalance: 0, walletStatus: 'active',
     });
     const field = await store.insert('fields', {
       name: stadiumName, address: stadiumAddress || '', phone: stadiumPhone || phone || '',
       image: stadiumImage || null, pricePerHour: Number(pricePerHour) || 0, ownerId: Number(user.id),
-      averageRating: 0, reviewCount: 0, latitude: null, longitude: null,
+      averageRating: 0, reviewCount: 0, latitude: null, longitude: null, isActive: true,
     });
     res.status(201).json({ token: sign(user), user: publicUser(user), field: publicField(field) });
-  } catch (e) { res.status(500).json({ message: 'خطأ في الخادم', error: String(e) }); }
+  } catch (e) {
+    console.error('register-owner:', e);
+    return safeError(res, 500, 'خطأ في الخادم');
+  }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
   try {
     const { email, password, expectedRole } = req.body || {};
-    if (!email || !password) return res.status(400).json({ message: 'البريد وكلمة المرور مطلوبة' });
+    if (!email || !password) return safeError(res, 400, 'البريد وكلمة المرور مطلوبة');
     const normEmail = String(email).trim().toLowerCase();
     const user = await findUserByEmail(normEmail);
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: 'بيانات الدخول غير صحيحة' });
+      return safeError(res, 401, 'بيانات الدخول غير صحيحة');
     }
     const role = String(expectedRole || '').trim().toLowerCase();
     if (role === 'owner' && user.role !== 'owner' && user.role !== 'admin') {
-      return res.status(403).json({ message: 'هذا حساب مستخدم — استخدم تسجيل دخول المستخدم' });
+      return safeError(res, 403, 'هذا حساب مستخدم — استخدم تسجيل دخول المستخدم');
     }
     if (role === 'user' && user.role === 'owner') {
-      return res.status(403).json({ message: 'هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب' });
+      return safeError(res, 403, 'هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب');
     }
     const body = { token: sign(user), user: publicUser(user) };
     if (user.role === 'owner') {
@@ -474,12 +840,15 @@ app.post('/api/login', async (req, res) => {
       if (owned[0]) body.field = publicField(owned[0]);
     }
     res.json(body);
-  } catch (e) { res.status(500).json({ message: 'خطأ في الخادم', error: String(e) }); }
+  } catch (e) {
+    console.error('login:', e);
+    return safeError(res, 500, 'خطأ في الخادم');
+  }
 });
 
 app.get('/api/me', auth, async (req, res) => {
   const user = await store.findById('users', req.user.id);
-  if (!user) return res.status(404).json({ message: 'غير موجود' });
+  if (!user) return safeError(res, 404, 'غير موجود');
   const body = { user: publicUser(user) };
   if (user.role === 'owner') {
     const owned = await fieldsByOwner(user.id);
@@ -494,13 +863,18 @@ app.put('/api/me', auth, async (req, res) => {
   if (name != null) patch.name = name;
   if (phone != null) patch.phone = phone;
   if (image != null) patch.image = image;
-  if (password) patch.password = await bcrypt.hash(password, 10);
+  if (password) {
+    if (String(password).length < MIN_PASSWORD_LENGTH) {
+      return safeError(res, 400, `كلمة المرور يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل`);
+    }
+    patch.password = await bcrypt.hash(password, 10);
+  }
   const updated = await store.update('users', req.user.id, patch);
   res.json(publicUser(updated));
 });
 
 /* ================================================================== */
-/* المسارات — Fields                                                   */
+/* المسارات — Fields                                                    */
 /* ================================================================== */
 
 app.get('/api/fields', optionalAuth, async (req, res) => {
@@ -508,20 +882,15 @@ app.get('/api/fields', optionalAuth, async (req, res) => {
   res.json(paged(list, req.query.page, req.query.limit));
 });
 
-/** إضافة ملعب جديد لصاحب الملعب — يظهر فوراً في قائمة المستخدمين. */
 app.post('/api/fields', auth, async (req, res) => {
   try {
     if (req.user.role !== 'owner' && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'غير مصرح — حساب صاحب ملعب فقط' });
+      return safeError(res, 403, 'غير مصرح — حساب صاحب ملعب فقط');
     }
     const { name, address, phone, pricePerHour, image, latitude, longitude } = req.body || {};
-    if (!name || !String(name).trim()) {
-      return res.status(400).json({ message: 'اسم الملعب مطلوب' });
-    }
+    if (!name || !String(name).trim()) return safeError(res, 400, 'اسم الملعب مطلوب');
     const price = Number(pricePerHour);
-    if (!Number.isFinite(price) || price < 1000) {
-      return res.status(400).json({ message: 'سعر الساعة غير صالح' });
-    }
+    if (!Number.isFinite(price) || price < 1000) return safeError(res, 400, 'سعر الساعة غير صالح');
     const field = await store.insert('fields', {
       name: String(name).trim(),
       address: String(address || '').trim(),
@@ -533,74 +902,35 @@ app.post('/api/fields', auth, async (req, res) => {
       reviewCount: 0,
       latitude: latitude != null ? Number(latitude) : null,
       longitude: longitude != null ? Number(longitude) : null,
+      isActive: true,
     });
     res.status(201).json(publicField(field));
   } catch (e) {
     console.error('POST /fields:', e);
-    res.status(500).json({ message: 'فشل إنشاء الملعب', error: String(e.message || e) });
+    return safeError(res, 500, 'فشل إنشاء الملعب');
   }
 });
 
-/** حذف كل الملاعب والحجوزات (طلب صريح من الإدارة). */
-app.post('/api/admin/clear-fields', auth, async (req, res) => {
-  try {
-    if (req.body?.confirm !== 'DELETE_ALL_FIELDS') {
-      return res.status(400).json({ message: 'أرسل confirm: DELETE_ALL_FIELDS' });
-    }
-    const deleted = await store.deleteAll('fields');
-    const deletedBookings = await store.deleteAll('bookings');
-    return res.json({ ok: true, deleted, deletedBookings });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ message: 'فشل حذف الملاعب' });
-  }
+// مسارات المسح القديمة — معطّلة نهائياً (كانت خطرة على الإنتاج)
+app.post('/api/admin/clear-fields', auth, (_req, res) => {
+  res.status(410).json({ message: 'تم تعطيل مسح الملاعب لأسباب أمنية' });
 });
-
-/** مسح كامل للإطلاق: مستخدمين + ملاعب + حجوزات + إشعارات. */
-app.post('/api/admin/clear-all', async (req, res) => {
-  try {
-    const secret = process.env.LAUNCH_WIPE_SECRET || 'RIYADA_LAUNCH_WIPE';
-    if (req.body?.confirm !== 'CLEAR_ALL_LAUNCH' || req.body?.secret !== secret) {
-      return res.status(400).json({ message: 'تأكيد غير صحيح' });
-    }
-    const result = await wipeAllAppData('api');
-    return res.json({ ok: true, ...result });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ message: 'فشل المسح الكامل' });
-  }
+app.post('/api/admin/clear-all', (_req, res) => {
+  res.status(410).json({ message: 'تم تعطيل المسح الكامل لأسباب أمنية' });
 });
-
-async function wipeAllAppData(reason) {
-  const deletedBookings = await store.deleteAll('bookings');
-  const deletedFields = await store.deleteAll('fields');
-  const deletedUsers = await store.deleteAll('users');
-  const deletedNotifications = await store.deleteAll('notifications');
-  if (typeof store.resetCounters === 'function') {
-    await store.resetCounters();
-  }
-  await store.insert('notifications', {
-    userId: 0,
-    title: '__launch_clean_slate_v2_mongoose_id__',
-    message: `wiped via ${reason}: users=${deletedUsers} fields=${deletedFields} bookings=${deletedBookings} notifs=${deletedNotifications}`,
-    isRead: true,
-  });
-  console.log(
-    `مسح الإطلاق (${reason}): users=${deletedUsers} fields=${deletedFields} bookings=${deletedBookings} notifications=${deletedNotifications}`,
-  );
-  return { deletedUsers, deletedFields, deletedBookings, deletedNotifications };
-}
 
 app.get('/api/fields/:id', auth, async (req, res) => {
   const f = await resolveField(req.params.id);
-  if (!f) return res.status(404).json({ message: 'الملعب غير موجود' });
+  if (!f || f.isActive === false) return safeError(res, 404, 'الملعب غير موجود');
   res.json(publicField(f));
 });
 
 app.put('/api/fields/:id', auth, async (req, res) => {
   const f = await resolveField(req.params.id);
-  if (!f) return res.status(404).json({ message: 'الملعب غير موجود' });
-  if (!sameId(f.ownerId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
+  if (!f) return safeError(res, 404, 'الملعب غير موجود');
+  if (!sameId(f.ownerId, req.user.id) && req.user.role !== 'admin') {
+    return safeError(res, 403, 'غير مصرح');
+  }
   const { name, address, phone, pricePerHour, image } = req.body || {};
   const patch = {};
   if (name != null) patch.name = name;
@@ -614,14 +944,15 @@ app.put('/api/fields/:id', auth, async (req, res) => {
   res.json(publicField(updated));
 });
 
-// جدول المواعيد: 7 أيام × ساعات 10:00–23:00 مع علامة التوفر
-app.get('/api/fields/:id/schedule', auth, async (req, res) => {
+app.get('/api/fields/:id/schedule', optionalAuth, async (req, res) => {
   try {
     const f = await resolveField(req.params.id);
-    if (!f) return res.status(404).json({ message: 'الملعب غير موجود' });
+    if (!f || f.isActive === false) return safeError(res, 404, 'الملعب غير موجود');
     const fieldKey = f.id != null ? f.id : publicNumericId(f);
+    const publicId = publicNumericId(f);
     const booked = (await bookingsByField(fieldKey)).filter((b) => b.status === 'pending' || b.status === 'approved');
     const bookedKeys = new Set(booked.map((b) => new Date(b.startTime).toISOString().slice(0, 13)));
+    purgeExpiredHolds();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -633,60 +964,168 @@ app.get('/api/fields/:id/schedule', auth, async (req, res) => {
         const start = new Date(day); start.setHours(h, 0, 0, 0);
         const end = new Date(start.getTime() + 3600000);
         const key = start.toISOString().slice(0, 13);
+        const hold = getActiveHold(publicId, start.toISOString());
+        const heldByOther = hold && (!req.user || Number(hold.userId) !== Number(req.user.id));
         slots.push({
           startTime: start.toISOString(),
           endTime: end.toISOString(),
-          isAvailable: !bookedKeys.has(key) && start > new Date(),
-          status: null,
-          heldUntil: null,
+          isAvailable: !bookedKeys.has(key) && !heldByOther && start > new Date(),
+          status: hold ? 'held' : null,
+          heldUntil: hold?.expiresAt || null,
         });
       }
       schedule.push({ date: day.toISOString(), slots });
     }
     res.json({
-      id: publicNumericId(f),
+      id: publicId,
       name: f.name,
       pricePerHour: f.pricePerHour || 0,
       schedule,
     });
   } catch (e) {
     console.error('schedule error:', e);
-    return res.status(500).json({ message: 'فشل تحميل جدول المواعيد' });
+    return safeError(res, 500, 'فشل تحميل جدول المواعيد');
   }
 });
 
-// التقييمات (مبسّطة)
+/* ================================================================== */
+/* Reviews                                                              */
+/* ================================================================== */
+
 app.get('/api/fields/:id/review-eligibility', auth, async (req, res) => {
   const f = await resolveField(req.params.id);
-  res.json({ canReview: false, hasBooked: false, userRating: null, averageRating: f?.averageRating || 0, reviewCount: f?.reviewCount || 0 });
+  if (!f) return safeError(res, 404, 'الملعب غير موجود');
+  const publicId = publicNumericId(f);
+  const userBookings = (await bookingsByUser(req.user.id))
+    .filter((b) => bookingBelongsToField(b, f) && (b.status === 'approved' || b.status === 'completed'));
+  const hasBooked = userBookings.length > 0;
+  const existing = (await reviewsByField(publicId)).find((r) => sameId(r.userId, req.user.id));
+  res.json({
+    canReview: hasBooked && !existing,
+    hasBooked,
+    userRating: existing?.rating ?? null,
+    averageRating: f.averageRating || 0,
+    reviewCount: f.reviewCount || 0,
+  });
 });
-app.get('/api/fields/:id/reviews', auth, (_req, res) => res.json([]));
-app.post('/api/fields/:id/reviews', auth, (_req, res) => res.json({ ok: true }));
 
-/* ================================================================== */
-/* المسارات — Slots (حجز تنافسي مبسّط)                                 */
-/* ================================================================== */
-
-app.post('/api/slots/select', auth, (_req, res) => {
-  res.json({ expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() });
+app.get('/api/fields/:id/reviews', auth, async (req, res) => {
+  const f = await resolveField(req.params.id);
+  if (!f) return safeError(res, 404, 'الملعب غير موجود');
+  const list = await reviewsByField(publicNumericId(f));
+  const items = [];
+  for (const r of list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))) {
+    const user = await store.findById('users', r.userId);
+    items.push({
+      id: Number(r.id),
+      userId: Number(r.userId),
+      userName: user?.name || 'مستخدم',
+      rating: Number(r.rating),
+      comment: r.comment || null,
+      createdAt: r.createdAt,
+    });
+  }
+  res.json(items);
 });
-app.post('/api/slots/release', auth, (_req, res) => res.json({ ok: true }));
+
+app.post('/api/fields/:id/reviews', auth, async (req, res) => {
+  const f = await resolveField(req.params.id);
+  if (!f) return safeError(res, 404, 'الملعب غير موجود');
+  const rating = Number(req.body?.rating);
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+    return safeError(res, 400, 'التقييم يجب أن يكون بين 1 و 5');
+  }
+  const publicId = publicNumericId(f);
+  const hasBooked = (await bookingsByUser(req.user.id))
+    .some((b) => bookingBelongsToField(b, f) && (b.status === 'approved' || b.status === 'completed'));
+  if (!hasBooked) return safeError(res, 403, 'يجب حجز الملعب أولاً قبل التقييم');
+  const existing = (await reviewsByField(publicId)).find((r) => sameId(r.userId, req.user.id));
+  if (existing) return safeError(res, 409, 'لقد قيّمت هذا الملعب مسبقاً');
+  await store.insert('reviews', {
+    fieldId: f.id != null ? f.id : publicId,
+    fieldPublicId: publicId,
+    userId: Number(req.user.id),
+    rating: Math.round(rating),
+    comment: String(req.body?.comment || '').trim() || null,
+    createdAt: new Date().toISOString(),
+  });
+  const stats = await refreshFieldRatings(f);
+  res.status(201).json({ ok: true, ...stats });
+});
 
 /* ================================================================== */
-/* المسارات — Bookings                                                 */
+/* Slots                                                                */
 /* ================================================================== */
 
-app.post('/api/bookings', auth, async (req, res) => {
+app.post('/api/slots/select', auth, async (req, res) => {
+  const { fieldId, startTime, hours } = req.body || {};
+  if (!fieldId || !startTime) return safeError(res, 400, 'الملعب ووقت البدء مطلوبان');
+  const f = await resolveField(fieldId);
+  if (!f) return safeError(res, 404, 'الملعب غير موجود');
+  const publicId = publicNumericId(f);
+  const hrs = Number(hours) || 1;
+  purgeExpiredHolds();
+  const key = holdKey(publicId, startTime, hrs);
+  const existing = slotHolds.get(key);
+  if (existing && Number(existing.userId) !== Number(req.user.id)
+    && new Date(existing.expiresAt) > new Date()) {
+    return res.status(409).json({ code: 'ConflictError', messageKey: 'slotUnderSelection' });
+  }
+  const booked = (await bookingsByField(f.id != null ? f.id : publicId))
+    .filter((b) => b.status === 'pending' || b.status === 'approved');
+  const start = new Date(startTime).toISOString();
+  if (booked.some((b) => new Date(b.startTime).toISOString().slice(0, 13) === start.slice(0, 13))) {
+    return res.status(409).json({ code: 'ConflictError', messageKey: 'slotJustBooked' });
+  }
+  const expiresAt = new Date(Date.now() + SLOT_HOLD_TTL_MS).toISOString();
+  const hold = {
+    fieldId: publicId,
+    userId: Number(req.user.id),
+    startTime: start,
+    hours: hrs,
+    expiresAt,
+  };
+  slotHolds.set(key, hold);
+  emitToField(publicId, 'slotSelection', hold);
+  res.json({ expiresAt });
+});
+
+app.post('/api/slots/release', auth, (req, res) => {
+  const { fieldId, startTime, hours } = req.body || {};
+  if (!fieldId || !startTime) return res.json({ ok: true });
+  const publicId = Number(fieldId);
+  const key = holdKey(publicId, startTime, Number(hours) || 1);
+  const existing = slotHolds.get(key);
+  if (existing && Number(existing.userId) === Number(req.user.id)) {
+    slotHolds.delete(key);
+    emitToField(publicId, 'slotRelease', {
+      fieldId: publicId,
+      startTime: new Date(startTime).toISOString(),
+      hours: Number(hours) || 1,
+    });
+  }
+  res.json({ ok: true });
+});
+
+/* ================================================================== */
+/* Bookings                                                             */
+/* ================================================================== */
+
+app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
   const { fieldId, startTime, hours, paymentMethod } = req.body || {};
-  if (!fieldId || !startTime) return res.status(400).json({ message: 'الملعب ووقت البدء مطلوبان' });
+  if (!fieldId || !startTime) return safeError(res, 400, 'الملعب ووقت البدء مطلوبان');
   const field = await resolveField(fieldId);
-  if (!field) return res.status(404).json({ message: 'الملعب غير موجود' });
+  if (!field || field.isActive === false) return safeError(res, 404, 'الملعب غير موجود');
 
   const hrs = Number(hours) || 1;
   const start = new Date(startTime).toISOString();
   const resolvedFieldId = publicNumericId(field);
 
-  // منع التعارض على نفس الساعة
+  const hold = getActiveHold(resolvedFieldId, start);
+  if (hold && Number(hold.userId) !== Number(req.user.id)) {
+    return res.status(409).json({ code: 'ConflictError', messageKey: 'slotUnderSelection' });
+  }
+
   const existing = (await bookingsByField(field.id != null ? field.id : resolvedFieldId))
     .filter((b) => b.status === 'pending' || b.status === 'approved');
   const clash = existing.some((b) => new Date(b.startTime).toISOString().slice(0, 13) === start.slice(0, 13));
@@ -695,13 +1134,11 @@ app.post('/api/bookings', auth, async (req, res) => {
   const hourlyRate = field.pricePerHour || 0;
   const totalPrice = hourlyRate * hrs;
   const method = String(paymentMethod || 'online').toLowerCase() === 'cash' ? 'cash' : 'online';
-  // نقداً: لا دفع إلكتروني — الحجز بانتظار موافقة المالك والدفع في الملعب
   const paymentStatus = method === 'cash' ? 'pay_at_venue' : 'unpaid';
   const ownerId = Number(field.ownerId) || 0;
   const storedFieldId = field.id != null ? field.id : resolvedFieldId;
   const booking = await store.insert('bookings', {
     fieldId: storedFieldId,
-    // نسخة رقمية عامة للمطابقة مع Flutter (stableId / public id)
     fieldPublicId: resolvedFieldId,
     ownerId,
     userId: Number(req.user.id),
@@ -710,7 +1147,14 @@ app.post('/api/bookings', auth, async (req, res) => {
     paymentMethod: method,
     referenceCode: 'REF-' + Date.now().toString().slice(-6),
     createdAt: new Date().toISOString(),
+    walletCredited: false,
   });
+
+  slotHolds.delete(holdKey(resolvedFieldId, start, hrs));
+  emitToField(resolvedFieldId, 'slotRelease', {
+    fieldId: resolvedFieldId, startTime: start, hours: hrs,
+  });
+
   await notify(
     ownerId,
     'طلب حجز جديد',
@@ -718,12 +1162,17 @@ app.post('/api/bookings', auth, async (req, res) => {
       ? `طلب حجز نقدي على ${field.name} — بانتظار موافقتك`
       : `طلب حجز على ${field.name}`,
   );
-  // إشعار داخل التطبيق للمستخدم أيضاً
   await notify(
     req.user.id,
     'تم إرسال طلب الحجز',
     `حجزك على ${field.name} بانتظار موافقة صاحب الملعب`,
   );
+  emitBookingUpdated(req.user.id, booking, 'bookingPending', 'bookingPendingMessage', {
+    fieldName: field.name,
+  });
+  emitBookingUpdated(ownerId, booking, 'bookingPending', 'newBookingRequest', {
+    fieldName: field.name,
+  });
 
   res.status(201).json({
     id: Number(booking.id),
@@ -753,7 +1202,7 @@ async function listUserBookings(userId, { activeOnly = false, page, limit } = {}
   for (const b of list.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
     if (!Number.isFinite(Number(b.id)) || Number(b.id) <= 0) continue;
     fieldsCache[b.fieldId] ??= await store.findById('fields', b.fieldId)
-      ?? (await allFields()).find((f) => bookingBelongsToField(b, f))
+      ?? (await allFields({ includeInactive: true })).find((f) => bookingBelongsToField(b, f))
       ?? null;
     items.push(userBookingDto(b, fieldsCache[b.fieldId]));
   }
@@ -773,20 +1222,29 @@ app.get('/api/bookings/user/me/history', auth, async (req, res) => {
 });
 
 app.get('/api/bookings/user/:userId', auth, async (req, res) => {
-  // دائماً من التوكن — يتجنب mismatch معرّف التطبيق (stableId)
-  const uid = (req.user.role === 'admin' && req.params.userId)
-    ? Number(req.params.userId)
-    : Number(req.user.id);
-  res.json(await listUserBookings(uid, {
+  if (req.user.role === 'admin') {
+    return res.json(await listUserBookings(Number(req.params.userId), {
+      activeOnly: true, page: req.query.page, limit: req.query.limit,
+    }));
+  }
+  if (!sameId(req.params.userId, req.user.id)) {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  res.json(await listUserBookings(Number(req.user.id), {
     activeOnly: true, page: req.query.page, limit: req.query.limit,
   }));
 });
 
 app.get('/api/bookings/user/:userId/history', auth, async (req, res) => {
-  const uid = (req.user.role === 'admin' && req.params.userId)
-    ? Number(req.params.userId)
-    : Number(req.user.id);
-  res.json(await listUserBookings(uid, {
+  if (req.user.role === 'admin') {
+    return res.json(await listUserBookings(Number(req.params.userId), {
+      page: req.query.page, limit: req.query.limit,
+    }));
+  }
+  if (!sameId(req.params.userId, req.user.id)) {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  res.json(await listUserBookings(Number(req.user.id), {
     page: req.query.page, limit: req.query.limit,
   }));
 });
@@ -794,17 +1252,27 @@ app.get('/api/bookings/user/:userId/history', auth, async (req, res) => {
 app.post('/api/bookings/cancel', auth, async (req, res) => {
   const { bookingId, referenceCode } = req.body || {};
   const b = await resolveBooking(bookingId, referenceCode);
-  if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
-  if (!sameId(b.userId, req.user.id)) return res.status(403).json({ message: 'غير مصرح' });
-  await store.update('bookings', b.id, { status: 'cancelled' });
+  if (!b) return safeError(res, 404, 'الحجز غير موجود');
+  if (!sameId(b.userId, req.user.id) && req.user.role !== 'admin') {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  const updated = await store.update('bookings', b.id, { status: 'cancelled' });
   await notify(b.ownerId, 'إلغاء حجز', 'قام المستخدم بإلغاء حجز');
+  emitBookingUpdated(b.userId, updated || { ...b, status: 'cancelled' }, 'bookingCancelled', 'bookingCancelled');
+  emitBookingUpdated(b.ownerId, updated || { ...b, status: 'cancelled' }, 'bookingCancelled', 'bookingCancelled');
+  if (b.fieldPublicId || b.fieldId) {
+    emitToField(b.fieldPublicId || b.fieldId, 'slotRelease', {
+      fieldId: Number(b.fieldPublicId || b.fieldId),
+      startTime: b.startTime,
+      hours: b.hours || 1,
+    });
+  }
   res.json({ message: 'تم الإلغاء', tier: 'free', penaltyIqd: 0, ownerShareIqd: 0, platformShareIqd: 0 });
 });
 
 async function buildOwnerDashboard(ownerId) {
   const owned = await fieldsByOwner(ownerId);
   const field = owned[0] || null;
-  // حجوزات ملاعب هذا المالك — بالميدان أو بـ ownerId المخزّن على الحجز
   const allBookings = await store.find('bookings');
   const list = allBookings.filter((b) => {
     if (!Number.isFinite(Number(b.id)) || Number(b.id) <= 0) return false;
@@ -812,10 +1280,7 @@ async function buildOwnerDashboard(ownerId) {
   });
   const usersCache = {};
   const bookings = [];
-  const byField = owned.map((f) => ({
-    field: publicField(f),
-    bookings: [],
-  }));
+  const byField = owned.map((f) => ({ field: publicField(f), bookings: [] }));
   let totalRevenue = 0;
   let pendingCount = 0;
   for (const b of list.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
@@ -847,47 +1312,40 @@ async function buildOwnerDashboard(ownerId) {
   };
 }
 
-app.get('/api/bookings/owner/me', auth, async (req, res) => {
+app.get('/api/bookings/owner/me', auth, requireOwnerOrAdmin, async (req, res) => {
   try {
     res.json(await buildOwnerDashboard(authedOwnerId(req)));
   } catch (e) {
     console.error('owner/me dashboard:', e);
-    res.status(500).json({ message: 'فشل تحميل لوحة المالك' });
+    return safeError(res, 500, 'فشل تحميل لوحة المالك');
   }
 });
 
 app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
   try {
-    // المالك دائماً يرى لوحته من التوكن (يتجنب mismatch معرّف التطبيق)
     if (req.user.role === 'admin') {
       return res.json(await buildOwnerDashboard(Number(req.params.ownerId)));
     }
-    if (req.user.role !== 'owner') {
-      return res.status(403).json({ message: 'غير مصرح' });
-    }
+    if (req.user.role !== 'owner') return safeError(res, 403, 'غير مصرح');
     res.json(await buildOwnerDashboard(authedOwnerId(req)));
   } catch (e) {
     console.error('owner dashboard:', e);
-    res.status(500).json({
-      field: null,
-      bookings: [],
-      totalRevenue: 0,
-      appCommission: 0,
-      netRevenue: 0,
-      pendingCount: 0,
-      message: 'فشل تحميل لوحة المالك',
-    });
+    return safeError(res, 500, 'فشل تحميل لوحة المالك');
   }
 });
 
-app.post('/api/bookings/approve', auth, async (req, res) => {
+app.post('/api/bookings/approve', auth, requireOwnerOrAdmin, async (req, res) => {
   const { bookingId, referenceCode } = req.body || {};
   const b = await resolveBooking(bookingId, referenceCode);
-  if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
+  if (!b) return safeError(res, 404, 'الحجز غير موجود');
   const owned = await fieldsByOwner(req.user.id);
-  const ownsBooking = bookingBelongsToOwner(b, req.user.id, owned);
-  if (!ownsBooking) return res.status(403).json({ message: 'غير مصرح' });
-  await store.update('bookings', b.id, { status: 'approved', ownerId: Number(req.user.id) });
+  const ownsBooking = req.user.role === 'admin' || bookingBelongsToOwner(b, req.user.id, owned);
+  if (!ownsBooking) return safeError(res, 403, 'غير مصرح');
+  const updated = await store.update('bookings', b.id, {
+    status: 'approved',
+    ownerId: Number(b.ownerId || req.user.id),
+  });
+  await creditOwnerForApprovedBooking(updated || { ...b, status: 'approved' });
   await notify(
     b.userId,
     'تمت الموافقة على حجزك',
@@ -895,37 +1353,179 @@ app.post('/api/bookings/approve', auth, async (req, res) => {
       ? `تمت الموافقة على حجزك — الرقم المرجعي: ${b.referenceCode}`
       : 'تمت الموافقة على حجزك — يمكنك مراجعته من قائمة الحجوزات',
   );
+  emitBookingUpdated(b.userId, updated || { ...b, status: 'approved' }, 'bookingApproved', 'bookingApproved');
   res.json({ ok: true });
 });
 
-app.post('/api/bookings/reject', auth, async (req, res) => {
+app.post('/api/bookings/reject', auth, requireOwnerOrAdmin, async (req, res) => {
   const { bookingId, referenceCode } = req.body || {};
   const b = await resolveBooking(bookingId, referenceCode);
-  if (!b) return res.status(404).json({ message: 'الحجز غير موجود' });
+  if (!b) return safeError(res, 404, 'الحجز غير موجود');
   const owned = await fieldsByOwner(req.user.id);
-  const ownsBooking = bookingBelongsToOwner(b, req.user.id, owned);
-  if (!ownsBooking) return res.status(403).json({ message: 'غير مصرح' });
-  await store.update('bookings', b.id, { status: 'rejected', ownerId: Number(req.user.id) });
+  const ownsBooking = req.user.role === 'admin' || bookingBelongsToOwner(b, req.user.id, owned);
+  if (!ownsBooking) return safeError(res, 403, 'غير مصرح');
+  const updated = await store.update('bookings', b.id, {
+    status: 'rejected',
+    ownerId: Number(b.ownerId || req.user.id),
+  });
   await notify(b.userId, 'تم الرفض', 'عذراً، تم رفض حجزك');
+  emitBookingUpdated(b.userId, updated || { ...b, status: 'rejected' }, 'bookingRejected', 'bookingRejected');
+  if (b.fieldPublicId || b.fieldId) {
+    emitToField(b.fieldPublicId || b.fieldId, 'slotRelease', {
+      fieldId: Number(b.fieldPublicId || b.fieldId),
+      startTime: b.startTime,
+      hours: b.hours || 1,
+    });
+  }
   res.json({ ok: true });
-});
-
-// دفع مبسّط (اختياري)
-app.post('/api/bookings/:bookingId/pay/initiate', auth, (req, res) => {
-  res.json({ transactionToken: 'demo-' + req.params.bookingId, gateway: req.body?.gateway || 'card', amount: 0, checkoutUrl: null });
-});
-app.post('/api/bookings/pay/verify', auth, (_req, res) => {
-  res.json({ success: true, status: 'paid', invoiceId: null, outstandingAmount: 0, message: 'تم' });
 });
 
 /* ================================================================== */
-/* المسارات — Stats / Notifications                                    */
+/* Payments — تسجيل داخلي آمن (بدون بوابة خارجية وهمية)                   */
+/* ================================================================== */
+
+app.post('/api/bookings/:bookingId/pay/initiate', auth, async (req, res) => {
+  purgeExpiredPayments();
+  const b = await resolveBooking(req.params.bookingId);
+  if (!b) return safeError(res, 404, 'الحجز غير موجود');
+  if (!sameId(b.userId, req.user.id) && req.user.role !== 'admin') {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  if (b.paymentStatus === 'paid') {
+    return res.json({
+      transactionToken: null,
+      gateway: req.body?.gateway || 'card',
+      amount: 0,
+      checkoutUrl: null,
+      message: 'الحجز مدفوع مسبقاً',
+    });
+  }
+  const token = `pay-${b.id}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  pendingPayments.set(token, {
+    bookingId: Number(b.id),
+    userId: Number(req.user.id),
+    amount: Number(b.totalPrice) || 0,
+    expiresAt: Date.now() + PENDING_PAYMENT_TTL_MS,
+  });
+  res.json({
+    transactionToken: token,
+    gateway: req.body?.gateway || 'manual',
+    amount: Number(b.totalPrice) || 0,
+    checkoutUrl: null,
+    message: 'ادفع في الملعب أو أكّد عبر المالك — لا توجد بوابة إلكترونية مفعّلة حالياً',
+  });
+});
+
+app.post('/api/bookings/pay/verify', auth, async (req, res) => {
+  purgeExpiredPayments();
+  const token = String(req.body?.transactionToken || '');
+  const bookingId = req.body?.bookingId;
+  let b = null;
+
+  if (token) {
+    const pending = pendingPayments.get(token);
+    if (!pending) {
+      return res.status(400).json({
+        success: false,
+        status: 'failed',
+        message: 'رمز الدفع غير صالح أو منتهٍ',
+      });
+    }
+    b = await store.findById('bookings', pending.bookingId);
+  } else if (bookingId != null) {
+    b = await resolveBooking(bookingId);
+  }
+
+  if (!b) return safeError(res, 404, 'الحجز غير موجود');
+
+  const owned = await fieldsByOwner(req.user.id);
+  const isOwner = req.user.role === 'admin' || bookingBelongsToOwner(b, req.user.id, owned);
+  const isBookingUser = sameId(b.userId, req.user.id);
+
+  // لا بوابة إلكترونية حقيقية — تأكيد الدفع النقدي للمالك فقط
+  if (b.paymentMethod !== 'cash' && b.paymentStatus !== 'pay_at_venue') {
+    return res.status(503).json({
+      success: false,
+      status: 'unavailable',
+      invoiceId: null,
+      outstandingAmount: Number(b.totalPrice) || 0,
+      message: 'بوابة الدفع الإلكتروني غير مفعّلة — استخدم الدفع نقداً في الملعب',
+    });
+  }
+
+  if (!isOwner) {
+    return res.status(403).json({
+      success: false,
+      status: 'forbidden',
+      message: isBookingUser
+        ? 'تأكيد الدفع النقدي يتم عبر صاحب الملعب'
+        : 'غير مصرح',
+    });
+  }
+
+  await store.update('bookings', b.id, { paymentStatus: 'paid' });
+  if (token) pendingPayments.delete(token);
+  res.json({
+    success: true,
+    status: 'paid',
+    invoiceId: `INV-${b.id}`,
+    outstandingAmount: 0,
+    message: 'تم تأكيد الدفع',
+  });
+});
+
+app.get('/api/payments/owner/me/account', auth, requireOwnerOrAdmin, async (req, res) => {
+  const dash = await buildOwnerDashboard(authedOwnerId(req));
+  res.json({
+    outstandingAmount: dash.appCommission,
+    outstandingHours: 0,
+    totalPaid: Math.max(0, dash.totalRevenue - dash.appCommission),
+    pendingInvoices: [],
+    paidInvoices: [],
+    recentPayments: [],
+  });
+});
+
+app.get('/api/payments/owner/:ownerId/account', auth, async (req, res) => {
+  let ownerId = Number(req.user.id);
+  if (req.user.role === 'admin') ownerId = Number(req.params.ownerId);
+  else if (req.user.role !== 'owner') return safeError(res, 403, 'غير مصرح');
+  const dash = await buildOwnerDashboard(ownerId);
+  res.json({
+    outstandingAmount: dash.appCommission,
+    outstandingHours: 0,
+    totalPaid: Math.max(0, dash.totalRevenue - dash.appCommission),
+    pendingInvoices: [],
+    paidInvoices: [],
+    recentPayments: [],
+  });
+});
+
+app.post('/api/payments/initiate', auth, (_req, res) => {
+  res.status(503).json({
+    message: 'بوابة دفع العمولات غير مفعّلة حالياً — تواصل مع الإدارة',
+  });
+});
+
+app.post('/api/payments/verify', auth, (_req, res) => {
+  res.status(503).json({
+    success: false,
+    status: 'unavailable',
+    invoiceId: null,
+    outstandingAmount: null,
+    message: 'بوابة الدفع غير مفعّلة',
+  });
+});
+
+/* ================================================================== */
+/* Stats / Notifications                                                */
 /* ================================================================== */
 
 app.get('/api/stats/user/:userId', auth, async (req, res) => {
-  const uid = (req.user.role === 'admin' && req.params.userId)
-    ? Number(req.params.userId)
-    : Number(req.user.id);
+  if (req.user.role !== 'admin' && !sameId(req.params.userId, req.user.id)) {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  const uid = req.user.role === 'admin' ? Number(req.params.userId) : Number(req.user.id);
   const list = await bookingsByUser(uid);
   const notifs = await notificationsByUser(uid);
   const now = new Date();
@@ -946,99 +1546,190 @@ app.get('/api/notifications/me', auth, async (req, res) => {
 });
 
 app.get('/api/notifications/:userId', auth, async (req, res) => {
-  const uid = (req.user.role === 'admin' && req.params.userId)
-    ? Number(req.params.userId)
-    : Number(req.user.id);
+  if (req.user.role !== 'admin' && !sameId(req.params.userId, req.user.id)) {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  const uid = req.user.role === 'admin' ? Number(req.params.userId) : Number(req.user.id);
   const list = (await notificationsByUser(uid))
     .filter((n) => !String(n.title || '').startsWith('__'))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .map((n) => ({ id: n.id, title: n.title, message: n.message, isRead: n.isRead, createdAt: n.createdAt }));
   res.json(paged(list, req.query.page, req.query.limit));
 });
+
 app.post('/api/notifications/:id/read', auth, async (req, res) => {
-  await store.update('notifications', req.params.id, { isRead: true });
+  const n = await store.findById('notifications', req.params.id);
+  if (!n) return safeError(res, 404, 'الإشعار غير موجود');
+  if (!sameId(n.userId, req.user.id) && req.user.role !== 'admin') {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  await store.update('notifications', n.id, { isRead: true });
   res.json({ ok: true });
 });
+
 app.post('/api/notifications/user/:userId/read-all', auth, async (req, res) => {
-  const list = await notificationsByUser(req.params.userId);
+  if (req.user.role !== 'admin' && !sameId(req.params.userId, req.user.id)) {
+    return safeError(res, 403, 'غير مصرح');
+  }
+  const uid = req.user.role === 'admin' ? Number(req.params.userId) : Number(req.user.id);
+  const list = await notificationsByUser(uid);
   for (const n of list) await store.update('notifications', n.id, { isRead: true });
   res.json({ ok: true });
 });
 
 /* ================================================================== */
-/* المسارات — أخرى (stubs تمنع أعطال الشاشات الثانوية)                 */
+/* FCM token + Wallet                                                   */
 /* ================================================================== */
 
-app.post('/api/users/update-token', auth, (_req, res) => res.json({ ok: true }));
-
-app.get('/api/owner/wallet/status', auth, (req, res) => {
-  res.json({ ownerId: authedOwnerId(req), balance: 0, status: 'active', message: null });
+app.post('/api/users/update-token', auth, async (req, res) => {
+  const token = String(req.body?.token || req.body?.fcmToken || '').trim();
+  if (!token) return safeError(res, 400, 'رمز الإشعار مطلوب');
+  await store.update('users', req.user.id, {
+    fcmToken: token,
+    fcmUpdatedAt: new Date().toISOString(),
+  });
+  res.json({ ok: true });
 });
-app.get('/api/owner/wallet', auth, (req, res) => {
-  const ownerId = authedOwnerId(req);
+
+app.get('/api/owner/wallet/status', auth, requireOwnerOrAdmin, async (req, res) => {
+  const detail = await walletDetailDto(authedOwnerId(req));
+  if (!detail) return safeError(res, 404, 'غير موجود');
   res.json({
-    walletId: ownerId,
-    ownerId,
-    balance: 0,
-    status: 'active',
-    lastUpdated: new Date().toISOString(),
-    transactions: [],
+    ownerId: detail.ownerId,
+    balance: detail.balance,
+    status: detail.status,
+    message: detail.status === 'blocked' ? 'المحفظة موقوفة' : null,
   });
 });
 
-// حساب عمولات المالك (stub حتى لا تنهار شاشات الدفع)
-function ownerPaymentAccountDto() {
-  return {
-    outstandingAmount: 0,
-    outstandingHours: 0,
-    totalPaid: 0,
-    pendingInvoices: [],
-    paidInvoices: [],
-    recentPayments: [],
-  };
-}
-app.get('/api/payments/owner/me/account', auth, (req, res) => {
-  if (req.user.role !== 'owner' && req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'غير مصرح' });
+app.get('/api/owner/wallet', auth, requireOwnerOrAdmin, async (req, res) => {
+  const detail = await walletDetailDto(authedOwnerId(req));
+  if (!detail) return safeError(res, 404, 'غير موجود');
+  res.json(detail);
+});
+
+/* ================================================================== */
+/* Admin                                                                */
+/* ================================================================== */
+
+app.get('/api/admin/stats', auth, requireAdmin, async (_req, res) => {
+  const users = await store.find('users');
+  const fields = await allFields({ includeInactive: true });
+  const bookings = await store.find('bookings');
+  const owners = users.filter((u) => u.role === 'owner');
+  const approved = bookings.filter((b) => b.status === 'approved');
+  const paid = bookings.filter((b) => b.paymentStatus === 'paid' || b.paymentStatus === 'pay_at_venue');
+  const totalRevenueIqd = approved.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
+  res.json({
+    totalUsers: users.filter((u) => u.role === 'user').length,
+    totalOwners: owners.length,
+    totalFields: fields.length,
+    totalBookings: bookings.length,
+    paidBookings: paid.length,
+    totalRevenueIqd,
+    platformCommissionIqd: Math.round(totalRevenueIqd * COMMISSION_RATE),
+  });
+});
+
+app.get('/api/admin/financials', auth, requireAdmin, async (_req, res) => {
+  const bookings = await store.find('bookings');
+  const approved = bookings.filter((b) => b.status === 'approved');
+  const paid = bookings.filter((b) => b.paymentStatus === 'paid' || b.paymentStatus === 'pay_at_venue');
+  const totalRevenueIqd = approved.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
+  res.json({
+    paidBookings: paid.length,
+    totalRevenueIqd,
+    platformCommissionIqd: Math.round(totalRevenueIqd * COMMISSION_RATE),
+  });
+});
+
+app.get('/api/admin/owners', auth, requireAdmin, async (_req, res) => {
+  const users = await store.find('users');
+  const fields = await allFields({ includeInactive: true });
+  const owners = users.filter((u) => u.role === 'owner').map((o) => ({
+    id: Number(o.id),
+    name: o.name,
+    email: o.email,
+    phone: o.phone || '',
+    fieldCount: fields.filter((f) => sameId(f.ownerId, o.id)).length,
+  }));
+  res.json(owners);
+});
+
+app.get('/api/admin/bookings/pending', auth, requireAdmin, async (_req, res) => {
+  const bookings = (await store.find('bookings')).filter((b) => b.status === 'pending');
+  const items = [];
+  for (const b of bookings) {
+    const user = await store.findById('users', b.userId);
+    const field = await store.findById('fields', b.fieldId);
+    items.push({
+      id: Number(b.id),
+      fieldName: field?.name || b.fieldName || '',
+      userName: user?.name || '',
+      startTime: b.startTime,
+      hours: b.hours,
+      totalPrice: b.totalPrice,
+      status: b.status,
+    });
   }
-  res.json(ownerPaymentAccountDto());
+  res.json(items);
 });
-app.get('/api/payments/owner/:ownerId/account', auth, (req, res) => {
-  if (req.user.role === 'admin') return res.json(ownerPaymentAccountDto());
-  if (req.user.role !== 'owner') return res.status(403).json({ message: 'غير مصرح' });
-  // ثقة بالتوكن — حتى لو معرّف المسار لا يطابق كاش التطبيق
-  res.json(ownerPaymentAccountDto());
+
+app.get('/api/admin/fields', auth, requireAdmin, async (_req, res) => {
+  const fields = await allFields({ includeInactive: true });
+  const items = [];
+  for (const f of fields) {
+    const owner = await store.findById('users', f.ownerId);
+    items.push({
+      id: publicNumericId(f),
+      name: f.name,
+      address: f.address || '',
+      ownerId: Number(f.ownerId) || 0,
+      ownerName: owner?.name || '',
+      isActive: f.isActive !== false,
+    });
+  }
+  res.json(items);
 });
-app.post('/api/payments/initiate', auth, (req, res) => {
-  res.json({
-    transactionToken: 'demo-' + Date.now(),
-    gateway: req.body?.gateway || 'card',
-    amount: Number(req.body?.amount) || 0,
-    checkoutUrl: null,
+
+app.patch('/api/admin/fields/:id/toggle', auth, requireAdmin, async (req, res) => {
+  const f = await resolveField(req.params.id);
+  if (!f || f.id == null) return safeError(res, 404, 'الملعب غير موجود');
+  const isActive = f.isActive === false;
+  await store.update('fields', f.id, { isActive });
+  res.json({ isActive });
+});
+
+app.post('/api/admin/wallets/top-up', auth, requireAdmin, async (req, res) => {
+  const ownerId = Number(req.body?.ownerId);
+  const amount = Number(req.body?.amount);
+  const note = String(req.body?.note || '').trim();
+  if (!Number.isFinite(ownerId) || ownerId <= 0) return safeError(res, 400, 'معرّف المالك مطلوب');
+  if (!Number.isFinite(amount) || amount <= 0) return safeError(res, 400, 'المبلغ غير صالح');
+  const owner = await store.findById('users', ownerId);
+  if (!owner || owner.role !== 'owner') return safeError(res, 404, 'المالك غير موجود');
+  await addWalletTx({
+    ownerId,
+    amount: Math.round(amount),
+    type: 'admin_credit',
+    typeLabel: 'شحن إداري',
+    description: note || 'شحن رصيد من الإدارة',
+    adminNote: note || null,
   });
-});
-app.post('/api/payments/verify', auth, (_req, res) => {
-  res.json({
-    success: true,
-    status: 'paid',
-    invoiceId: null,
-    outstandingAmount: 0,
-    message: 'تم',
-  });
+  const detail = await walletDetailDto(ownerId);
+  res.json(detail);
 });
 
 /* ================================================================== */
-/* معالجة المسارات غير الموجودة والأخطاء (JSON دائماً لمسارات /api)     */
+/* 404 / errors                                                         */
 /* ================================================================== */
 
 app.use('/api', (_req, res) => res.status(404).json({ message: 'المسار غير موجود' }));
 
-// أي طلب آخر غير معروف → الواجهة (SPA fallback) إن وُجدت
 app.use((_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
   if (err) res.status(404).json({ message: 'غير موجود' });
 }));
 
-// معالج أخطاء عام — يضمن استجابة JSON بدل تعطّل الخادم
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error('خطأ غير متوقع:', err);
@@ -1046,28 +1737,26 @@ app.use((err, _req, res, _next) => {
 });
 
 /* ================================================================== */
-/* التشغيل                                                             */
+/* التشغيل                                                              */
 /* ================================================================== */
 
 async function start() {
-  if (MONGODB_URI) { store = await createMongoStore(MONGODB_URI); console.log('التخزين: MongoDB'); }
-  else { store = createMemoryStore(); console.log('التخزين: في الذاكرة (in-memory)'); }
-
-  // مسح كامل لمرة واحدة قبل الإطلاق — يحذف المستخدمين الوهميين والملاعب والحجوزات
-  // بعدها يمكن التسجيل من جديد بنفس البريد دون «الحساب موجود»
-  try {
-    const flag = isMongo()
-      // v2: بعد إصلاح Mongoose id virtual — مسح البيانات التالفة (ownerId=0 / بدون id رقمي)
-      ? await store.findOne('notifications', { title: '__launch_clean_slate_v2_mongoose_id__' })
-      : await store.findOne('notifications', (n) => n.title === '__launch_clean_slate_v2_mongoose_id__');
-    if (!flag) {
-      await wipeAllAppData('startup');
-    }
-  } catch (e) {
-    console.error('تحذير: فشل مسح الإطلاق:', e.message || e);
+  if (MONGODB_URI) {
+    store = await createMongoStore(MONGODB_URI);
+    console.log('التخزين: MongoDB');
+  } else {
+    store = createMemoryStore();
+    console.log('التخزين: في الذاكرة (in-memory)');
   }
 
-  app.listen(PORT, () => console.log(`الخادم يعمل على المنفذ ${PORT}`));
+  // لا يوجد مسح تلقائي عند الإقلاع — حماية بيانات الإنتاج
+
+  server.listen(PORT, () => {
+    console.log(`الخادم يعمل على المنفذ ${PORT} (HTTP + Socket.io)`);
+  });
 }
 
-start().catch((err) => { console.error('فشل بدء الخادم:', err); process.exit(1); });
+start().catch((err) => {
+  console.error('فشل بدء الخادم:', err);
+  process.exit(1);
+});
