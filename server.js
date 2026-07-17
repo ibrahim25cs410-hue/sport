@@ -33,6 +33,10 @@ const SLOT_HOLD_TTL_MS = 5 * 60 * 1000;
 const PENDING_PAYMENT_TTL_MS = 15 * 60 * 1000;
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
+const ADMIN_EMAIL = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_NAME = process.env.ADMIN_NAME || 'مدير المنصة';
+const ADMIN_BOOTSTRAP_SECRET = process.env.ADMIN_BOOTSTRAP_SECRET || '';
 
 function resolveJwtSecret() {
   if (JWT_SECRET && JWT_SECRET.length >= 32 && JWT_SECRET !== 'dev-secret-change-me') {
@@ -53,6 +57,63 @@ function resolveJwtSecret() {
 }
 
 const EFFECTIVE_JWT_SECRET = resolveJwtSecret();
+
+/* ================================================================== */
+/* FCM (اختياري) — يُفعّل فقط عند توفّر بيانات اعتماد Firebase           */
+/* ================================================================== */
+
+let fcmMessaging = null;
+
+function initFcm() {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT || '';
+  const hasAdc = !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!raw && !hasAdc) {
+    console.log('FCM: غير مفعّل (لا FIREBASE_SERVICE_ACCOUNT) — الإشعارات الفورية عبر Socket.io فقط');
+    return;
+  }
+  try {
+    const admin = require('firebase-admin');
+    if (!admin.apps.length) {
+      if (raw) {
+        // يقبل JSON مباشرة أو Base64 لتفادي مشاكل الأسطر الجديدة في Render
+        let json = raw.trim();
+        if (!json.startsWith('{')) {
+          json = Buffer.from(json, 'base64').toString('utf8');
+        }
+        const creds = JSON.parse(json);
+        admin.initializeApp({ credential: admin.credential.cert(creds) });
+      } else {
+        admin.initializeApp({ credential: admin.credential.applicationDefault() });
+      }
+    }
+    fcmMessaging = admin.messaging();
+    console.log('FCM: مفعّل — إرسال إشعارات push حقيقية');
+  } catch (e) {
+    console.warn('FCM: فشل التهيئة —', e.message || e);
+    fcmMessaging = null;
+  }
+}
+
+async function sendFcmToUser(user, title, message, data = {}) {
+  if (!fcmMessaging || !user?.fcmToken) return;
+  try {
+    await fcmMessaging.send({
+      token: user.fcmToken,
+      notification: { title, body: message },
+      data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+      android: { priority: 'high' },
+    });
+  } catch (e) {
+    const code = e?.errorInfo?.code || e?.code || '';
+    // توكن غير صالح → احذفه حتى لا نعيد المحاولة
+    if (String(code).includes('registration-token-not-registered')
+      || String(code).includes('invalid-registration-token')) {
+      try { await store.update('users', user.id, { fcmToken: null }); } catch { /* تجاهل */ }
+    } else {
+      console.warn('FCM send failed:', code || e.message || e);
+    }
+  }
+}
 
 const ALLOWED_ORIGINS = String(process.env.ALLOWED_ORIGINS || '')
   .split(',')
@@ -559,7 +620,7 @@ function paged(items, page, limit) {
   };
 }
 
-async function notify(userId, title, message) {
+async function notify(userId, title, message, data = {}) {
   const uid = Number(userId);
   if (!Number.isFinite(uid) || uid <= 0) return null;
   const n = await store.insert('notifications', {
@@ -568,6 +629,12 @@ async function notify(userId, title, message) {
   emitToUser(uid, 'notification', {
     id: n.id, title: n.title, message: n.message, isRead: false, createdAt: n.createdAt,
   });
+  // إشعار push حقيقي عبر FCM إذا كان التطبيق مغلقاً (لا يعطّل الطلب عند الفشل)
+  if (fcmMessaging) {
+    store.findById('users', uid)
+      .then((user) => sendFcmToUser(user, title, message, { notificationId: String(n.id), ...data }))
+      .catch(() => { /* تجاهل */ });
+  }
   return n;
 }
 
@@ -1720,6 +1787,27 @@ app.post('/api/admin/wallets/top-up', auth, requireAdmin, async (req, res) => {
   res.json(detail);
 });
 
+/**
+ * ترقية حساب موجود إلى أدمن — محمي بسر ADMIN_BOOTSTRAP_SECRET.
+ * يُستخدم مرة واحدة لإنشاء أول أدمن دون الحاجة لتعديل قاعدة البيانات يدوياً.
+ */
+app.post('/api/admin/bootstrap', async (req, res) => {
+  if (!ADMIN_BOOTSTRAP_SECRET) {
+    return safeError(res, 410, 'التهيئة الإدارية غير مفعّلة — اضبط ADMIN_BOOTSTRAP_SECRET');
+  }
+  if (String(req.body?.secret || '') !== ADMIN_BOOTSTRAP_SECRET) {
+    return safeError(res, 403, 'سر غير صحيح');
+  }
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!email) return safeError(res, 400, 'البريد مطلوب');
+  const user = await findUserByEmail(email);
+  if (!user) return safeError(res, 404, 'المستخدم غير موجود — سجّل الحساب أولاً');
+  if (user.role === 'admin') return res.json({ ok: true, message: 'الحساب أدمن مسبقاً' });
+  await store.update('users', user.id, { role: 'admin' });
+  console.log(`تمت ترقية ${email} إلى أدمن عبر bootstrap`);
+  res.json({ ok: true, message: 'تمت الترقية إلى أدمن' });
+});
+
 /* ================================================================== */
 /* 404 / errors                                                         */
 /* ================================================================== */
@@ -1740,6 +1828,29 @@ app.use((err, _req, res, _next) => {
 /* التشغيل                                                              */
 /* ================================================================== */
 
+async function seedAdmin() {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) return;
+  if (ADMIN_PASSWORD.length < MIN_PASSWORD_LENGTH) {
+    console.warn('تخطي بذر الأدمن: ADMIN_PASSWORD قصيرة جداً');
+    return;
+  }
+  const existing = await findUserByEmail(ADMIN_EMAIL);
+  if (existing) {
+    if (existing.role !== 'admin') {
+      await store.update('users', existing.id, { role: 'admin' });
+      console.log(`تمت ترقية ${ADMIN_EMAIL} إلى أدمن`);
+    }
+    return;
+  }
+  const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  await store.insert('users', {
+    name: ADMIN_NAME, email: ADMIN_EMAIL, password: hashed, phone: '',
+    province: 'نينوى', image: null, role: 'admin', loyaltyPoints: 0,
+    walletBalance: 0, walletStatus: 'active',
+  });
+  console.log(`تم إنشاء حساب أدمن: ${ADMIN_EMAIL}`);
+}
+
 async function start() {
   if (MONGODB_URI) {
     store = await createMongoStore(MONGODB_URI);
@@ -1750,6 +1861,13 @@ async function start() {
   }
 
   // لا يوجد مسح تلقائي عند الإقلاع — حماية بيانات الإنتاج
+
+  initFcm();
+  try {
+    await seedAdmin();
+  } catch (e) {
+    console.warn('تحذير: فشل بذر الأدمن:', e.message || e);
+  }
 
   server.listen(PORT, () => {
     console.log(`الخادم يعمل على المنفذ ${PORT} (HTTP + Socket.io)`);

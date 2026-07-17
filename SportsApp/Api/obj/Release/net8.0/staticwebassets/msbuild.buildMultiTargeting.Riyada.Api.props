@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\Riyada.Api.props" />
-</Project>
