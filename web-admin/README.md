@@ -12,7 +12,24 @@ npm install
 npm run dev
 ```
 
-يفتح على `http://localhost:5174` ويوجّه الطلبات عبر بروكسي Vite إلى Render.
+يفتح على `http://localhost:5174` (بدون `/panel` في وضع التطوير — Vite يستخدم `/` محلياً إذا غيّرت base... حالياً base هو `/panel/`).
+
+للتطوير بنفس مسار الإنتاج:
+
+```powershell
+# من جذر المستودع — يبني اللوحة ويضعها في public/panel
+npm run build
+npm start
+# ثم افتح http://localhost:3000/panel/
+```
+
+## على Render (الإنتاج)
+
+اللوحة تُخدم من نفس خدمة API:
+
+**https://sports-x7v7.onrender.com/panel/**
+
+`npm run build` على Render يبني `web-admin` وينسخ الملفات إلى `public/panel`.
 
 ## البناء للإنتاج
 
@@ -21,8 +38,11 @@ cd web-admin
 npm run build
 ```
 
-الملفات في `dist/` — انشرها على أي استضافة ثابتة (Render Static / Netlify / Nginx).  
-ملف `.env.production` يضبط `VITE_API_BASE` على سيرفر Render.
+أو من الجذر:
+
+```powershell
+npm run build
+```
 
 ## الدخول
 

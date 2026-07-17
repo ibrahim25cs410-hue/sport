@@ -76,7 +76,7 @@ export default function AdminLayout() {
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-pitch-200/70 bg-white/80 px-4 py-3 backdrop-blur lg:px-8">
           <div>
             <p className="text-sm font-bold text-pitch-900">إدارة المنصة مباشرة</p>
-            <p className="text-xs text-pitch-600">متصل بـ sports-x7v7.onrender.com</p>
+            <p className="text-xs text-pitch-600">https://sports-x7v7.onrender.com/panel</p>
           </div>
           <button type="button" onClick={handleLogout} className="btn-ghost lg:hidden">
             <LogOut className="h-4 w-4" />

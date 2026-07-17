@@ -13,6 +13,7 @@ require('dotenv').config();
 
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
@@ -1937,14 +1938,40 @@ app.post('/api/admin/bootstrap', async (req, res) => {
 });
 
 /* ================================================================== */
-/* 404 / errors                                                         */
+/* 404 / errors + Admin panel SPA                                       */
 /* ================================================================== */
 
 app.use('/api', (_req, res) => res.status(404).json({ message: 'المسار غير موجود' }));
 
-app.use((_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
-  if (err) res.status(404).json({ message: 'غير موجود' });
-}));
+const panelDir = path.join(__dirname, 'public', 'panel');
+const panelIndex = path.join(panelDir, 'index.html');
+
+app.get(['/panel', '/admin'], (_req, res) => {
+  res.redirect(302, '/panel/');
+});
+
+app.use('/panel', express.static(panelDir, { index: 'index.html', fallthrough: true }));
+
+app.get('/panel/*', (req, res, next) => {
+  if (!fs.existsSync(panelIndex)) {
+    return res.status(503).json({
+      message: 'لوحة الأدمن غير مبنية — شغّل npm run build على السيرفر',
+    });
+  }
+  // لا تIntercept ملفات الأصول
+  if (path.extname(req.path)) return next();
+  return res.sendFile(panelIndex);
+});
+
+app.use((_req, res) => {
+  // إن وُجدت لوحة الأدمن، وجّه الجذر إليها
+  if (fs.existsSync(panelIndex)) {
+    return res.redirect(302, '/panel/');
+  }
+  return res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+    if (err) res.status(404).json({ message: 'غير موجود' });
+  });
+});
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
