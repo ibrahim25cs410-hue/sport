@@ -891,16 +891,38 @@ app.post('/api/login', authLimiter, async (req, res) => {
     const { email, password, expectedRole } = req.body || {};
     if (!email || !password) return safeError(res, 400, 'البريد وكلمة المرور مطلوبة');
     const normEmail = String(email).trim().toLowerCase();
-    const user = await findUserByEmail(normEmail);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return safeError(res, 401, 'بيانات الدخول غير صحيحة');
+
+    let user = await findUserByEmail(normEmail);
+    const passwordOk = user && user.password
+      ? await bcrypt.compare(password, user.password)
+      : false;
+
+    // حساب الأدمن من Environment على Render — حتى لو البذرة لم تشتغل أو الباسوورد قديم
+    if (!passwordOk) {
+      const ensured = await ensureAdminFromEnv(normEmail, password);
+      if (ensured) {
+        user = ensured;
+      } else {
+        return safeError(res, 401, 'بيانات الدخول غير صحيحة');
+      }
+    } else if (
+      ADMIN_EMAIL
+      && normEmail === ADMIN_EMAIL
+      && String(password) === ADMIN_PASSWORD
+      && user.role !== 'admin'
+    ) {
+      user = await store.update('users', user.id, { role: 'admin' }) || user;
     }
+
     const role = String(expectedRole || '').trim().toLowerCase();
     if (role === 'owner' && user.role !== 'owner' && user.role !== 'admin') {
       return safeError(res, 403, 'هذا حساب مستخدم — استخدم تسجيل دخول المستخدم');
     }
     if (role === 'user' && user.role === 'owner') {
       return safeError(res, 403, 'هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب');
+    }
+    if (role === 'admin' && user.role !== 'admin') {
+      return safeError(res, 403, 'هذا الحساب ليس أدمن');
     }
     const body = { token: sign(user), user: publicUser(user) };
     if (user.role === 'owner') {
@@ -1989,21 +2011,49 @@ async function seedAdmin() {
     console.warn('تخطي بذر الأدمن: ADMIN_PASSWORD قصيرة جداً');
     return;
   }
+  const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
   const existing = await findUserByEmail(ADMIN_EMAIL);
   if (existing) {
-    if (existing.role !== 'admin') {
-      await store.update('users', existing.id, { role: 'admin' });
-      console.log(`تمت ترقية ${ADMIN_EMAIL} إلى أدمن`);
-    }
+    await store.update('users', existing.id, {
+      role: 'admin',
+      password: hashed,
+      name: existing.name || ADMIN_NAME,
+    });
+    console.log(`تم مزامنة حساب الأدمن: ${ADMIN_EMAIL} (role + password من Environment)`);
     return;
   }
-  const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
   await store.insert('users', {
     name: ADMIN_NAME, email: ADMIN_EMAIL, password: hashed, phone: '',
     province: 'نينوى', image: null, role: 'admin', loyaltyPoints: 0,
     walletBalance: 0, walletStatus: 'active',
   });
   console.log(`تم إنشاء حساب أدمن: ${ADMIN_EMAIL}`);
+}
+
+/** إذا تطابقت بيانات الدخول مع ADMIN_EMAIL/PASSWORD من Render — أنشئ/رقِّ الأدمن فوراً */
+async function ensureAdminFromEnv(email, password) {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) return null;
+  if (ADMIN_PASSWORD.length < MIN_PASSWORD_LENGTH) return null;
+  if (String(email).trim().toLowerCase() !== ADMIN_EMAIL) return null;
+  if (String(password) !== ADMIN_PASSWORD) return null;
+
+  const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  let user = await findUserByEmail(ADMIN_EMAIL);
+  if (user) {
+    user = await store.update('users', user.id, {
+      role: 'admin',
+      password: hashed,
+      name: user.name || ADMIN_NAME,
+    });
+  } else {
+    user = await store.insert('users', {
+      name: ADMIN_NAME, email: ADMIN_EMAIL, password: hashed, phone: '',
+      province: 'نينوى', image: null, role: 'admin', loyaltyPoints: 0,
+      walletBalance: 0, walletStatus: 'active',
+    });
+  }
+  console.log(`تم تأكيد أدمن عبر Environment عند تسجيل الدخول: ${ADMIN_EMAIL}`);
+  return user;
 }
 
 async function start() {
