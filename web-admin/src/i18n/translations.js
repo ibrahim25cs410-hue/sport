@@ -18,6 +18,19 @@ export const translations = {
     empty: 'لا توجد بيانات',
     error: 'حدث خطأ',
     currency: 'د.ع',
+    navGroup: {
+      overview: 'نظرة عامة',
+      operations: 'التشغيل',
+      people: 'الأشخاص',
+      system: 'النظام',
+    },
+    section: {
+      overview: 'نظرة عامة',
+      finance: 'المالية',
+      action: 'يحتاج إجراء',
+      analytics: 'تحليلات',
+      recent: 'أحدث النشاط',
+    },
 
     nav: {
       dashboard: 'لوحة التحكم',
@@ -249,6 +262,19 @@ export const translations = {
     empty: 'No data',
     error: 'Something went wrong',
     currency: 'IQD',
+    navGroup: {
+      overview: 'Overview',
+      operations: 'Operations',
+      people: 'People',
+      system: 'System',
+    },
+    section: {
+      overview: 'Overview',
+      finance: 'Finance',
+      action: 'Needs action',
+      analytics: 'Analytics',
+      recent: 'Recent activity',
+    },
 
     nav: {
       dashboard: 'Dashboard',

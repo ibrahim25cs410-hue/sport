@@ -13,21 +13,42 @@ export function RequireAdmin() {
   return <Outlet />;
 }
 
+function NavGroup({ title, children }) {
+  return (
+    <div className="mb-3">
+      <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-pitch-500">
+        {title}
+      </p>
+      <div className="flex gap-1 lg:flex-col">{children}</div>
+    </div>
+  );
+}
+
+function SideLink({ to, end, label, icon: Icon }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition ${
+          isActive
+            ? 'bg-white text-pitch-950'
+            : 'text-pitch-200 hover:bg-pitch-900 hover:text-white'
+        }`
+      }
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {label}
+    </NavLink>
+  );
+}
+
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const { t, locale, toggleLocale } = useLocale();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const links = [
-    { to: '/', end: true, label: t('nav.dashboard'), icon: LayoutDashboard },
-    { to: '/bookings', label: t('nav.bookings'), icon: CalendarDays },
-    { to: '/fields', label: t('nav.fields'), icon: Building2 },
-    { to: '/owners', label: t('nav.owners'), icon: Wallet },
-    { to: '/users', label: t('nav.users'), icon: Users },
-    { to: '/settings', label: t('nav.settings'), icon: Settings },
-  ];
 
   const titleMap = {
     '/': t('nav.dashboard'),
@@ -46,8 +67,8 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="relative border-b border-pitch-800/30 bg-pitch-950 text-pitch-50 lg:min-h-screen lg:border-b-0 lg:border-e lg:border-pitch-900">
+    <div className="min-h-screen lg:grid lg:grid-cols-[252px_1fr]">
+      <aside className="relative flex flex-col border-b border-pitch-800/30 bg-pitch-950 text-pitch-50 lg:min-h-screen lg:border-b-0 lg:border-e lg:border-pitch-900">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(480px_220px_at_50%_-10%,rgba(94,163,111,0.22),transparent_70%)]" />
 
         <div className="relative px-5 py-5">
@@ -62,30 +83,25 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        <nav className="relative space-y-1 overflow-x-auto px-3 pb-4 lg:overflow-visible">
-          <div className="flex gap-1 lg:flex-col">
-            {links.map(({ to, end, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition ${
-                    isActive
-                      ? 'bg-white text-pitch-950'
-                      : 'text-pitch-200 hover:bg-pitch-900 hover:text-white'
-                  }`
-                }
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </NavLink>
-            ))}
-          </div>
+        <nav className="relative flex-1 overflow-x-auto px-3 pb-4 lg:overflow-y-auto lg:overflow-x-visible">
+          <NavGroup title={t('navGroup.overview')}>
+            <SideLink to="/" end label={t('nav.dashboard')} icon={LayoutDashboard} />
+          </NavGroup>
+          <NavGroup title={t('navGroup.operations')}>
+            <SideLink to="/bookings" label={t('nav.bookings')} icon={CalendarDays} />
+            <SideLink to="/fields" label={t('nav.fields')} icon={Building2} />
+          </NavGroup>
+          <NavGroup title={t('navGroup.people')}>
+            <SideLink to="/owners" label={t('nav.owners')} icon={Wallet} />
+            <SideLink to="/users" label={t('nav.users')} icon={Users} />
+          </NavGroup>
+          <NavGroup title={t('navGroup.system')}>
+            <SideLink to="/settings" label={t('nav.settings')} icon={Settings} />
+          </NavGroup>
         </nav>
 
-        <div className="relative mt-auto hidden space-y-3 border-t border-pitch-800/80 px-4 py-4 lg:block">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="relative mt-auto space-y-3 border-t border-pitch-800/80 px-4 py-4">
+          <div className="hidden grid-cols-2 gap-2 lg:grid">
             <button type="button" onClick={toggleLocale} className="btn !bg-pitch-900 !px-2 !py-2 !text-xs !text-pitch-100">
               <Languages className="h-3.5 w-3.5" />
               {locale === 'ar' ? 'EN' : 'ع'}
@@ -95,14 +111,14 @@ export default function AdminLayout() {
               {isDark ? t('settings.light') : t('settings.dark')}
             </button>
           </div>
-          <div className="rounded-2xl bg-pitch-900/90 px-3 py-3">
+          <div className="hidden rounded-2xl bg-pitch-900/90 px-3 py-3 lg:block">
             <p className="truncate text-sm font-semibold">{user?.name}</p>
             <p className="truncate text-xs text-pitch-400">{user?.email}</p>
             <span className="mt-2 inline-flex rounded-md bg-pitch-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
               Admin
             </span>
           </div>
-          <button type="button" onClick={handleLogout} className="btn w-full !bg-pitch-900 !text-pitch-100 hover:!bg-pitch-800">
+          <button type="button" onClick={handleLogout} className="btn hidden w-full !bg-pitch-900 !text-pitch-100 hover:!bg-pitch-800 lg:inline-flex">
             <LogOut className="h-4 w-4" />
             {t('logout')}
           </button>
@@ -132,7 +148,7 @@ export default function AdminLayout() {
             </button>
           </div>
         </header>
-        <main className="px-4 py-6 lg:px-8 lg:py-7">
+        <main className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-7">
           <Outlet />
         </main>
       </div>
