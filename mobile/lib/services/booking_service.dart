@@ -25,6 +25,7 @@ class BookingService {
       'fieldId': fieldId,
       'startTime': startTime.toIso8601String(),
       'hours': hours,
+      'paymentMethod': 'cash',
     });
   }
 
@@ -32,7 +33,7 @@ class BookingService {
     required int fieldId,
     required DateTime startTime,
     required int hours,
-    String paymentMethod = 'online',
+    String paymentMethod = 'cash',
   }) async {
     try {
       final res = await _api.dio.post('/bookings', data: {

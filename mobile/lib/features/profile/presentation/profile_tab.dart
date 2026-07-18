@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../router/app_router.dart';
+import '../../../services/payment_preferences_service.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../theme/riyada_theme_extension.dart';
 import '../../../utils/l10n_extension.dart';
@@ -67,7 +68,8 @@ class ProfileTab extends ConsumerWidget {
           const SizedBox(height: 16),
           _tile(context, chevron, Icons.person_outline_rounded, l10n.profile, () => context.goProfile()),
           _tile(context, chevron, Icons.language_rounded, l10n.language, () => showLanguagePickerSheet(context)),
-          _tile(context, chevron, Icons.payment_rounded, l10n.paymentMethods, () => context.goPaymentMethods()),
+          if (PaymentPreferencesService.electronicPaymentsEnabled)
+            _tile(context, chevron, Icons.payment_rounded, l10n.paymentMethods, () => context.goPaymentMethods()),
           Padding(
             padding: const EdgeInsetsDirectional.only(bottom: 8),
             child: Column(

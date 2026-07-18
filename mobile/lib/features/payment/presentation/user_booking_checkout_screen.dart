@@ -139,6 +139,34 @@ class _UserBookingCheckoutScreenState extends ConsumerState<UserBookingCheckoutS
     final l10n = context.l10n;
     final c = context.colors;
     final args = widget.args;
+    if (!PaymentPreferencesService.electronicPaymentsEnabled) {
+      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.payNow)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(DesignTokens.spaceXl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.money_rounded, size: 52),
+                const SizedBox(height: DesignTokens.spaceMd),
+                Text(
+                  isArabic ? 'الدفع نقداً في الملعب' : 'Pay cash at the venue',
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: DesignTokens.spaceSm),
+                Text(
+                  isArabic ? 'الدفع الإلكتروني سيتوفر قريباً' : 'Electronic payments are coming soon',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.payNow)),

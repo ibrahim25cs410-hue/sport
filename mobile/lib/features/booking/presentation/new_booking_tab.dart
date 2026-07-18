@@ -66,6 +66,7 @@ class _NewBookingTabState extends ConsumerState<NewBookingTab> with AutomaticKee
             fieldName: field.name,
             fieldAddress: field.address,
             fieldPhone: field.phone,
+            paymentMethod: 'cash',
             slot: slot,
             schedule: schedule,
           );

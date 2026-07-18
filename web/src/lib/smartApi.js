@@ -182,7 +182,12 @@ export const smartApi = {
   createBooking: (body) =>
     smartFetch('/bookings', {
       method: 'POST',
-      body: { fieldId: body.fieldId ?? body.stadiumId, startTime: body.startTime, hours: body.hours },
+      body: {
+        fieldId: body.fieldId ?? body.stadiumId,
+        startTime: body.startTime,
+        hours: body.hours,
+        paymentMethod: 'cash',
+      },
       auth: true,
     }).then((r) => {
       clearSmartCache('/bookings/user');

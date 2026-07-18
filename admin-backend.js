@@ -173,6 +173,7 @@ function setupAdminBackend(options) {
     emitBookingUpdated,
     emitToField,
     commissionRate = 0.10,
+    electronicPaymentsEnabled = false,
     creditOwnerForPaidBooking,
   } = options;
 
@@ -358,7 +359,7 @@ function setupAdminBackend(options) {
       totalPrice: Number(booking.totalPrice) || 0,
       status: booking.status,
       paymentStatus: booking.paymentStatus || 'unpaid',
-      paymentMethod: booking.paymentMethod || 'online',
+      paymentMethod: booking.paymentMethod || 'cash',
       source: booking.source || 'app',
       notes: booking.adminNotes || null,
       createdAt: booking.createdAt || null,
@@ -806,7 +807,8 @@ function setupAdminBackend(options) {
     }
     if (!user) return res.status(400).json({ message: 'مستخدم صالح مطلوب للحجز اليدوي' });
     const requestedMethod = String(req.body?.paymentMethod || 'cash').toLowerCase();
-    const paymentMethod = ['online', 'card', 'wallet'].includes(requestedMethod)
+    const paymentMethod = electronicPaymentsEnabled
+      && ['online', 'card', 'wallet'].includes(requestedMethod)
       ? requestedMethod
       : 'cash';
     const booking = await store().insert('bookings', {

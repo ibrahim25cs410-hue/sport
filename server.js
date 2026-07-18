@@ -35,6 +35,9 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PROD = NODE_ENV === 'production';
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const COMMISSION_RATE = 0.10;
+const ELECTRONIC_PAYMENTS_ENABLED = /^(1|true|yes)$/i.test(
+  String(process.env.ELECTRONIC_PAYMENTS_ENABLED || 'false'),
+);
 const MIN_PASSWORD_LENGTH = 6;
 const SLOT_HOLD_TTL_MS = 5 * 60 * 1000;
 const PENDING_PAYMENT_TTL_MS = 15 * 60 * 1000;
@@ -731,7 +734,7 @@ function userBookingDto(b, field) {
     totalPrice: b.totalPrice,
     status: b.status,
     paymentStatus: b.paymentStatus || 'unpaid',
-    paymentMethod: b.paymentMethod || 'online',
+    paymentMethod: b.paymentMethod || 'cash',
     remainingHours: 0,
     canCancel: b.status === 'pending' || b.status === 'approved',
   };
@@ -1066,6 +1069,8 @@ app.get('/api/health', (_req, res) => res.json({
   status: 'ok',
   storage: store?.kind || 'starting',
   realtime: true,
+  electronicPaymentsEnabled: ELECTRONIC_PAYMENTS_ENABLED,
+  paymentMode: ELECTRONIC_PAYMENTS_ENABLED ? 'cash_and_electronic' : 'cash_only',
   env: IS_PROD ? 'production' : 'development',
 }));
 
@@ -1513,7 +1518,8 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
 
   const hourlyRate = field.pricePerHour || 0;
   const totalPrice = hourlyRate * hrs;
-  const method = String(paymentMethod || 'online').toLowerCase() === 'cash' ? 'cash' : 'online';
+  const requestedMethod = String(paymentMethod || 'cash').toLowerCase();
+  const method = ELECTRONIC_PAYMENTS_ENABLED && requestedMethod !== 'cash' ? 'online' : 'cash';
   const paymentStatus = method === 'cash' ? 'pay_at_venue' : 'unpaid';
   const ownerId = Number(field.ownerId) || 0;
   const storedFieldId = field.id != null ? field.id : resolvedFieldId;
@@ -1824,6 +1830,13 @@ app.post('/api/bookings/reject', auth, requireOwnerOrAdminPermission('bookings.m
 /* ================================================================== */
 
 app.post('/api/bookings/:bookingId/pay/initiate', auth, async (req, res) => {
+  if (!ELECTRONIC_PAYMENTS_ENABLED) {
+    return res.status(503).json({
+      code: 'ELECTRONIC_PAYMENTS_DISABLED',
+      paymentMode: 'cash_only',
+      message: 'الدفع الإلكتروني سيتوفر قريباً — الدفع الحالي نقداً في الملعب فقط',
+    });
+  }
   purgeExpiredPayments();
   const b = await resolveBooking(req.params.bookingId);
   if (!b) return safeError(res, 404, 'الحجز غير موجود');
@@ -2373,6 +2386,7 @@ adminBackend = setupAdminBackend({
   emitBookingUpdated,
   emitToField,
   commissionRate: COMMISSION_RATE,
+  electronicPaymentsEnabled: ELECTRONIC_PAYMENTS_ENABLED,
   creditOwnerForPaidBooking,
 });
 

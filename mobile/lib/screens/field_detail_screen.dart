@@ -18,6 +18,7 @@ import '../models/slot_hold.dart';
 import '../providers/auth_provider.dart';
 import '../providers/session_key.dart';
 import '../providers/socket_provider.dart';
+import '../services/payment_preferences_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
@@ -300,8 +301,12 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
     if (_selected == null || session == null) return;
     final l10n = context.l10n;
 
-    final paymentMethod = await showPaymentMethodSelector(context);
-    if (paymentMethod == null || !mounted) return;
+    var paymentMethodApiValue = 'cash';
+    if (PaymentPreferencesService.electronicPaymentsEnabled) {
+      final paymentMethod = await showPaymentMethodSelector(context);
+      if (paymentMethod == null || !mounted) return;
+      paymentMethodApiValue = paymentMethod.apiValue;
+    }
 
     final confirmed = await showBookingConfirmSheet(
       context: context,
@@ -322,7 +327,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
             fieldName: widget.field.name,
             fieldAddress: widget.field.address,
             fieldPhone: widget.field.phone,
-            paymentMethod: paymentMethod.apiValue,
+            paymentMethod: paymentMethodApiValue,
             slot: _selected,
             schedule: schedule,
           );

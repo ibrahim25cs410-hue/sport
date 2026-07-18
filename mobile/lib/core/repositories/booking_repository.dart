@@ -23,7 +23,7 @@ class BookingRepository {
     required int fieldId,
     required DateTime startTime,
     required int hours,
-    String paymentMethod = 'online',
+    String paymentMethod = 'cash',
     TimeSlot? slot,
     FieldSchedule? schedule,
     DateTime? now,

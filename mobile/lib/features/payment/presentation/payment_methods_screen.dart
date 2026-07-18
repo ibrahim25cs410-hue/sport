@@ -48,9 +48,33 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     return Scaffold(
       appBar: AppBar(title: Text(l10n.paymentMethods)),
-      body: _loading
+      body: !PaymentPreferencesService.electronicPaymentsEnabled
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(DesignTokens.spaceXl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.payments_rounded, size: 52),
+                    const SizedBox(height: DesignTokens.spaceMd),
+                    Text(
+                      isArabic ? 'الدفع نقداً في الملعب حالياً' : 'Cash at venue is currently available',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: DesignTokens.spaceSm),
+                    Text(
+                      isArabic ? 'الدفع الإلكتروني سيتوفر قريباً' : 'Electronic payments are coming soon',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : _loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(DesignTokens.spaceLg),

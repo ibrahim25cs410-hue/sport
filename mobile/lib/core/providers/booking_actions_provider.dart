@@ -107,7 +107,7 @@ class BookingActions {
     required String fieldName,
     required String fieldAddress,
     required String fieldPhone,
-    String paymentMethod = 'online',
+    String paymentMethod = 'cash',
     TimeSlot? slot,
     FieldSchedule? schedule,
   }) async {

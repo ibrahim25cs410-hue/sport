@@ -31,7 +31,7 @@ class Booking {
     required this.totalPrice,
     required this.status,
     this.paymentStatus = 'paid',
-    this.paymentMethod = 'online',
+    this.paymentMethod = 'cash',
     required this.remainingHours,
     required this.canCancel,
   });
@@ -67,7 +67,7 @@ class Booking {
       totalPrice: asInt(json['totalPrice']) ?? 0,
       status: json['status'] as String? ?? 'pending',
       paymentStatus: json['paymentStatus'] as String? ?? 'unpaid',
-      paymentMethod: json['paymentMethod'] as String? ?? 'online',
+      paymentMethod: json['paymentMethod'] as String? ?? 'cash',
       remainingHours: (json['remainingHours'] as num?)?.toDouble() ?? 0,
       canCancel: json['canCancel'] as bool? ?? false,
     );

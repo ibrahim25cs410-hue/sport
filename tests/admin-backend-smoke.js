@@ -175,8 +175,16 @@ async function run() {
         userId: userRegistration.user.id,
         startTime: start.toISOString(),
         hours: 2,
-        paymentMethod: 'cash',
+        paymentMethod: 'card',
       },
+    });
+    if (booking.paymentMethod !== 'cash' || booking.paymentStatus !== 'pay_at_venue') {
+      throw new Error('cash-only mode did not normalize the booking payment method');
+    }
+    await request(`/bookings/${booking.id}/pay/initiate`, {
+      method: 'POST',
+      expected: 503,
+      body: { gateway: 'card' },
     });
     await request(`/admin/bookings/${booking.id}`);
     const rescheduledStart = new Date(start.getTime() + 3 * 3600000);

@@ -8,6 +8,9 @@ import { useLocale } from '../context/LocaleContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { PermissionGate } from '../components/PermissionGate';
 
+const ELECTRONIC_PAYMENTS_ENABLED =
+  String(import.meta.env.VITE_ELECTRONIC_PAYMENTS_ENABLED || '').toLowerCase() === 'true';
+
 function copy(locale) {
   return locale === 'ar' ? {
     back: 'رجوع', createTitle: 'إنشاء حجز يدوي', createSub: 'أنشئ حجزاً نيابة عن العميل مع تحقق التوفر من الخادم',
@@ -67,7 +70,7 @@ export function BookingCreatePage() {
           <FormField label={c.date}><input required min={new Date().toISOString().slice(0, 10)} type="date" className="input" value={form.date} onChange={set('date')} /></FormField>
           <FormField label={c.start}><input required type="time" className="input" value={form.startTime} onChange={set('startTime')} /></FormField>
           <FormField label={c.hours}><input required min="1" max="12" type="number" className="input" value={form.hours} onChange={set('hours')} /></FormField>
-          <FormField label={c.payment}><select className="input" value={form.paymentMethod} onChange={set('paymentMethod')}><option value="cash">{locale === 'ar' ? 'نقداً في الملعب' : 'Cash at venue'}</option><option value="wallet">{locale === 'ar' ? 'المحفظة' : 'Wallet'}</option><option value="card">{locale === 'ar' ? 'بطاقة' : 'Card'}</option></select></FormField>
+          <FormField label={c.payment}><select className="input" value={form.paymentMethod} onChange={set('paymentMethod')}><option value="cash">{locale === 'ar' ? 'نقداً في الملعب' : 'Cash at venue'}</option>{ELECTRONIC_PAYMENTS_ENABLED ? <><option value="wallet">{locale === 'ar' ? 'المحفظة' : 'Wallet'}</option><option value="card">{locale === 'ar' ? 'بطاقة' : 'Card'}</option></> : null}</select>{!ELECTRONIC_PAYMENTS_ENABLED ? <p className="mt-1 text-xs text-pitch-500">{locale === 'ar' ? 'الدفع الإلكتروني سيتوفر قريباً' : 'Electronic payments are coming soon'}</p> : null}</FormField>
         </div>
         <FormField label={c.notes}><textarea className="input mt-4 min-h-24" value={form.notes} onChange={set('notes')} /></FormField>
         <div className="mt-5 flex justify-end"><button className="btn-primary" disabled={mutation.isPending || !form.userId}><Save className="h-4 w-4" />{mutation.isPending ? '…' : c.create}</button></div>
