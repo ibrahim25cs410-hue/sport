@@ -6,5 +6,7 @@ enum PaymentMethod {
   final String apiValue;
 
   static PaymentMethod fromApi(String? raw) =>
-      raw?.toLowerCase() == 'cash' ? PaymentMethod.cash : PaymentMethod.online;
+      raw?.toLowerCase() == 'online'
+          ? PaymentMethod.online
+          : PaymentMethod.cash;
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../core/providers/wallet_providers.dart';
 import '../../../core/utils/session_key_helper.dart';
 import '../../../models/wallet.dart';
@@ -101,13 +102,15 @@ class _OwnerWalletTabState extends ConsumerState<OwnerWalletTab> {
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(l10n.walletTab),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long_rounded),
-            tooltip: l10n.accountsTab,
-            onPressed: () => context.goOwnerCommissionCheckout(),
-          ),
-        ],
+        actions: PaymentPolicy.electronicPaymentsEnabled
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.receipt_long_rounded),
+                  tooltip: l10n.accountsTab,
+                  onPressed: () => context.goOwnerCommissionCheckout(),
+                ),
+              ]
+            : null,
       ),
       body: walletAsync.when(
         loading: () => const OwnerDashboardSkeleton(),

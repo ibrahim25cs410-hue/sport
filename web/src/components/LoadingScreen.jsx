@@ -1,5 +1,5 @@
 import { AppLoadingScreen } from './AppLogo';
 
 export default function LoadingScreen({ message = 'جاري التحميل...' }) {
-  return <AppLoadingScreen message={message} />;
+  return <div role="status" aria-live="polite" aria-busy="true"><AppLoadingScreen message={message} /></div>;
 }

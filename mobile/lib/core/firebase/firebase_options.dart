@@ -5,6 +5,16 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 abstract final class DefaultFirebaseOptions {
+  static bool get isConfigured {
+    final options = currentPlatform;
+    return options.apiKey.trim().isNotEmpty &&
+        options.appId.trim().isNotEmpty &&
+        options.messagingSenderId.trim().isNotEmpty &&
+        options.projectId.trim().isNotEmpty &&
+        !options.apiKey.startsWith('YOUR_') &&
+        !options.appId.startsWith('YOUR_');
+  }
+
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) return web;
     return switch (defaultTargetPlatform) {
@@ -16,31 +26,31 @@ abstract final class DefaultFirebaseOptions {
     };
   }
 
-  static const String _senderId = String.fromEnvironment('FIREBASE_SENDER_ID', defaultValue: 'YOUR_SENDER_ID');
-  static const String _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: 'riyada-app');
+  static const String _senderId = String.fromEnvironment('FIREBASE_SENDER_ID');
+  static const String _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
   static const String _storageBucket =
-      String.fromEnvironment('FIREBASE_STORAGE_BUCKET', defaultValue: 'riyada-app.appspot.com');
+      String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_WEB_API_KEY', defaultValue: 'YOUR_WEB_API_KEY'),
-    appId: String.fromEnvironment('FIREBASE_WEB_APP_ID', defaultValue: 'YOUR_WEB_APP_ID'),
+    apiKey: String.fromEnvironment('FIREBASE_WEB_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_WEB_APP_ID'),
     messagingSenderId: _senderId,
     projectId: _projectId,
-    authDomain: String.fromEnvironment('FIREBASE_AUTH_DOMAIN', defaultValue: 'riyada-app.firebaseapp.com'),
+    authDomain: String.fromEnvironment('FIREBASE_AUTH_DOMAIN'),
     storageBucket: _storageBucket,
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_ANDROID_API_KEY', defaultValue: 'YOUR_ANDROID_API_KEY'),
-    appId: String.fromEnvironment('FIREBASE_ANDROID_APP_ID', defaultValue: 'YOUR_ANDROID_APP_ID'),
+    apiKey: String.fromEnvironment('FIREBASE_ANDROID_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_ANDROID_APP_ID'),
     messagingSenderId: _senderId,
     projectId: _projectId,
     storageBucket: _storageBucket,
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_IOS_API_KEY', defaultValue: 'YOUR_IOS_API_KEY'),
-    appId: String.fromEnvironment('FIREBASE_IOS_APP_ID', defaultValue: 'YOUR_IOS_APP_ID'),
+    apiKey: String.fromEnvironment('FIREBASE_IOS_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_IOS_APP_ID'),
     messagingSenderId: _senderId,
     projectId: _projectId,
     storageBucket: _storageBucket,

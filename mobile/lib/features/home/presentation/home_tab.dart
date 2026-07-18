@@ -16,7 +16,6 @@ import '../../../utils/error_messages.dart';
 import '../../../utils/l10n_extension.dart';
 import '../../../utils/phone_launcher.dart';
 import '../../../widgets/common.dart';
-import '../../../widgets/connectivity_banner.dart';
 import '../../../widgets/field_card.dart';
 import '../../../widgets/field_filters_sheet.dart';
 import '../../../widgets/load_more_footer.dart';
@@ -140,8 +139,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
       ('outdoor', l10n.categoryOutdoor, Icons.wb_sunny_outlined),
     ];
 
-    return ConnectivityBanner(
-      child: ColoredBox(
+    return ColoredBox(
         color: Colors.transparent,
         child: loading
             ? const FieldsListSkeleton()
@@ -260,7 +258,6 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-      ),
     );
   }
 }

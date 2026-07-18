@@ -12,6 +12,8 @@ import DashboardInsights from '../components/DashboardInsights';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LocaleContext';
 
+const EMPTY_BOOKINGS = [];
+
 function Section({ title, action, children }) {
   return (
     <section className="space-y-3">
@@ -42,7 +44,7 @@ export default function DashboardPage() {
   const fields = useQuery({ queryKey: ['admin-fields'], queryFn: api.fields });
   const owners = useQuery({ queryKey: ['admin-owners'], queryFn: api.owners });
 
-  const allBookings = bookings.data?.items || [];
+  const allBookings = bookings.data?.items || EMPTY_BOOKINGS;
 
   const statusCounts = useMemo(() => {
     const map = { pending: 0, approved: 0, rejected: 0, cancelled: 0 };

@@ -2470,6 +2470,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next'**
   String get next;
+
+  String get cashOnlyTitle;
+  String get electronicPaymentsComingSoon;
+  String get navigationError;
+  String get unexpectedError;
+  String get privacyPolicy;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

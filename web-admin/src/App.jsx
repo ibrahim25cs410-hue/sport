@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { FeedbackProvider } from './context/FeedbackContext';
 import AdminLayout, { RequireAdmin } from './components/AdminLayout';
 import LoginPage from './pages/LoginPage';
+import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import DashboardPage from './pages/DashboardPage';
 import BookingsPage from './pages/BookingsPage';
 import FieldsPage from './pages/FieldsPage';
@@ -17,6 +18,7 @@ import { AuditLogPage } from './pages/OperationsPages';
 import { EnhancedAlertsPage, EnhancedCalendarPage, EnhancedReportsPage, EnhancedSettlementsPage, EnhancedStaffPage } from './pages/EnhancedOperations';
 import { BookingCreatePage, BookingDetailPage, BookingReschedulePage, MaintenancePage } from './pages/BookingWorkflowPages';
 import { ForbiddenPage, RequirePermission } from './components/PermissionGate';
+import { ConnectionStatus } from './components/AppQuality';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,9 +39,11 @@ export default function App() {
         <LocaleProvider>
           <AuthProvider>
             <FeedbackProvider>
+            <ConnectionStatus />
             <BrowserRouter basename="/panel">
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
                 <Route element={<RequireAdmin />}>
                   <Route element={<AdminLayout />}>
                     <Route index element={guarded('dashboard.read', <DashboardPage />)} />

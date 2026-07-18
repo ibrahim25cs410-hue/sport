@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../core/booking/booking_result.dart';
 import '../../../core/providers/booking_actions_provider.dart';
 import '../../../core/utils/session_key_helper.dart';
@@ -145,7 +146,7 @@ class _BookingsTabState extends ConsumerState<BookingsTab> with SingleTickerProv
             booking: booking,
             canCancel: canCancel,
             onCancel: canCancel ? () => _cancel(booking, key) : null,
-            onPay: booking.needsPayment ? () => _pay(booking) : null,
+            onPay: PaymentPolicy.electronicPaymentsEnabled && booking.needsPayment ? () => _pay(booking) : null,
           );
         },
       ),

@@ -6,8 +6,8 @@ import '../models/field.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
 
-const _maxCachedFieldImages = 64;
-final _fieldImageCache = <int, MemoryImage>{};
+const _maxCachedFieldImages = 32;
+final _fieldImageCache = <int, ImageProvider>{};
 
 ImageProvider? fieldImageProvider(Field field) {
   if (field.image == null || !field.image!.startsWith('data:')) return null;
@@ -17,7 +17,7 @@ ImageProvider? fieldImageProvider(Field field) {
 
   try {
     final bytes = base64Decode(field.image!.split(',').last);
-    final image = MemoryImage(bytes);
+    final image = ResizeImage.resizeIfNeeded(1280, null, MemoryImage(bytes));
     _fieldImageCache[field.id] = image;
     while (_fieldImageCache.length > _maxCachedFieldImages) {
       _fieldImageCache.remove(_fieldImageCache.keys.first);

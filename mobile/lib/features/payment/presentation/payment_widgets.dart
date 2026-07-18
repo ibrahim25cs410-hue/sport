@@ -175,14 +175,19 @@ class PayNowButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.colors;
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
+    final buttonLabel = label ?? '${l10n.payNow} — $amount';
+    return Semantics(
+      button: true,
+      enabled: !loading && onPressed != null,
+      label: buttonLabel,
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton(
         onPressed: loading ? null : onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: c.primary,
           foregroundColor: c.onPrimary,
-          minimumSize: const Size(0, 48),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
         ),
@@ -192,14 +197,12 @@ class PayNowButton extends StatelessWidget {
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2, color: c.onPrimary),
               )
-            : FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label ?? '${l10n.payNow} — $amount',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                  maxLines: 1,
-                ),
+            : Text(
+                buttonLabel,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                textAlign: TextAlign.center,
               ),
+        ),
       ),
     );
   }

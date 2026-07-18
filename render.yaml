@@ -4,12 +4,17 @@ services:
     name: sports-x7v7
     runtime: node
     plan: free
+    autoDeployTrigger: checksPass
     buildCommand: npm run build
     startCommand: npm start
-    healthCheckPath: /api/health
+    healthCheckPath: /api/ready
     envVars:
+      - key: NODE_VERSION
+        value: 20.19.4
       - key: NODE_ENV
         value: production
+      - key: ELECTRONIC_PAYMENTS_ENABLED
+        value: "false"
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
@@ -19,4 +24,12 @@ services:
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: ADMIN_INVITE_BASE_URL
         sync: false

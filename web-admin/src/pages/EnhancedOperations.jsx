@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Bell, Check, ChevronLeft, ChevronRight, Download, Eye, FileText, Pencil, Plus, Printer, ShieldCheck, Trash2, WalletCards, Wrench } from 'lucide-react';
 import { API_BASE, api, formatDate, formatMoney } from '../lib/api';
 import { DateRangeControls } from '../components/AdminTools';
-import { ConfirmDialog, EmptyBlock, ErrorBlock, LoadingBlock, Modal, PageHeader, StatusBadge, Toolbar } from '../components/ui';
+import { EmptyBlock, ErrorBlock, LoadingBlock, Modal, PageHeader, StatusBadge, Toolbar } from '../components/ui';
 import { useLocale } from '../context/LocaleContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { PermissionGate } from '../components/PermissionGate';

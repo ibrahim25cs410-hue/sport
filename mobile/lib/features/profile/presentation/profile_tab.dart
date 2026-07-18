@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart' as legacy;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../router/app_router.dart';
-import '../../../services/payment_preferences_service.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../theme/riyada_theme_extension.dart';
 import '../../../utils/l10n_extension.dart';
@@ -68,7 +68,7 @@ class ProfileTab extends ConsumerWidget {
           const SizedBox(height: 16),
           _tile(context, chevron, Icons.person_outline_rounded, l10n.profile, () => context.goProfile()),
           _tile(context, chevron, Icons.language_rounded, l10n.language, () => showLanguagePickerSheet(context)),
-          if (PaymentPreferencesService.electronicPaymentsEnabled)
+          if (PaymentPolicy.electronicPaymentsEnabled)
             _tile(context, chevron, Icons.payment_rounded, l10n.paymentMethods, () => context.goPaymentMethods()),
           Padding(
             padding: const EdgeInsetsDirectional.only(bottom: 8),
@@ -86,7 +86,7 @@ class ProfileTab extends ConsumerWidget {
           _tile(context, chevron, Icons.history_rounded, l10n.bookingHistory, () => context.goBookingHistory()),
           _tile(context, chevron, Icons.notifications_outlined, l10n.notifications, () => context.goNotifications()),
           _tile(context, chevron, Icons.sports_soccer_rounded, l10n.penaltyShootout, () => context.goPenaltyShootout()),
-          _tile(context, chevron, Icons.privacy_tip_outlined, 'سياسة الخصوصية', () async {
+          _tile(context, chevron, Icons.privacy_tip_outlined, l10n.privacyPolicy, () async {
             final uri = Uri.parse('https://riyada.iq/privacy');
             if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
           }),

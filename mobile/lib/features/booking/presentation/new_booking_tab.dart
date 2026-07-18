@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../core/booking/booking_result.dart';
 import '../../../core/providers/booking_actions_provider.dart';
 import '../../../core/utils/session_key_helper.dart';
@@ -73,7 +74,7 @@ class _NewBookingTabState extends ConsumerState<NewBookingTab> with AutomaticKee
       if (!mounted) return;
       switch (result) {
         case BookingOk(:final value):
-          if (value.needsPayment) {
+          if (PaymentPolicy.electronicPaymentsEnabled && value.needsPayment) {
             await context.goBookingCheckout(BookingCheckoutArgs(
               bookingId: value.id,
               totalPrice: value.totalPrice,

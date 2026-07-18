@@ -1,5 +1,6 @@
 import '../../data/payment/card_payment_gateway.dart';
 import '../../data/payment/zain_cash_payment_gateway.dart';
+import '../../config/payment_policy.dart';
 import '../../domain/enums/owner_payment_gateway.dart';
 import '../../domain/payment/payment_gateway.dart';
 import '../../models/owner_payment_account.dart';
@@ -44,7 +45,10 @@ class OwnerPaymentOrchestrator implements PaymentService {
   @override
   Future<OwnerPaymentAccount> loadAccount(int ownerId) => _repository.getAccount(ownerId);
 
-  PaymentGatewayStrategy gatewayFor(OwnerPaymentGateway gateway) => _gateways[gateway]!;
+  PaymentGatewayStrategy gatewayFor(OwnerPaymentGateway gateway) {
+    PaymentPolicy.requireElectronicPayments();
+    return _gateways[gateway]!;
+  }
 
   /// يبدأ الدفع عبر البوابة المختارة ويفتح صفحة الدفع الخارجية.
   @override
@@ -52,6 +56,7 @@ class OwnerPaymentOrchestrator implements PaymentService {
     required int invoiceId,
     required OwnerPaymentGateway gateway,
   }) async {
+    PaymentPolicy.requireElectronicPayments();
     final initiation = await _repository.initiatePayment(invoiceId: invoiceId, gateway: gateway);
     final strategy = _gateways[gateway]!;
     final launch = await strategy.launchCheckout(GatewayCheckoutSession(
@@ -65,6 +70,7 @@ class OwnerPaymentOrchestrator implements PaymentService {
   /// يتحقق من السيرفر أن العملية نجحت قبل تحديث حالة الحساب.
   @override
   Future<OwnerPaymentVerifiedEvent?> verifyPayment(String transactionToken) async {
+    PaymentPolicy.requireElectronicPayments();
     final result = await _repository.verifyPayment(transactionToken);
     if (!result.success) return null;
     return OwnerPaymentVerifiedEvent(

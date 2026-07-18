@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History, Clock } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useBookingHistory, useUserStats } from '../hooks/useRiyadaData';
 import Header from '../components/Header';
 import Badge from '../components/Badge';
@@ -26,7 +25,6 @@ function statusAccent(status, endTime) {
 
 export default function BookingHistory() {
   const navigate = useNavigate();
-  const { session } = useAuth();
   const [filter, setFilter] = useState('all');
   const { data: bookings = [], isLoading, refetch } = useBookingHistory();
   const { data: stats } = useUserStats();

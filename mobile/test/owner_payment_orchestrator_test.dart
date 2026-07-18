@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riyada/config/payment_policy.dart';
 import 'package:riyada/core/payment/owner_payment_orchestrator.dart';
 import 'package:riyada/core/repositories/owner_payment_repository.dart';
 import 'package:riyada/domain/enums/owner_payment_gateway.dart';
@@ -67,6 +68,13 @@ void main() {
       gateways: {OwnerPaymentGateway.zainCash: _FakeGateway(OwnerPaymentGateway.zainCash)},
     );
 
+    if (PaymentPolicy.cashOnly) {
+      await expectLater(
+        orchestrator.verifyPayment('TXN-test'),
+        throwsA(isA<ElectronicPaymentsDisabledException>()),
+      );
+      return;
+    }
     final event = await orchestrator.verifyPayment('TXN-test');
     expect(event, isNotNull);
     expect(event!.invoiceId, 7);
@@ -80,10 +88,16 @@ void main() {
       gateways: {OwnerPaymentGateway.card: _FakeGateway(OwnerPaymentGateway.card)},
     );
 
-    final result = await orchestrator.startExternalPayment(
+    final payment = orchestrator.startExternalPayment(
       invoiceId: 1,
       gateway: OwnerPaymentGateway.card,
     );
+    if (PaymentPolicy.cashOnly) {
+      await expectLater(payment, throwsA(isA<ElectronicPaymentsDisabledException>()));
+      expect(repo.lastInitiation, isNull);
+      return;
+    }
+    final result = await payment;
 
     expect(result.launch.launched, isTrue);
     expect(result.initiation.transactionToken, 'TXN-test');

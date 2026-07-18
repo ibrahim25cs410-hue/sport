@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/payment_policy.dart';
 import '../models/payment_method.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
@@ -37,13 +38,15 @@ Future<PaymentMethod?> showPaymentMethodSelector(BuildContext context) {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          _OptionTile(
-            icon: Icons.payments_rounded,
-            title: l10n.payOnline,
-            subtitle: l10n.payOnlineHint,
-            onTap: () => Navigator.pop(ctx, PaymentMethod.online),
-          ),
-          const SizedBox(height: 10),
+          if (PaymentPolicy.electronicPaymentsEnabled) ...[
+            _OptionTile(
+              icon: Icons.payments_rounded,
+              title: l10n.payOnline,
+              subtitle: l10n.payOnlineHint,
+              onTap: () => Navigator.pop(ctx, PaymentMethod.online),
+            ),
+            const SizedBox(height: 10),
+          ],
           _OptionTile(
             icon: Icons.money_rounded,
             title: l10n.payCash,

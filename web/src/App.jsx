@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SmartToastProvider } from './context/SmartToastContext';
@@ -15,6 +15,7 @@ import AdminHome from './screens/AdminHome';
 import BookingHistory from './screens/BookingHistory';
 import Settings from './screens/Settings';
 import PrivacyPolicy from './screens/PrivacyPolicy';
+import { ConnectionStatus } from './components/AppQuality';
 
 function ProtectedRoute({ children, role }) {
   const { session, loading } = useAuth();
@@ -53,7 +54,7 @@ function AnimatedRoutes() {
 }
 
 function AppRoutes() {
-  const { session, loading } = useAuth();
+  const { loading } = useAuth();
   if (loading) return <LoadingScreen />;
 
   return <AnimatedRoutes />;
@@ -61,12 +62,13 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <SmartToastProvider>
+          <ConnectionStatus />
           <AppRoutes />
         </SmartToastProvider>
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

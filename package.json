@@ -7,11 +7,18 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test:admin": "node tests/admin-backend-smoke.js",
-    "build": "npm --prefix web-admin install --no-audit --no-fund && npm --prefix web-admin run build && node scripts/copy-admin.js",
-    "build:admin": "npm --prefix web-admin run build && node scripts/copy-admin.js"
+    "test:backend": "node --test tests/backend-*.test.js && node tests/admin-backend-smoke.js",
+    "test:mongo-integration": "node --test tests/backend-mongo-integration.test.js",
+    "test": "npm run test:backend",
+    "migrate:dry-run": "node scripts/migrate-production-data.js",
+    "migrate:apply": "node scripts/migrate-production-data.js --apply",
+    "migrate:rollback": "node scripts/migrate-production-data.js --rollback",
+    "build": "npm --prefix web-admin install --no-audit --no-fund && npm --prefix web-admin run build && node scripts/copy-admin.js && npm --prefix web install --no-audit --no-fund && npm --prefix web run build:deploy",
+    "build:admin": "npm --prefix web-admin run build && node scripts/copy-admin.js",
+    "build:web": "npm --prefix web run build:deploy"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19.4"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -26,6 +33,7 @@
     "socket.io": "^4.8.3"
   },
   "optionalDependencies": {
-    "firebase-admin": "^12.7.0"
+    "@sentry/node": "^10.66.0",
+    "firebase-admin": "^14.2.0"
   }
 }

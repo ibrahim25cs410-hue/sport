@@ -19,7 +19,6 @@ import '../../../utils/l10n_extension.dart';
 
 import '../../../widgets/common.dart';
 
-import '../../../widgets/connectivity_banner.dart';
 
 import '../../../widgets/field_card.dart';
 
@@ -77,9 +76,7 @@ class SimpleHomeTab extends ConsumerWidget {
 
 
 
-    return ConnectivityBanner(
-
-      child: Scaffold(
+    return Scaffold(
 
         appBar: AppBar(
 
@@ -218,8 +215,6 @@ class SimpleHomeTab extends ConsumerWidget {
           ],
 
         ),
-
-      ),
 
     );
 

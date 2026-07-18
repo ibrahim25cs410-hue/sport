@@ -23,6 +23,11 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { Server: SocketServer } = require('socket.io');
+const { buildModels, checkRequiredIndexes } = require('./backend/mongo-models');
+const { createInvitationToken, deliverInvitation, tokenHash } = require('./backend/invitations');
+const {
+  allowedOrigin, cspConfig, initSentry, requestContext,
+} = require('./backend/security');
 const {
   ADMIN_PERMISSIONS,
   effectivePermissions,
@@ -39,6 +44,8 @@ const ELECTRONIC_PAYMENTS_ENABLED = /^(1|true|yes)$/i.test(
   String(process.env.ELECTRONIC_PAYMENTS_ENABLED || 'false'),
 );
 const MIN_PASSWORD_LENGTH = 6;
+const ADMIN_SESSION_TTL = process.env.ADMIN_SESSION_TTL || '8h';
+const USER_SESSION_TTL = process.env.USER_SESSION_TTL || '30d';
 const SLOT_HOLD_TTL_MS = 5 * 60 * 1000;
 const PENDING_PAYMENT_TTL_MS = 15 * 60 * 1000;
 
@@ -53,14 +60,7 @@ function resolveJwtSecret() {
     return JWT_SECRET;
   }
   if (IS_PROD) {
-    if (!MONGODB_URI) {
-      console.error('FATAL: اضبط JWT_SECRET أو MONGODB_URI في متغيرات بيئة Render.');
-      process.exit(1);
-    }
-    // سر ثابت مشتق من Mongo — أفضل من السر الافتراضي الضعيف؛ يُفضّل ضبط JWT_SECRET يدوياً
-    const derived = crypto.createHmac('sha256', 'riyada-jwt-v1').update(MONGODB_URI).digest('hex');
-    console.warn('تحذير: JWT_SECRET غير مضبوط — استخدام سر مشتق من MONGODB_URI. اضبط JWT_SECRET في Render.');
-    return derived;
+    throw new Error('JWT_SECRET must be a unique secret of at least 32 characters in production');
   }
   console.warn('تحذير تطوير: JWT_SECRET غير مضبوط — لا تستخدم هذا السر في الإنتاج.');
   return JWT_SECRET || 'dev-secret-change-me';
@@ -132,28 +132,19 @@ const ALLOWED_ORIGINS = String(process.env.ALLOWED_ORIGINS || '')
 
 const app = express();
 const server = http.createServer(app);
+const sentry = initSentry({ dsn: process.env.SENTRY_DSN, environment: NODE_ENV });
 
 app.set('trust proxy', 1);
 app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: cspConfig(),
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  hsts: IS_PROD ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
 }));
+app.use(requestContext());
 app.use(compression());
 app.use(cors({
   origin(origin, cb) {
-    // تطبيقات الموبايل وطلبات السيرفر غالباً بلا Origin
-    if (!origin) return cb(null, true);
-    if (ALLOWED_ORIGINS.length === 0) {
-      if (IS_PROD) {
-        // مؤقتاً مسموح — يُفضّل ضبط ALLOWED_ORIGINS في Render
-        return cb(null, true);
-      }
-      return cb(null, true);
-    }
-    if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
-      return cb(null, true);
-    }
-    return cb(null, false);
+    return cb(null, allowedOrigin(origin, ALLOWED_ORIGINS, IS_PROD));
   },
   credentials: true,
 }));
@@ -191,12 +182,7 @@ app.use('/api', globalLimiter);
 const io = new SocketServer(server, {
   cors: {
     origin(origin, cb) {
-      if (!origin) return cb(null, true);
-      if (ALLOWED_ORIGINS.length === 0) return cb(null, true);
-      if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
-        return cb(null, true);
-      }
-      return cb(null, false);
+      return cb(null, allowedOrigin(origin, ALLOWED_ORIGINS, IS_PROD));
     },
     credentials: true,
   },
@@ -248,6 +234,9 @@ io.use(async (socket, next) => {
       if (!current) return next(new Error('Invalid user'));
       if (current.role === 'admin' && current.adminStatus === 'suspended') {
         return next(new Error('Admin account suspended'));
+      }
+      if (Number(socket.user.sv || 0) !== Number(current.sessionVersion || 0)) {
+        return next(new Error('Session revoked'));
       }
       let currentPermissions = current.customPermissions;
       if (current.role === 'admin' && current.adminRole === 'custom' && current.customRoleId) {
@@ -306,6 +295,15 @@ io.on('connection', (socket) => {
 let store;
 let adminBackend;
 
+function bookingSlotKeys(fieldPublicId, startTime, hours) {
+  const start = new Date(startTime);
+  const count = Math.max(1, Number(hours) || 1);
+  if (!Number.isFinite(Number(fieldPublicId)) || Number.isNaN(start.getTime()) || count > 24) return [];
+  return Array.from({ length: count }, (_, offset) => (
+    `${Number(fieldPublicId)}:${new Date(start.getTime() + offset * 3600000).toISOString()}`
+  ));
+}
+
 function createMemoryStore() {
   const data = {
     users: [], fields: [], bookings: [], notifications: [], reviews: [], walletTransactions: [],
@@ -318,6 +316,7 @@ function createMemoryStore() {
     paymentCredits: 0, adminRoles: 0, adminInvitations: 0,
   };
   const clone = (o) => (o ? JSON.parse(JSON.stringify(o)) : o);
+  const bookingClaims = new Map();
   return {
     kind: 'memory',
     async insert(col, doc) {
@@ -341,6 +340,45 @@ function createMemoryStore() {
       if (!rec) return null;
       Object.assign(rec, patch);
       return clone(rec);
+    },
+    async createBookingAtomic(doc, idempotencyKey) {
+      if (idempotencyKey) {
+        const prior = data.bookings.find((booking) => booking.idempotencyKey === idempotencyKey);
+        if (prior) return { booking: clone(prior), duplicate: true };
+      }
+      const keys = bookingSlotKeys(doc.fieldPublicId, doc.startTime, doc.hours);
+      if (!keys.length) throw Object.assign(new Error('Invalid booking slot'), { code: 'VALIDATION_ERROR' });
+      if (keys.some((key) => bookingClaims.has(key))) {
+        throw Object.assign(new Error('Booking conflict'), { code: 'BOOKING_CONFLICT' });
+      }
+      const booking = { id: ++seq.bookings, ...doc, ...(idempotencyKey ? { idempotencyKey } : {}) };
+      data.bookings.push(booking);
+      keys.forEach((key) => bookingClaims.set(key, booking.id));
+      return { booking: clone(booking), duplicate: false };
+    },
+    async releaseBookingClaims(bookingId) {
+      for (const [key, value] of bookingClaims) {
+        if (sameId(value, bookingId)) bookingClaims.delete(key);
+      }
+    },
+    async replaceBookingClaims(booking, patch) {
+      const candidate = { ...booking, ...patch };
+      const keys = bookingSlotKeys(candidate.fieldPublicId, candidate.startTime, candidate.hours);
+      const conflicts = keys.some((key) => bookingClaims.has(key)
+        && !sameId(bookingClaims.get(key), booking.id));
+      if (conflicts) throw Object.assign(new Error('Booking conflict'), { code: 'BOOKING_CONFLICT' });
+      await this.releaseBookingClaims(booking.id);
+      keys.forEach((key) => bookingClaims.set(key, booking.id));
+    },
+    async consumeInvitation(hash, now, patch) {
+      const invitation = data.adminInvitations.find((item) => item.tokenHash === hash
+        && item.status === 'pending' && new Date(item.expiresAt) > now);
+      if (!invitation) return null;
+      Object.assign(invitation, patch);
+      return clone(invitation);
+    },
+    async readiness() {
+      return { ready: true, storage: 'memory', missingIndexes: [] };
     },
     async applyWalletDeltaOnce(ownerId, idempotencyKey, amount) {
       const rec = data.users.find((user) => sameId(user.id, ownerId));
@@ -371,44 +409,19 @@ function createMemoryStore() {
 
 async function createMongoStore(uri) {
   const mongoose = require('mongoose');
+  mongoose.set('sanitizeFilter', true);
   await mongoose.connect(uri);
   const { Schema } = mongoose;
-  const schemaOpts = { strict: false, timestamps: true, id: false };
-  const models = {
-    users: mongoose.model('User', new Schema({}, schemaOpts)),
-    fields: mongoose.model('Field', new Schema({}, schemaOpts)),
-    bookings: mongoose.model('Booking', new Schema({}, schemaOpts)),
-    notifications: mongoose.model('Notification', new Schema({}, schemaOpts)),
-    reviews: mongoose.model('Review', new Schema({}, schemaOpts)),
-    walletTransactions: mongoose.model('WalletTransaction', new Schema({}, schemaOpts)),
-    auditLogs: mongoose.model('AuditLog', new Schema({}, schemaOpts)),
-    maintenanceBlocks: mongoose.model('MaintenanceBlock', new Schema({}, schemaOpts)),
-    settlements: mongoose.model('Settlement', new Schema({}, schemaOpts)),
-    adminPreferences: mongoose.model('AdminPreference', new Schema({}, schemaOpts)),
-    adminAlerts: mongoose.model('AdminAlert', new Schema({}, schemaOpts)),
-    paymentCredits: mongoose.model('PaymentCredit', new Schema({}, schemaOpts)),
-    adminRoles: mongoose.model('AdminRole', new Schema({}, schemaOpts)),
-    adminInvitations: mongoose.model('AdminInvitation', new Schema({}, schemaOpts)),
-  };
+  const models = buildModels(mongoose);
   const Counter = mongoose.model('Counter', new Schema({ _id: String, n: Number }));
 
-  // Safe, additive indexes. Sparse uniqueness preserves old documents that do not have these fields.
-  await Promise.all([
-    models.paymentCredits.collection.createIndex(
-      { idempotencyKey: 1 },
-      { unique: true, sparse: true, name: 'payment_credit_idempotency' },
-    ),
-    models.walletTransactions.collection.createIndex(
-      { idempotencyKey: 1 },
-      { unique: true, sparse: true, name: 'wallet_transaction_idempotency' },
-    ),
-    models.settlements.collection.createIndex(
-      { idempotencyKey: 1 },
-      { unique: true, sparse: true, name: 'settlement_idempotency' },
-    ),
-    models.auditLogs.collection.createIndex({ createdAt: -1 }, { name: 'audit_created_at' }),
-    models.adminAlerts.collection.createIndex({ status: 1, createdAt: -1 }, { name: 'alerts_status_created' }),
-  ]);
+  let indexInitError = null;
+  try {
+    await Promise.all(Object.values(models).map((model) => model.createIndexes()));
+  } catch (error) {
+    indexInitError = error;
+    console.error(JSON.stringify({ level: 'error', event: 'index_initialization_failed', message: error.message }));
+  }
 
   async function nextId(col) {
     const c = await Counter.findByIdAndUpdate(col, { $inc: { n: 1 } }, { new: true, upsert: true });
@@ -434,6 +447,85 @@ async function createMongoStore(uri) {
       }
       return mapped;
     },
+    async createBookingAtomic(doc, idempotencyKey) {
+      if (idempotencyKey) {
+        const existing = out(await models.bookings.findOne({ idempotencyKey }));
+        if (existing) return { booking: existing, duplicate: true };
+      }
+      const keys = bookingSlotKeys(doc.fieldPublicId, doc.startTime, doc.hours);
+      if (!keys.length) throw Object.assign(new Error('Invalid booking slot'), { code: 'VALIDATION_ERROR' });
+      const id = await nextId('bookings');
+      const reservationId = crypto.randomUUID();
+      const claims = keys.map((slotKey) => ({ slotKey, bookingId: id, reservationId }));
+      const session = await mongoose.startSession();
+      try {
+        let created;
+        await session.withTransaction(async () => {
+          await models.bookingClaims.insertMany(claims, { session });
+          [created] = await models.bookings.create(
+            [{ ...doc, id, ...(idempotencyKey ? { idempotencyKey } : {}) }],
+            { session },
+          );
+        });
+        return { booking: out(created), duplicate: false };
+      } catch (error) {
+        if (String(error?.code) === '11000') {
+          const duplicate = idempotencyKey
+            ? out(await models.bookings.findOne({ idempotencyKey }))
+            : null;
+          if (duplicate) return { booking: duplicate, duplicate: true };
+          throw Object.assign(new Error('Booking conflict'), { code: 'BOOKING_CONFLICT' });
+        }
+        throw error;
+      } finally {
+        await session.endSession();
+      }
+    },
+    async releaseBookingClaims(bookingId) {
+      await models.bookingClaims.deleteMany({ bookingId: Number(bookingId) });
+    },
+    async replaceBookingClaims(booking, patch) {
+      const candidate = { ...booking, ...patch };
+      const keys = bookingSlotKeys(candidate.fieldPublicId, candidate.startTime, candidate.hours);
+      const reservationId = crypto.randomUUID();
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          await models.bookingClaims.deleteMany({ bookingId: Number(booking.id) }, { session });
+          await models.bookingClaims.insertMany(keys.map((slotKey) => ({
+            slotKey, bookingId: Number(booking.id), reservationId,
+          })), { session });
+        });
+      } catch (error) {
+        if (String(error?.code) === '11000') {
+          throw Object.assign(new Error('Booking conflict'), { code: 'BOOKING_CONFLICT' });
+        }
+        throw error;
+      } finally {
+        await session.endSession();
+      }
+    },
+    async consumeInvitation(hash, now, patch) {
+      return out(await models.adminInvitations.findOneAndUpdate(
+        { tokenHash: hash, status: 'pending', expiresAt: { $gt: now.toISOString() } },
+        patch,
+        { new: true, runValidators: true },
+      ));
+    },
+    async readiness() {
+      try {
+        await mongoose.connection.db.admin().ping();
+        const missingIndexes = await checkRequiredIndexes(models);
+        return {
+          ready: !indexInitError && missingIndexes.length === 0,
+          storage: 'mongodb',
+          missingIndexes,
+          indexError: indexInitError?.message || null,
+        };
+      } catch (error) {
+        return { ready: false, storage: 'mongodb', missingIndexes: [], error: error.message };
+      }
+    },
     async findById(col, id) {
       const n = Number(id);
       if (Number.isFinite(n)) {
@@ -451,10 +543,14 @@ async function createMongoStore(uri) {
     async update(col, id, patch) {
       const n = Number(id);
       if (Number.isFinite(n)) {
-        const byNum = out(await models[col].findOneAndUpdate({ id: n }, patch, { new: true }));
+        const byNum = out(await models[col].findOneAndUpdate(
+          { id: n }, patch, { new: true, runValidators: true },
+        ));
         if (byNum) return byNum;
       }
-      return out(await models[col].findOneAndUpdate({ id: String(id) }, patch, { new: true }));
+      return out(await models[col].findOneAndUpdate(
+        { id: String(id) }, patch, { new: true, runValidators: true },
+      ));
     },
     async applyWalletDeltaOnce(ownerId, idempotencyKey, amount) {
       const numericId = Number(ownerId);
@@ -551,10 +647,11 @@ function sign(user) {
       id: Number(user.id),
       role: user.role,
       name: user.name,
+      sv: Number(user.sessionVersion || 0),
       ...(user.role === 'admin' ? { adminRole: user.adminRole || 'admin' } : {}),
     },
     EFFECTIVE_JWT_SECRET,
-    { expiresIn: '30d' },
+    { expiresIn: user.role === 'admin' ? ADMIN_SESSION_TTL : USER_SESSION_TTL },
   );
 }
 
@@ -574,6 +671,9 @@ async function auth(req, res, next) {
     if (!current) return res.status(401).json({ message: 'الحساب غير موجود' });
     if (current.role === 'admin' && current.adminStatus === 'suspended') {
       return res.status(403).json({ message: 'الحساب الإداري موقوف' });
+    }
+    if (Number(req.user.sv || 0) !== Number(current.sessionVersion || 0)) {
+      return res.status(401).json({ message: 'تم إلغاء الجلسة' });
     }
     let currentPermissions = current.customPermissions;
     if (current.role === 'admin' && current.adminRole === 'custom' && current.customRoleId) {
@@ -1074,6 +1174,32 @@ app.get('/api/health', (_req, res) => res.json({
   env: IS_PROD ? 'production' : 'development',
 }));
 
+let readinessCache = { at: 0, value: { ready: false, storage: 'starting' } };
+async function readiness() {
+  if (Date.now() - readinessCache.at < 3000) return readinessCache.value;
+  const value = store ? await store.readiness() : { ready: false, storage: 'starting' };
+  readinessCache = { at: Date.now(), value };
+  return value;
+}
+
+app.get('/api/ready', async (_req, res) => {
+  const result = await readiness();
+  res.status(result.ready ? 200 : 503).json(result);
+});
+
+app.use('/api', async (req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  const result = await readiness();
+  if (!result.ready) {
+    return res.status(503).json({
+      code: 'SERVICE_NOT_READY',
+      message: 'الخدمة غير جاهزة للكتابة',
+      requestId: req.id,
+    });
+  }
+  return next();
+});
+
 // Capture successful legacy admin mutations as well as the new modular admin routes.
 // The response listener is deliberately best-effort and never changes the API response.
 app.use('/api', (req, res, next) => {
@@ -1493,8 +1619,18 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
   if (!field || field.isActive === false) return safeError(res, 404, 'الملعب غير موجود');
 
   const hrs = Number(hours) || 1;
-  const start = new Date(startTime).toISOString();
+  const startDate = new Date(startTime);
+  if (!Number.isInteger(hrs) || hrs < 1 || hrs > 24 || Number.isNaN(startDate.getTime())
+    || startDate <= new Date()) {
+    return safeError(res, 400, 'وقت أو مدة الحجز غير صالحة');
+  }
+  const start = startDate.toISOString();
   const resolvedFieldId = publicNumericId(field);
+  const idempotencyKey = String(req.headers['idempotency-key'] || req.body?.idempotencyKey || '').trim();
+  if (idempotencyKey.length > 200) return safeError(res, 400, 'مفتاح التكرار طويل جداً');
+  const priorIdempotent = idempotencyKey
+    ? (await store.find('bookings')).find((item) => item.idempotencyKey === idempotencyKey)
+    : null;
 
   const hold = getActiveHold(resolvedFieldId, start);
   if (hold && Number(hold.userId) !== Number(req.user.id)) {
@@ -1504,11 +1640,14 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
   const existing = (await bookingsByField(field.id != null ? field.id : resolvedFieldId))
     .filter((b) => b.status === 'pending' || b.status === 'approved');
   const clash = existing.some((b) => new Date(b.startTime).toISOString().slice(0, 13) === start.slice(0, 13));
-  if (clash) return res.status(409).json({ code: 'ConflictError', messageKey: 'slotJustBooked' });
+  if (!idempotencyKey && clash) {
+    return res.status(409).json({ code: 'ConflictError', messageKey: 'slotJustBooked' });
+  }
   const adminConflict = adminBackend
     ? await adminBackend.bookingConflict(field, start, hrs)
     : null;
-  if (adminConflict) {
+  if (!priorIdempotent && adminConflict
+    && (adminConflict.type === 'maintenance' || !idempotencyKey)) {
     return res.status(409).json({
       code: adminConflict.type === 'maintenance' ? 'MaintenanceConflict' : 'ConflictError',
       messageKey: adminConflict.type === 'maintenance' ? 'fieldUnderMaintenance' : 'slotJustBooked',
@@ -1523,43 +1662,54 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
   const paymentStatus = method === 'cash' ? 'pay_at_venue' : 'unpaid';
   const ownerId = Number(field.ownerId) || 0;
   const storedFieldId = field.id != null ? field.id : resolvedFieldId;
-  const booking = await store.insert('bookings', {
-    fieldId: storedFieldId,
-    fieldPublicId: resolvedFieldId,
-    ownerId,
-    userId: Number(req.user.id),
-    startTime: start, hours: hrs, totalPrice, status: 'pending',
-    paymentStatus,
-    paymentMethod: method,
-    referenceCode: 'REF-' + Date.now().toString().slice(-6),
-    createdAt: new Date().toISOString(),
-    walletCredited: false,
-  });
+  let booking;
+  let duplicate = false;
+  try {
+    const result = await store.createBookingAtomic({
+      fieldId: storedFieldId,
+      fieldPublicId: resolvedFieldId,
+      ownerId,
+      userId: Number(req.user.id),
+      startTime: start, hours: hrs, totalPrice, status: 'pending',
+      paymentStatus,
+      paymentMethod: method,
+      referenceCode: `REF-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+      createdAt: new Date().toISOString(),
+      walletCredited: false,
+    }, idempotencyKey || null);
+    booking = result.booking;
+    duplicate = result.duplicate;
+  } catch (error) {
+    if (error.code === 'BOOKING_CONFLICT' || String(error.code) === '11000') {
+      return res.status(409).json({ code: 'ConflictError', messageKey: 'slotJustBooked' });
+    }
+    throw error;
+  }
 
   slotHolds.delete(holdKey(resolvedFieldId, start, hrs));
   emitToField(resolvedFieldId, 'slotRelease', {
     fieldId: resolvedFieldId, startTime: start, hours: hrs,
   });
 
-  await notify(
+  if (!duplicate) await notify(
     ownerId,
     'طلب حجز جديد',
     method === 'cash'
       ? `طلب حجز نقدي على ${field.name} — بانتظار موافقتك`
       : `طلب حجز على ${field.name}`,
   );
-  await notify(
+  if (!duplicate) await notify(
     req.user.id,
     'تم إرسال طلب الحجز',
     `حجزك على ${field.name} بانتظار موافقة صاحب الملعب`,
   );
-  emitBookingUpdated(req.user.id, booking, 'bookingPending', 'bookingPendingMessage', {
+  if (!duplicate) emitBookingUpdated(req.user.id, booking, 'bookingPending', 'bookingPendingMessage', {
     fieldName: field.name,
   });
-  emitBookingUpdated(ownerId, booking, 'bookingPending', 'newBookingRequest', {
+  if (!duplicate) emitBookingUpdated(ownerId, booking, 'bookingPending', 'newBookingRequest', {
     fieldName: field.name,
   });
-  adminBackend.publish('admin:booking.created', {
+  if (!duplicate) adminBackend.publish('admin:booking.created', {
     bookingId: Number(booking.id),
     referenceCode: booking.referenceCode,
     fieldId: resolvedFieldId,
@@ -1572,7 +1722,7 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
     totalPrice: booking.totalPrice,
     source: 'app',
   });
-  await adminBackend.createAlert({
+  if (!duplicate) await adminBackend.createAlert({
     type: 'booking',
     severity: 'info',
     title: 'طلب حجز جديد',
@@ -1584,6 +1734,7 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
     data: { bookingId: booking.id, fieldId: resolvedFieldId, ownerId },
   });
 
+  if (duplicate) res.setHeader('Idempotent-Replayed', 'true');
   res.status(201).json({
     id: Number(booking.id),
     referenceCode: booking.referenceCode,
@@ -1599,6 +1750,7 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
     fieldName: field.name,
     startTime: booking.startTime,
     hours: booking.hours,
+    idempotentReplay: duplicate,
   });
 });
 
@@ -1675,6 +1827,7 @@ app.post('/api/bookings/cancel', auth, async (req, res) => {
     return res.json({ message: 'تم الإلغاء مسبقاً', tier: 'free', penaltyIqd: 0, ownerShareIqd: 0, platformShareIqd: 0 });
   }
   const updated = await store.update('bookings', b.id, { status: 'cancelled' });
+  await store.releaseBookingClaims(b.id);
   await notify(b.ownerId, 'إلغاء حجز', 'قام المستخدم بإلغاء حجز');
   emitBookingUpdated(b.userId, updated || { ...b, status: 'cancelled' }, 'bookingCancelled', 'bookingCancelled');
   emitBookingUpdated(b.ownerId, updated || { ...b, status: 'cancelled' }, 'bookingCancelled', 'bookingCancelled');
@@ -1806,6 +1959,7 @@ app.post('/api/bookings/reject', auth, requireOwnerOrAdminPermission('bookings.m
     status: 'rejected',
     ownerId: Number(b.ownerId || req.user.id),
   });
+  await store.releaseBookingClaims(b.id);
   await notify(b.userId, 'تم الرفض', 'عذراً، تم رفض حجزك');
   emitBookingUpdated(b.userId, updated || { ...b, status: 'rejected' }, 'bookingRejected', 'bookingRejected');
   if (b.fieldPublicId || b.fieldId) {
@@ -2388,6 +2542,68 @@ adminBackend = setupAdminBackend({
   commissionRate: COMMISSION_RATE,
   electronicPaymentsEnabled: ELECTRONIC_PAYMENTS_ENABLED,
   creditOwnerForPaidBooking,
+  createInvitation: createInvitationToken,
+  sendInvitation: deliverInvitation,
+});
+
+app.post('/api/admin/invitations/accept', authLimiter, async (req, res) => {
+  const rawToken = String(req.body?.token || '').trim();
+  const password = String(req.body?.password || '');
+  if (!rawToken || password.length < Math.max(8, MIN_PASSWORD_LENGTH)) {
+    return safeError(res, 400, 'رمز الدعوة وكلمة مرور من 8 أحرف على الأقل مطلوبان');
+  }
+  const now = new Date();
+  const accepted = await store.consumeInvitation(tokenHash(rawToken), now, {
+    status: 'accepted',
+    acceptedAt: now.toISOString(),
+    tokenHash: null,
+  });
+  if (!accepted) return safeError(res, 410, 'الدعوة غير صالحة أو منتهية أو مستخدمة');
+  const hashed = await bcrypt.hash(password, 12);
+  let user = await findUserByEmail(accepted.email);
+  const adminFields = {
+    name: accepted.name,
+    email: accepted.email,
+    password: hashed,
+    role: 'admin',
+    adminRole: accepted.roleId && !Number.isFinite(Number(accepted.roleId))
+      ? accepted.roleId
+      : 'custom',
+    customRoleId: Number.isFinite(Number(accepted.roleId)) ? Number(accepted.roleId) : null,
+    customPermissions: accepted.permissions || [],
+    deniedPermissions: [],
+    adminStatus: 'active',
+    sessionVersion: Number(user?.sessionVersion || 0) + 1,
+  };
+  user = user
+    ? await store.update('users', user.id, adminFields)
+    : await store.insert('users', {
+      ...adminFields, phone: '', province: 'نينوى', loyaltyPoints: 0,
+      walletBalance: 0, walletStatus: 'active',
+    });
+  await store.insert('auditLogs', {
+    actorId: Number(user.id),
+    actorName: user.name,
+    actorEmail: user.email,
+    action: 'adminInvitation.accepted',
+    resourceType: 'adminInvitation',
+    resourceId: String(accepted.id),
+    details: { invitedBy: accepted.invitedBy },
+    requestId: req.id,
+    ipAddress: String(req.ip || ''),
+    createdAt: now.toISOString(),
+  });
+  return res.json({ token: sign(user), user: publicUser(user) });
+});
+
+app.post('/api/admin/sessions/revoke-all', auth, requireAdmin, async (req, res) => {
+  const user = await store.findById('users', req.user.id);
+  await store.update('users', user.id, {
+    sessionVersion: Number(user.sessionVersion || 0) + 1,
+    sessionsRevokedAt: new Date().toISOString(),
+  });
+  await adminBackend.audit(req, 'admin.sessions.revoked', 'user', user.id);
+  res.json({ ok: true });
 });
 
 /**
@@ -2422,8 +2638,26 @@ app.post('/api/admin/bootstrap', async (req, res) => {
 
 app.use('/api', (_req, res) => res.status(404).json({ message: 'المسار غير موجود' }));
 
+const customerAppDir = path.join(__dirname, 'public', 'app');
+const customerAppIndex = path.join(customerAppDir, 'index.html');
 const panelDir = path.join(__dirname, 'public', 'panel');
 const panelIndex = path.join(panelDir, 'index.html');
+
+app.get('/app', (_req, res) => {
+  res.redirect(302, '/app/');
+});
+
+app.use('/app', express.static(customerAppDir, { index: 'index.html', fallthrough: true }));
+
+app.get('/app/*', (req, res, next) => {
+  if (!fs.existsSync(customerAppIndex)) {
+    return res.status(503).json({
+      message: 'واجهة المستخدم غير مبنية — شغّل npm run build على السيرفر',
+    });
+  }
+  if (path.extname(req.path)) return next();
+  return res.sendFile(customerAppIndex);
+});
 
 app.get(['/panel', '/admin'], (_req, res) => {
   res.redirect(302, '/panel/');
@@ -2453,9 +2687,12 @@ app.use((_req, res) => {
 });
 
 // eslint-disable-next-line no-unused-vars
-app.use((err, _req, res, _next) => {
-  console.error('خطأ غير متوقع:', err);
-  res.status(500).json({ message: 'خطأ في الخادم' });
+app.use((err, req, res, _next) => {
+  if (sentry) sentry.captureException(err, { tags: { requestId: req.id } });
+  console.error(JSON.stringify({
+    level: 'error', event: 'unhandled_error', requestId: req.id, message: err.message,
+  }));
+  res.status(500).json({ message: 'خطأ في الخادم', requestId: req.id });
 });
 
 /* ================================================================== */
@@ -2559,6 +2796,12 @@ async function backfillAdminData() {
 }
 
 async function start() {
+  if (IS_PROD && !MONGODB_URI) {
+    throw new Error('MONGODB_URI is required in production');
+  }
+  if (IS_PROD && ALLOWED_ORIGINS.length === 0) {
+    throw new Error('ALLOWED_ORIGINS is required in production');
+  }
   if (MONGODB_URI) {
     store = await createMongoStore(MONGODB_URI);
     console.log('التخزين: MongoDB');

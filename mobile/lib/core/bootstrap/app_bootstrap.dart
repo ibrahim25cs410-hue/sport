@@ -39,21 +39,27 @@ abstract final class AppBootstrap {
     // إيقاظ خادم Render مبكراً (بدون انتظار) لتقليل تأخير "الإقلاع البارد".
     _warmUpServer();
 
-    await _safe('Firebase', () async => FirebaseAppService.initialize());
+    await _safe('Firebase', () async {
+      await FirebaseAppService.initialize();
+    });
     await _safe('FCM', FcmService.initialize);
-    await initializeDateFormatting('ar', null);
-    await initializeDateFormatting('en', null);
+    await _safe('Arabic date formatting', () => initializeDateFormatting('ar', null));
+    await _safe('English date formatting', () => initializeDateFormatting('en', null));
 
     final themeProvider = ThemeProvider();
     final localeProvider = LocaleProvider();
-    await Future.wait([
-      themeProvider.load(),
-      localeProvider.load(),
-      LocalNotificationService.init(),
+    await Future.wait<void>([
+      _safe('Theme', themeProvider.load),
+      _safe('Locale', localeProvider.load),
+      _safe('Local notifications', LocalNotificationService.init),
     ]);
 
     final tokenStorage = TokenStorage();
-    final onboardingComplete = await OnboardingService().isComplete();
+    final onboardingComplete = await _safeValue(
+      'Onboarding',
+      OnboardingService().isComplete,
+      fallback: false,
+    );
     final container = ProviderContainer(
       overrides: [tokenStorageProvider.overrideWithValue(tokenStorage)],
     );
@@ -84,8 +90,8 @@ abstract final class AppBootstrap {
     () async {
       try {
         final dio = Dio(BaseOptions(
-          connectTimeout: const Duration(seconds: 60),
-          receiveTimeout: const Duration(seconds: 60),
+          connectTimeout: const Duration(seconds: 8),
+          receiveTimeout: const Duration(seconds: 8),
         ));
         await dio.get<dynamic>('${ApiConfig.baseUrl}/health');
       } catch (_) {
@@ -99,6 +105,19 @@ abstract final class AppBootstrap {
       await action();
     } catch (e, st) {
       debugPrint('$label init skipped: $e\n$st');
+    }
+  }
+
+  static Future<T> _safeValue<T>(
+    String label,
+    Future<T> Function() action, {
+    required T fallback,
+  }) async {
+    try {
+      return await action();
+    } catch (e, st) {
+      debugPrint('$label init skipped: $e\n$st');
+      return fallback;
     }
   }
 }

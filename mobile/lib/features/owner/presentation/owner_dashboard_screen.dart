@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../core/providers/booking_actions_provider.dart';
 import '../../../core/providers/owner_payment_provider.dart';
 import '../../../core/providers/realtime_booking_sync.dart';
@@ -16,7 +17,6 @@ import '../../../theme/riyada_theme_extension.dart';
 import '../../../utils/format.dart';
 import '../../../utils/l10n_extension.dart';
 import '../../../widgets/common.dart';
-import '../../../widgets/connectivity_banner.dart';
 import '../../../widgets/skeleton_loaders.dart';
 import '../../../router/app_router.dart';
 import '../../../widgets/stat_card.dart';
@@ -126,7 +126,7 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
       appBar: AppBar(
         title: Text(dash?.field?.name ?? l10n.ownerDashboard),
         actions: [
-          if (outstandingAmount > 0)
+          if (PaymentPolicy.electronicPaymentsEnabled && outstandingAmount > 0)
             IconButton(
               tooltip: l10n.payCommission,
               icon: Badge(
@@ -141,8 +141,7 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
           }),
         ],
       ),
-      body: ConnectivityBanner(
-        child: loading
+      body: loading
             ? const OwnerDashboardSkeleton()
             : dash == null
                 ? EmptyState(icon: Icons.error_outline_rounded, title: l10n.retry, subtitle: l10n.connectionLost)
@@ -157,7 +156,7 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                           pendingCount: dash.pendingCount,
                         ),
                       ),
-                      if (outstandingAmount > 0)
+                      if (PaymentPolicy.electronicPaymentsEnabled && outstandingAmount > 0)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: FilledButton.icon(
@@ -220,7 +219,6 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
                       ),
                     ],
                   ),
-      ),
     );
   }
 

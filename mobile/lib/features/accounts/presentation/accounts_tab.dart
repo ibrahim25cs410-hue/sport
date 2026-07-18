@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/booking/booking_result.dart';
+import '../../../config/payment_policy.dart';
 import '../../../core/providers/booking_actions_provider.dart';
 import '../../../core/utils/session_key_helper.dart';
 import '../../../domain/booking/booking_policy.dart';
@@ -106,7 +107,9 @@ class _AccountsTabState extends ConsumerState<AccountsTab> with AutomaticKeepAli
                             booking: booking,
                             canCancel: canCancel,
                             onCancel: canCancel ? () => _cancel(booking, key) : null,
-                            onPay: booking.needsPayment ? () => _pay(booking, key) : null,
+                            onPay: PaymentPolicy.electronicPaymentsEnabled && booking.needsPayment
+                                ? () => _pay(booking, key)
+                                : null,
                           ),
                         );
                       },

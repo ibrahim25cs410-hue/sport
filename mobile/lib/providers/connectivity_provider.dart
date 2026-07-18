@@ -8,11 +8,15 @@ import '../services/api_client.dart';
 class ConnectivityProvider extends ChangeNotifier {
   bool _online = true;
   Timer? _timer;
+  ApiClient? _client;
+  bool _checking = false;
   int _failStreak = 0;
 
   bool get isOnline => _online;
+  bool get isChecking => _checking;
 
   void start(ApiClient client) {
+    _client = client;
     _timer?.cancel();
     _failStreak = 0;
     _check(client);
@@ -23,11 +27,19 @@ class ConnectivityProvider extends ChangeNotifier {
     _timer?.cancel();
     _timer = null;
     _failStreak = 0;
+    _client = null;
   }
 
   Future<void> recheck(ApiClient client) => _check(client);
+  Future<void> retry() async {
+    final client = _client;
+    if (client != null) await _check(client);
+  }
 
   Future<void> _check(ApiClient client) async {
+    if (_checking) return;
+    _checking = true;
+    notifyListeners();
     try {
       await client.dio.get('/health');
       _failStreak = 0;
@@ -41,6 +53,9 @@ class ConnectivityProvider extends ChangeNotifier {
         _online = false;
         notifyListeners();
       }
+    } finally {
+      _checking = false;
+      notifyListeners();
     }
   }
 

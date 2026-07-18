@@ -554,5 +554,10 @@
     }
   },
   "back": "Back",
-  "next": "Next"
+  "next": "Next",
+  "cashOnlyTitle": "Pay cash at the venue",
+  "electronicPaymentsComingSoon": "Electronic payments are coming soon",
+  "navigationError": "This page could not be opened.",
+  "unexpectedError": "Something went wrong. Please restart the app and try again.",
+  "privacyPolicy": "Privacy policy"
 }

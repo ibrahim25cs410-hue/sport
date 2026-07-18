@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Phone, Clock, Timer, XCircle, RefreshCw, History, Building2, Calendar, Bell } from 'lucide-react';
+import { MapPin, Phone, Clock, Timer, XCircle, RefreshCw, Building2, Calendar, Bell } from 'lucide-react';
 import { formatDateTime, formatRemaining, formatMoney } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useSmartToast } from '../context/SmartToastContext';

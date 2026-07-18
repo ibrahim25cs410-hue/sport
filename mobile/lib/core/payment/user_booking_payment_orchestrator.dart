@@ -1,5 +1,6 @@
 import '../../data/payment/card_payment_gateway.dart';
 import '../../data/payment/zain_cash_payment_gateway.dart';
+import '../../config/payment_policy.dart';
 import '../../domain/enums/owner_payment_gateway.dart';
 import '../../domain/payment/payment_gateway.dart';
 import '../../models/owner_payment_account.dart';
@@ -23,6 +24,7 @@ class UserBookingPaymentOrchestrator {
     required int bookingId,
     required OwnerPaymentGateway gateway,
   }) async {
+    PaymentPolicy.requireElectronicPayments();
     final initiation = await _repository.initiatePayment(bookingId: bookingId, gateway: gateway);
     final strategy = _gateways[gateway]!;
     final launch = await strategy.launchCheckout(GatewayCheckoutSession(
@@ -33,6 +35,8 @@ class UserBookingPaymentOrchestrator {
     return (initiation: initiation, launch: launch);
   }
 
-  Future<PaymentVerification> verifyPayment(String transactionToken) =>
-      _repository.verifyPayment(transactionToken);
+  Future<PaymentVerification> verifyPayment(String transactionToken) {
+    PaymentPolicy.requireElectronicPayments();
+    return _repository.verifyPayment(transactionToken);
+  }
 }

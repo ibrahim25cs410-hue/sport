@@ -16,6 +16,20 @@ val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+val releaseRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+val requiredSigningKeys = listOf("keyAlias", "keyPassword", "storeFile", "storePassword")
+val signingPropertiesComplete = keystorePropertiesFile.exists() &&
+    requiredSigningKeys.all { !keystoreProperties.getProperty(it).isNullOrBlank() }
+val releaseStoreFile = keystoreProperties.getProperty("storeFile")?.let(::file)
+
+if (releaseRequested && (!signingPropertiesComplete || releaseStoreFile?.isFile != true)) {
+    throw GradleException(
+        "Release signing is not configured. Provide android/key.properties with " +
+            "keyAlias, keyPassword, storeFile, and storePassword pointing to an existing keystore."
+    )
+}
 
 android {
     namespace = "iq.riyada.riyada"
@@ -33,12 +47,12 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        if (signingPropertiesComplete && releaseStoreFile?.isFile == true) {
             create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = releaseStoreFile
+                storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
     }
@@ -53,11 +67,10 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (signingConfigs.names.contains("release")) {
                 signingConfigs.getByName("release")
             } else {
-                println("WARNING: android/key.properties missing — release signed with debug key. Run scripts/generate_keystore.ps1")
-                signingConfigs.getByName("debug")
+                null
             }
             isMinifyEnabled = false
             isShrinkResources = false

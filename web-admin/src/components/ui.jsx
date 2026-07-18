@@ -67,8 +67,8 @@ export function StatusBadge({ status }) {
 export function LoadingBlock({ label }) {
   const { t } = useLocale();
   return (
-    <div className="panel flex min-h-56 flex-col items-center justify-center gap-3 p-8">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-200 border-t-pitch-700 dark:border-pitch-700 dark:border-t-pitch-300" />
+    <div className="panel flex min-h-56 flex-col items-center justify-center gap-3 p-8" role="status" aria-live="polite" aria-busy="true">
+      <div aria-hidden="true" className="h-8 w-8 animate-spin rounded-full border-2 border-pitch-200 border-t-pitch-700 dark:border-pitch-700 dark:border-t-pitch-300" />
       <p className="text-sm text-pitch-600 dark:text-pitch-300">{label || t('loading')}</p>
     </div>
   );
@@ -77,7 +77,7 @@ export function LoadingBlock({ label }) {
 export function ErrorBlock({ error, onRetry }) {
   const { t } = useLocale();
   return (
-    <div className="panel border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+    <div className="panel border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200" role="alert">
       <p className="font-semibold">{error?.message || t('error')}</p>
       {onRetry ? (
         <button type="button" className="btn-ghost mt-3" onClick={onRetry}>{t('retry')}</button>
@@ -98,10 +98,10 @@ export function EmptyBlock({ title, hint }) {
 export function Modal({ title, children, onClose }) {
   const { t } = useLocale();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-pitch-950/50 p-4 backdrop-blur-sm">
-      <div className="panel w-full max-w-md p-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-pitch-950/50 p-4 backdrop-blur-sm" role="presentation" onMouseDown={onClose}>
+      <div className="panel max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto p-5" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h3 className="text-lg font-bold text-pitch-950 dark:text-pitch-50">{title}</h3>
+          <h3 id="modal-title" className="text-lg font-bold text-pitch-950 dark:text-pitch-50">{title}</h3>
           <button type="button" className="btn-ghost !px-3 !py-1.5" onClick={onClose}>{t('close')}</button>
         </div>
         {children}

@@ -34,6 +34,12 @@
 
   * {
     -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--color-accent));
+    outline-offset: 3px;
   }
 
   body {
@@ -43,6 +49,33 @@
 
   input, textarea, select {
     @apply outline-none;
+  }
+}
+
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin: 0 auto;
+  max-width: 28rem;
+  padding: 0.6rem 1rem;
+  background: #92400e;
+  color: white;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  button, [role="button"], a { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

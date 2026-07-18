@@ -27,11 +27,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="absolute start-4 top-4 flex gap-2">
-        <button type="button" className="btn-ghost !px-3 !py-2" onClick={toggleLocale}>
+        <button type="button" className="btn-ghost !px-3 !py-2" onClick={toggleLocale} aria-label={locale === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>
           <Languages className="h-4 w-4" />
           {locale === 'ar' ? 'EN' : 'ع'}
         </button>
-        <button type="button" className="btn-ghost !px-3 !py-2" onClick={toggleTheme}>
+        <button type="button" className="btn-ghost !px-3 !py-2" onClick={toggleTheme} aria-label={isDark ? (locale === 'ar' ? 'الوضع الفاتح' : 'Light theme') : (locale === 'ar' ? 'الوضع الداكن' : 'Dark theme')}>
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
       </div>
@@ -69,7 +69,7 @@ export default function LoginPage() {
           />
 
           {error ? (
-            <div className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-200">
+            <div className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-200" role="alert" aria-live="assertive">
               {error === 'NOT_ADMIN' ? t('login.notAdmin') : error}
             </div>
           ) : null}

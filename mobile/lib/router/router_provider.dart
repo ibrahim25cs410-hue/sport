@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/notifications/presentation/notifications_screen.dart';
+import '../config/payment_policy.dart';
 import '../features/owner/presentation/owner_commission_checkout_screen.dart';
 import '../features/owner/presentation/owner_dashboard_screen.dart';
 import '../features/payment/presentation/payment_methods_screen.dart';
@@ -11,6 +12,7 @@ import '../features/payment/presentation/user_booking_checkout_screen.dart';
 import '../features/shell/presentation/main_wrapper.dart';
 import '../games/penalty_shootout/penalty_menu_screen.dart';
 import '../games/penalty_flame/penalty_flame_bridge_screen.dart';
+import '../l10n/app_localizations.dart';
 import '../models/booking_checkout_args.dart';
 import '../models/field.dart';
 import '../models/user.dart';
@@ -91,6 +93,15 @@ const _shellPaths = {
   AppRoutes.adminDashboard,
 };
 
+const paymentRoutePaths = {
+  AppRoutes.ownerCommissionCheckout,
+  AppRoutes.paymentMethods,
+  AppRoutes.bookingCheckout,
+};
+
+String? guardDisabledPaymentRoute(String path) =>
+    PaymentPolicy.cashOnly && paymentRoutePaths.contains(path) ? AppRoutes.userHome : null;
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ref.watch(authRouterRefreshProvider);
   final auth = ref.read(authProvider);
@@ -106,6 +117,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       final auth = ref.read(authProvider);
       final onboardingComplete = ref.read(onboardingCompleteProvider);
       final path = state.uri.path;
+
+      final paymentRedirect = guardDisabledPaymentRoute(path);
+      if (paymentRedirect != null) {
+        final user = auth.user;
+        return user == null ? AppRoutes.welcome : _homeFor(user);
+      }
 
       if (auth.bootstrapping) {
         return path == AppRoutes.splash ? null : AppRoutes.splash;
@@ -127,8 +144,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (path == AppRoutes.splash || path == AppRoutes.onboarding) return null;
           return AppRoutes.onboarding;
         }
-        if (auth.hasStoredToken && path == AppRoutes.userHome) return null;
-        if (auth.hasStoredToken && path.startsWith('/field/')) return null;
         if (_shellPaths.contains(path)) return AppRoutes.welcome;
         if (path == AppRoutes.onboarding) return AppRoutes.welcome;
         if (path.startsWith('/field/')) return AppRoutes.loginUser;
@@ -222,12 +237,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (c, s) => riyadaTransitionPage(child: const OwnerDashboardScreen(), state: s, fromBottom: true),
       ),
-      GoRoute(
-        path: AppRoutes.ownerCommissionCheckout,
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) =>
-            riyadaTransitionPage(child: const OwnerCommissionCheckoutScreen(), state: s, fromBottom: true),
-      ),
+      if (PaymentPolicy.electronicPaymentsEnabled)
+        GoRoute(
+          path: AppRoutes.ownerCommissionCheckout,
+          parentNavigatorKey: rootNavigatorKey,
+          pageBuilder: (c, s) =>
+              riyadaTransitionPage(child: const OwnerCommissionCheckoutScreen(), state: s, fromBottom: true),
+        ),
       GoRoute(
         path: AppRoutes.profile,
         parentNavigatorKey: rootNavigatorKey,
@@ -258,29 +274,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (c, s) => riyadaTransitionPage(child: const NotificationsScreen(), state: s, fromBottom: true),
       ),
-      GoRoute(
-        path: AppRoutes.paymentMethods,
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (c, s) => riyadaTransitionPage(child: const PaymentMethodsScreen(), state: s, fromBottom: true),
-      ),
-      GoRoute(
-        path: AppRoutes.bookingCheckout,
-        parentNavigatorKey: rootNavigatorKey,
-        pageBuilder: (context, state) {
-          final args = state.extra as BookingCheckoutArgs?;
-          if (args == null) {
+      if (PaymentPolicy.electronicPaymentsEnabled)
+        GoRoute(
+          path: AppRoutes.paymentMethods,
+          parentNavigatorKey: rootNavigatorKey,
+          pageBuilder: (c, s) => riyadaTransitionPage(child: const PaymentMethodsScreen(), state: s, fromBottom: true),
+        ),
+      if (PaymentPolicy.electronicPaymentsEnabled)
+        GoRoute(
+          path: AppRoutes.bookingCheckout,
+          parentNavigatorKey: rootNavigatorKey,
+          pageBuilder: (context, state) {
+            final args = state.extra as BookingCheckoutArgs?;
+            if (args == null) {
+              return riyadaTransitionPage(
+                child: const _NavigationErrorScreen(),
+                state: state,
+              );
+            }
             return riyadaTransitionPage(
-              child: const _NavigationErrorScreen(message: 'بيانات الدفع غير متوفرة'),
+              child: UserBookingCheckoutScreen(args: args),
               state: state,
+              fromBottom: true,
             );
-          }
-          return riyadaTransitionPage(
-            child: UserBookingCheckoutScreen(args: args),
-            state: state,
-            fromBottom: true,
-          );
-        },
-      ),
+          },
+        ),
       GoRoute(
         path: '/field/:id',
         parentNavigatorKey: rootNavigatorKey,
@@ -288,7 +306,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) {
             return riyadaTransitionPage(
-              child: const _NavigationErrorScreen(message: 'تعذّر فتح الملعب'),
+              child: const _NavigationErrorScreen(),
               state: state,
             );
           }
@@ -308,12 +326,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 class _NavigationErrorScreen extends StatelessWidget {
-  const _NavigationErrorScreen({required this.message});
-
-  final String message;
+  const _NavigationErrorScreen();
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(),
       body: Center(
@@ -324,11 +341,11 @@ class _NavigationErrorScreen extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline_rounded, size: 48),
               const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center),
+              Text(l10n.navigationError, textAlign: TextAlign.center),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => context.canPop() ? context.pop() : context.go(AppRoutes.welcome),
-                child: const Text('رجوع'),
+                child: Text(l10n.back),
               ),
             ],
           ),

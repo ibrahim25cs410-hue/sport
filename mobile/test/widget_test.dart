@@ -23,4 +23,27 @@ void main() {
 
     expect(find.text('احجز ملعبك في نينوى'), findsOneWidget);
   });
+
+  testWidgets('operational error copy follows English locale', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: Builder(
+          builder: (context) => Text(AppLocalizations.of(context).unexpectedError),
+        ),
+      ),
+    );
+
+    expect(
+      find.text('Something went wrong. Please restart the app and try again.'),
+      findsOneWidget,
+    );
+  });
 }

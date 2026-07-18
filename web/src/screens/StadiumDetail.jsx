@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { MapPin, Phone, Clock, CheckCircle } from 'lucide-react';
 import { formatDate, formatTime, formatMoney } from '../api';
@@ -11,6 +11,7 @@ import { useSmartToast } from '../context/SmartToastContext';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import { ScheduleSkeleton } from '../components/Skeleton';
+import { assertCashOnly } from '../lib/paymentPolicy';
 
 export default function StadiumDetail() {
   const { id } = useParams();
@@ -20,13 +21,14 @@ export default function StadiumDetail() {
   const { success, smartError } = useSmartToast();
   const [stadium, setStadium] = useState(state?.stadium || null);
   const [selected, setSelected] = useState(null);
+  const selectedRef = useRef(null);
   const [booking, setBooking] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [rating, setRating] = useState(0);
   const [submittingReview, setSubmittingReview] = useState(false);
   const fieldId = parseInt(id, 10);
 
-  const { data: scheduleData, isLoading, refetch } = useSchedule(fieldId);
+  const { data: scheduleData, isLoading, isError, refetch } = useSchedule(fieldId);
   const { data: reviewInfo, refetch: refetchReview } = useReviewEligibility(fieldId);
   const schedule = scheduleData?.schedule || [];
 
@@ -80,7 +82,7 @@ export default function StadiumDetail() {
         startTime: selected.startTime,
         hours: slotHours,
       });
-    } catch (_) {
+    } catch {
       /* ignore */
     }
   };
@@ -89,6 +91,7 @@ export default function StadiumDetail() {
     const hours = Math.round((new Date(slot.endTime) - new Date(slot.startTime)) / 3600000);
     if (selected?.startTime === slot.startTime) {
       await releaseCurrent();
+      selectedRef.current = null;
       setSelected(null);
       return;
     }
@@ -97,6 +100,7 @@ export default function StadiumDetail() {
     try {
       if (selected) await releaseCurrent();
       await riyadaRepository.selectSlot({ fieldId, startTime: slot.startTime, hours });
+      selectedRef.current = slot;
       setSelected(slot);
     } catch (err) {
       smartError(err);
@@ -108,6 +112,7 @@ export default function StadiumDetail() {
 
   const handleBook = async () => {
     if (!selected) return;
+    assertCashOnly('cash');
     if (!confirm(`تأكيد الحجز؟\n${formatMoney(totalPrice)} — عمولة 2,000 د.ع عند الموافقة`)) return;
     setBooking(true);
     try {
@@ -118,6 +123,8 @@ export default function StadiumDetail() {
         hours: slotHours,
       });
       await releaseCurrent();
+      selectedRef.current = null;
+      setSelected(null);
       success('تم إرسال طلب الحجز! ستصلك إشعار عند الموافقة');
       navigate('/home', { replace: true });
     } catch (err) {
@@ -129,10 +136,21 @@ export default function StadiumDetail() {
   };
 
   useEffect(() => () => {
-    if (selected) releaseCurrent();
-  }, []);
+    const current = selectedRef.current;
+    if (!current) return;
+    const hours = Math.round((new Date(current.endTime) - new Date(current.startTime)) / 3600000);
+    riyadaRepository.releaseSlot({ fieldId, startTime: current.startTime, hours }).catch(() => {});
+  }, [fieldId]);
 
   if (isLoading && !scheduleData) return <ScheduleSkeleton />;
+  if (isError && !scheduleData) return (
+    <main className="app-shell flex min-h-screen items-center justify-center p-5" role="alert">
+      <section className="card text-center">
+        <h1 className="font-bold">تعذر تحميل مواعيد الملعب</h1>
+        <button type="button" className="btn-primary mt-4" onClick={() => refetch()}>إعادة المحاولة</button>
+      </section>
+    </main>
+  );
 
   return (
     <div className="app-shell min-h-screen pb-8 animate-fade-in">
@@ -226,6 +244,8 @@ export default function StadiumDetail() {
                       key={j}
                       type="button"
                       disabled={selecting}
+                      aria-pressed={isSelected}
+                      aria-label={`${formatTime(slot.startTime)}، ${hours} ساعة`}
                       onClick={() => handleSelectSlot(slot)}
                       className={isSelected ? 'slot-selected' : 'slot-available'}
                     >

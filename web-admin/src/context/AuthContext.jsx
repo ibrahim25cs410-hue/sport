@@ -29,6 +29,24 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const acceptInvitation = useCallback(async (token, password) => {
+    setBusy(true);
+    setError('');
+    try {
+      const data = await api.acceptInvitation(token, password);
+      if (data.user?.role !== 'admin') throw new Error('NOT_ADMIN');
+      const next = { token: data.token, user: data.user };
+      setSession(next);
+      setSessionState(next);
+      return next;
+    } catch (e) {
+      setError(e.message || 'INVITATION_FAILED');
+      throw e;
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   const logout = useCallback(() => {
     clearSession();
     setSessionState(null);
@@ -67,7 +85,8 @@ export function AuthProvider({ children }) {
 
   const hasPermission = useCallback((permission) => {
     const permissions = session?.user?.permissions;
-    return !Array.isArray(permissions) || permissions.includes('*') || permissions.includes(permission);
+    return Array.isArray(permissions)
+      && (permissions.includes('*') || permissions.includes(permission));
   }, [session]);
 
   const value = useMemo(() => ({
@@ -77,10 +96,11 @@ export function AuthProvider({ children }) {
     busy,
     error,
     login,
+    acceptInvitation,
     logout,
     hasPermission,
     setError,
-  }), [session, busy, error, login, logout, hasPermission]);
+  }), [session, busy, error, login, acceptInvitation, logout, hasPermission]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

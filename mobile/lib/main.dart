@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import 'core/bootstrap/service_bootstrap.dart';
 import 'core/notifications/booking_notification_listener.dart';
 import 'core/utils/session_key_helper.dart';
 import 'core/loading/loading_overlay.dart';
+import 'core/monitoring/crash_reporting.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/auth_provider.dart';
 import 'providers/booking_provider.dart';
@@ -25,21 +28,92 @@ import 'widgets/ambient_green_background.dart';
 import 'widgets/theme_sync.dart';
 
 Future<void> main() async {
-  final boot = await AppBootstrap.run();
+  await runZonedGuarded(() async {
+    await CrashReporting.initialize(() async {
+      AppBootstrapResult boot;
+      try {
+        boot = await AppBootstrap.run();
+      } catch (error, stack) {
+        await CrashReporting.capture(error, stack);
+        runApp(const _StartupFailureApp());
+        return;
+      }
 
-  runApp(
-    UncontrolledProviderScope(
-      container: boot.container,
-      child: legacy.MultiProvider(
-        providers: [
-          legacy.ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
-          legacy.ChangeNotifierProvider.value(value: boot.themeProvider),
-          legacy.ChangeNotifierProvider.value(value: boot.localeProvider),
-        ],
-        child: const RiyadaApp(),
+      ErrorWidget.builder = (details) => const _CrashFallback();
+      runApp(
+        UncontrolledProviderScope(
+          container: boot.container,
+          child: legacy.MultiProvider(
+            providers: [
+              legacy.ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
+              legacy.ChangeNotifierProvider.value(value: boot.themeProvider),
+              legacy.ChangeNotifierProvider.value(value: boot.localeProvider),
+            ],
+            child: const RiyadaApp(),
+          ),
+        ),
+      );
+    });
+  }, (error, stack) {
+    unawaited(CrashReporting.capture(error, stack));
+  });
+}
+
+class _StartupFailureApp extends StatelessWidget {
+  const _StartupFailureApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                AppLocalizations.of(context).unexpectedError,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
+}
+
+class _CrashFallback extends StatelessWidget {
+  const _CrashFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        child: Center(
+          child: Semantics(
+            liveRegion: true,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                l10n.unexpectedError,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class RiyadaApp extends ConsumerWidget {
@@ -77,6 +151,10 @@ class RiyadaApp extends ConsumerWidget {
       themeAnimationCurve: RiyadaMotion.themeCurve,
       routerConfig: router,
       builder: (context, child) {
+        final media = MediaQuery.of(context);
+        final accessibleMedia = media.copyWith(
+          textScaler: media.textScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 2.0),
+        );
         final base = Theme.of(context);
         final isDark = base.brightness == Brightness.dark;
         final textColor = AppColors.typography(base.brightness);
@@ -95,16 +173,19 @@ class RiyadaApp extends ConsumerWidget {
           ),
         );
 
-        return Theme(
-          data: branded,
-          child: RiyadaTypographyScope(
-            child: ThemeSync(
-              child: Directionality(
-                textDirection: textDirection,
-                child: LoadingOverlay(
-                  child: BookingNotificationListener(
-                    child: AmbientGreenBackground(
-                      child: child ?? const SizedBox.shrink(),
+        return MediaQuery(
+          data: accessibleMedia,
+          child: Theme(
+            data: branded,
+            child: RiyadaTypographyScope(
+              child: ThemeSync(
+                child: Directionality(
+                  textDirection: textDirection,
+                  child: LoadingOverlay(
+                    child: BookingNotificationListener(
+                      child: AmbientGreenBackground(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../core/providers/owner_payment_provider.dart';
 import '../../../core/utils/session_key_helper.dart';
 import '../../../providers/booking_provider.dart';
@@ -66,7 +67,7 @@ class OwnerHomeTab extends ConsumerWidget {
                               pendingCount: dash.pendingCount,
                             ),
                           ),
-                          if (outstanding > 0)
+                          if (PaymentPolicy.electronicPaymentsEnabled && outstanding > 0)
                             Padding(
                               padding: const EdgeInsets.only(top: DesignTokens.spaceMd),
                               child: FilledButton.icon(

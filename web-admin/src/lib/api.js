@@ -86,6 +86,12 @@ export const api = {
       auth: false,
       body: { email, password, expectedRole: 'admin' },
     }),
+  acceptInvitation: (token, password) =>
+    request('/admin/invitations/accept', {
+      method: 'POST',
+      auth: false,
+      body: { token, password },
+    }),
   me: () => request('/me'),
   stats: () => request('/admin/stats'),
   financials: () => request('/admin/financials'),

@@ -534,5 +534,10 @@
     }
   },
   "back": "رجوع",
-  "next": "التالي"
+  "next": "التالي",
+  "cashOnlyTitle": "الدفع نقداً في الملعب",
+  "electronicPaymentsComingSoon": "الدفع الإلكتروني سيتوفر قريباً",
+  "navigationError": "تعذّر فتح هذه الصفحة.",
+  "unexpectedError": "حدث خطأ غير متوقع. أعد تشغيل التطبيق وحاول مجدداً.",
+  "privacyPolicy": "سياسة الخصوصية"
 }

@@ -101,40 +101,48 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Restores the session once at app launch. Token is only cleared on HTTP 401.
   Future<void> bootstrap() async {
     state = state.copyWith(bootstrapping: true, clearError: true);
-    await ApiConfig.load();
-    client.refreshBaseUrl();
-    apiLog('Base URL', client.baseUrl);
-
-    final authService = ref.read(authServiceProvider);
-    final hasToken = await authService.hasToken();
-    state = state.copyWith(hasStoredToken: hasToken);
-
-    if (!hasToken) {
-      state = state.copyWith(bootstrapping: false);
-      return;
-    }
-
     try {
-      final session = await _repo.bootstrapFromToken();
-      state = state.copyWith(user: session.user, ownerField: session.field);
-      await SessionStorage.save(session.user, session.field);
-      await FcmService.syncTokenWithServer(client);
-    } on DioException catch (e) {
-      if (AuthInterceptor.isStrictUnauthorized(e)) {
-        await authService.logout();
+      await ApiConfig.load();
+      client.refreshBaseUrl();
+      apiLog('Base URL', client.baseUrl);
+
+      final authService = ref.read(authServiceProvider);
+      final hasToken = await authService.hasToken();
+      state = state.copyWith(hasStoredToken: hasToken);
+      if (!hasToken) {
         await SessionStorage.clear();
-        state = state.copyWith(clearUser: true, clearField: true, hasStoredToken: false);
-      } else {
+        return;
+      }
+
+      try {
+        final session = await _repo.bootstrapFromToken();
+        state = state.copyWith(user: session.user, ownerField: session.field);
+        await SessionStorage.save(session.user, session.field);
+        await _syncPushTokenSafely();
+      } on DioException catch (e) {
+        if (AuthInterceptor.isStrictUnauthorized(e)) {
+          await authService.logout();
+          await SessionStorage.clear();
+          state = state.copyWith(clearUser: true, clearField: true, hasStoredToken: false);
+        } else {
+          await _restoreCachedSession();
+        }
+      } catch (e, st) {
+        apiLogError('bootstrap session restore failed — using cache', e, st);
         await _restoreCachedSession();
       }
-    } catch (e, st) {
-      apiLogError('bootstrap session restore failed — using cache', e, st);
-      await _restoreCachedSession();
-    }
 
-    state = state.copyWith(bootstrapping: false);
-    if (state.isLoggedIn) {
-      await _socket.connect();
+      if (state.isLoggedIn) {
+        await _connectSocketSafely();
+      } else {
+        state = state.copyWith(hasStoredToken: false);
+      }
+    } catch (e, st) {
+      apiLogError('auth bootstrap failed safely', e, st);
+      await SessionStorage.clear();
+      state = state.copyWith(clearUser: true, clearField: true, hasStoredToken: false);
+    } finally {
+      state = state.copyWith(bootstrapping: false);
     }
   }
 
@@ -171,24 +179,24 @@ class AuthNotifier extends Notifier<AuthState> {
         }
         state = state.copyWith(user: r.user, ownerField: r.field, hasStoredToken: true);
         await SessionStorage.save(r.user, r.field);
-        await FcmService.syncTokenWithServer(client);
-        await _socket.connect();
+        await _syncPushTokenSafely();
+        await _connectSocketSafely();
       });
 
   Future<bool> registerUser(Map<String, dynamic> body) => _run(() async {
         final r = await _repo.registerUser(body);
         state = state.copyWith(user: r.user, clearField: true, hasStoredToken: true);
         await SessionStorage.save(r.user, null);
-        await FcmService.syncTokenWithServer(client);
-        await _socket.connect();
+        await _syncPushTokenSafely();
+        await _connectSocketSafely();
       });
 
   Future<bool> registerOwner(Map<String, dynamic> body) => _run(() async {
         final r = await _repo.registerOwner(body);
         state = state.copyWith(user: r.user, ownerField: r.field, hasStoredToken: true);
         await SessionStorage.save(r.user, r.field);
-        await FcmService.syncTokenWithServer(client);
-        await _socket.connect();
+        await _syncPushTokenSafely();
+        await _connectSocketSafely();
       });
 
   /// Clears in-memory session state without touching the stored JWT.
@@ -274,6 +282,22 @@ class AuthNotifier extends Notifier<AuthState> {
       return false;
     } finally {
       state = state.copyWith(loading: false);
+    }
+  }
+
+  Future<void> _syncPushTokenSafely() async {
+    try {
+      await FcmService.syncTokenWithServer(client);
+    } catch (e, st) {
+      apiLogError('Push token sync deferred', e, st);
+    }
+  }
+
+  Future<void> _connectSocketSafely() async {
+    try {
+      await _socket.connect();
+    } catch (e, st) {
+      apiLogError('Realtime connection deferred', e, st);
     }
   }
 }

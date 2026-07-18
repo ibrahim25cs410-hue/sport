@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/payment_policy.dart';
 import '../core/booking/booking_result.dart';
 import '../core/providers/booking_actions_provider.dart';
 import '../core/providers/review_provider.dart';
@@ -18,7 +19,6 @@ import '../models/slot_hold.dart';
 import '../providers/auth_provider.dart';
 import '../providers/session_key.dart';
 import '../providers/socket_provider.dart';
-import '../services/payment_preferences_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
@@ -302,7 +302,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
     final l10n = context.l10n;
 
     var paymentMethodApiValue = 'cash';
-    if (PaymentPreferencesService.electronicPaymentsEnabled) {
+    if (PaymentPolicy.electronicPaymentsEnabled) {
       final paymentMethod = await showPaymentMethodSelector(context);
       if (paymentMethod == null || !mounted) return;
       paymentMethodApiValue = paymentMethod.apiValue;
@@ -334,7 +334,7 @@ class _FieldDetailScreenState extends ConsumerState<FieldDetailScreen> {
       if (!mounted) return;
       switch (result) {
         case BookingOk(:final value):
-          if (value.needsPayment) {
+          if (PaymentPolicy.electronicPaymentsEnabled && value.needsPayment) {
             final paid = await context.goBookingCheckout(BookingCheckoutArgs(
               bookingId: value.id,
               totalPrice: value.totalPrice,

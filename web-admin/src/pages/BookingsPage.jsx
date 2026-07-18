@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Filter, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { api, formatDate, formatMoney } from '../lib/api';
 import { ConfirmDialog, EmptyBlock, ErrorBlock, FilterChips, LoadingBlock, PageHeader, StatusBadge, Toolbar } from '../components/ui';
 import { useLocale } from '../context/LocaleContext';

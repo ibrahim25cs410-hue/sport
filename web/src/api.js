@@ -1,6 +1,4 @@
-const API_PORT = import.meta.env.VITE_API_PORT || '3000';
-const API_HOST = import.meta.env.VITE_API_HOST || 'localhost';
-export const API_BASE = import.meta.env.VITE_API_BASE || `http://${API_HOST}:${API_PORT}/api`;
+export const API_BASE = (import.meta.env.VITE_API_BASE || '/api').replace(/\/+$/, '');
 
 function authHeaders() {
   const session = storage.getSession();
@@ -11,35 +9,26 @@ function authHeaders() {
 
 async function request(path, options = {}, auth = false) {
   const url = `${API_BASE}${path}`;
-  console.log('[Riyada API] →', options.method || 'GET', url);
-  if (options.body) {
-    try {
-      const preview = JSON.parse(options.body);
-      if (preview.password) preview.password = '***';
-      console.log('[Riyada API]   body:', preview);
-    } catch {
-      console.log('[Riyada API]   body:', options.body);
-    }
-  }
-
   let res;
   try {
     res = await fetch(url, {
       headers: { ...(auth ? authHeaders() : { 'Content-Type': 'application/json' }), ...(options.headers || {}) },
       ...options,
     });
-  } catch (err) {
-    console.error('[Riyada API] ❌ Network error:', err);
-    console.error('[Riyada API]   تحقق أن الخادم يعمل على', API_BASE);
-    throw new Error('عذراً، لم نتمكن من الاتصال بالخادم. تأكد من اتصال الإنترنت وحاول مجدداً.');
+  } catch {
+    const networkError = new Error('عذراً، لم نتمكن من الاتصال بالخادم. تأكد من اتصال الإنترنت وحاول مجدداً.');
+    networkError.code = 'NETWORK_ERROR';
+    networkError.retryable = true;
+    throw networkError;
   }
 
   const data = await res.json().catch(() => ({}));
-  console.log('[Riyada API] ←', res.status, url, data);
-
   if (!res.ok) {
-    console.error('[Riyada API] ❌ Server error:', res.status, data);
-    throw new Error(data.message || 'حدث خطأ');
+    const error = new Error(data.message || 'حدث خطأ');
+    error.status = res.status;
+    error.code = data.code;
+    error.retryable = res.status >= 500 || res.status === 429;
+    throw error;
   }
   return data;
 }
@@ -66,8 +55,13 @@ export const api = {
 export const storage = {
   saveSession: (session) => localStorage.setItem('riyada_session', JSON.stringify(session)),
   getSession: () => {
-    const raw = localStorage.getItem('riyada_session');
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem('riyada_session');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      localStorage.removeItem('riyada_session');
+      return null;
+    }
   },
   clearSession: () => localStorage.removeItem('riyada_session'),
 };

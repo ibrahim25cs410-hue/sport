@@ -1,0 +1,48 @@
+name: Post-deploy smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Deployed service origin
+        required: true
+        default: https://sports-x7v7.onrender.com
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.4'
+      - name: Resolve deployment URL
+        id: target
+        shell: bash
+        env:
+          INPUT_URL: ${{ inputs.base_url }}
+          DEPLOYMENT_URL: ${{ github.event.deployment_status.environment_url }}
+          DEFAULT_URL: ${{ vars.PRODUCTION_ORIGIN }}
+        run: |
+          URL="${INPUT_URL:-${DEPLOYMENT_URL:-${DEFAULT_URL:-https://sports-x7v7.onrender.com}}}"
+          if [[ "$URL" != https://* ]]; then
+            echo "::error::Production smoke target must use HTTPS."
+            exit 1
+          fi
+          echo "url=${URL%/}" >> "$GITHUB_OUTPUT"
+      - name: Run production smoke
+        run: node scripts/ops/post-deploy-smoke.mjs "${{ steps.target.outputs.url }}"
+        env:
+          EXPECT_CASH_ONLY: 'true'
+          EXPECT_MONGODB: 'true'
+      - name: Rollback guidance
+        if: failure()
+        run: |
+          echo "::error::Smoke failed. Stop promotion and use Render's previous successful deploy."
+          echo "::error::Follow docs/runbooks/INCIDENT_RESPONSE.md; do not restore MongoDB unless data corruption is confirmed."

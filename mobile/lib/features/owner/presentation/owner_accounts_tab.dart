@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../core/providers/owner_payment_provider.dart';
 import '../../../core/utils/session_key_helper.dart';
 import '../../../router/app_router.dart';
@@ -66,12 +67,14 @@ class OwnerAccountsTab extends ConsumerWidget {
                           formatMoney(account.outstandingAmount),
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, color: c.primary),
                         ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: () => context.goOwnerCommissionCheckout(),
-                          icon: const Icon(Icons.payment_rounded),
-                          label: Text(l10n.payCommission),
-                        ),
+                        if (PaymentPolicy.electronicPaymentsEnabled) ...[
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: () => context.goOwnerCommissionCheckout(),
+                            icon: const Icon(Icons.payment_rounded),
+                            label: Text(l10n.payCommission),
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Bell, Check, ChevronLeft, ChevronRight, Download, Eye, FileBarChart, Plus, RefreshCw, Search, ShieldCheck, WalletCards } from 'lucide-react';
+import { AlertTriangle, Bell, Check, ChevronLeft, ChevronRight, Download, Eye, Plus, RefreshCw, Search, ShieldCheck, WalletCards } from 'lucide-react';
 import { api, formatDate, formatMoney } from '../lib/api';
 import { DateRangeControls } from '../components/AdminTools';
 import { EmptyBlock, ErrorBlock, LoadingBlock, Modal, PageHeader, StatusBadge, Toolbar } from '../components/ui';
@@ -33,8 +33,8 @@ export function CalendarPage() {
   );
   const [cursor, setCursor] = useState(() => new Date());
   const [fieldId, setFieldId] = useState('');
-  const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-  const end = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
+  const start = useMemo(() => new Date(cursor.getFullYear(), cursor.getMonth(), 1), [cursor]);
+  const end = useMemo(() => new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0), [cursor]);
   const query = useQuery({ queryKey: ['admin-calendar', start.toISOString(), fieldId], queryFn: () => api.calendar({ from: start.toISOString(), to: end.toISOString(), fieldId }) });
   const fields = useQuery({ queryKey: ['admin-fields'], queryFn: api.fields });
   const days = useMemo(() => {
@@ -42,7 +42,7 @@ export function CalendarPage() {
     for (let day = 1; day <= end.getDate(); day += 1) cells.push(new Date(cursor.getFullYear(), cursor.getMonth(), day));
     while (cells.length % 7) cells.push(null);
     return cells;
-  }, [cursor]);
+  }, [cursor, end, start]);
   const items = query.data?.items || [];
   return (
     <div>

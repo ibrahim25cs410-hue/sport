@@ -13,7 +13,12 @@ class ConnectivityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final online = context.select<ConnectivityProvider, bool>((p) => p.isOnline);
+    final online = context.select<ConnectivityProvider, bool>(
+      (p) => p.isOnline,
+    );
+    final checking = context.select<ConnectivityProvider, bool>(
+      (p) => p.isChecking,
+    );
 
     return Stack(
       fit: StackFit.expand,
@@ -28,12 +33,17 @@ class ConnectivityBanner extends StatelessWidget {
               color: context.colors.error,
               child: SafeArea(
                 bottom: false,
-                child: SizedBox(
-                  height: 40,
+                child: Semantics(
+                  liveRegion: true,
+                  container: true,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.wifi_off_rounded, color: context.colors.onPrimary, size: 18),
+                      Icon(
+                        Icons.wifi_off_rounded,
+                        color: context.colors.onPrimary,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
@@ -45,6 +55,30 @@ class ConnectivityBanner extends StatelessWidget {
                           ),
                           textAlign: TextAlign.center,
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed:
+                            checking
+                                ? null
+                                : () =>
+                                    context
+                                        .read<ConnectivityProvider>()
+                                        .retry(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: context.colors.onPrimary,
+                          minimumSize: const Size(48, 48),
+                        ),
+                        child:
+                            checking
+                                ? SizedBox.square(
+                                  dimension: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: context.colors.onPrimary,
+                                  ),
+                                )
+                                : Text(context.l10n.retry),
                       ),
                     ],
                   ),

@@ -9,6 +9,8 @@ import '../../theme/riyada_theme_extension.dart';
 import '../brand/riyada_icon_badge.dart';
 
 bool _preferBlur(BuildContext context) {
+  const enabled = bool.fromEnvironment('ENABLE_GLASS_BLUR', defaultValue: false);
+  if (!enabled) return false;
   if (MediaQuery.disableAnimationsOf(context)) return false;
   if (kIsWeb) return false;
   try {
@@ -59,7 +61,7 @@ class GlassSurface extends StatelessWidget {
     );
 
     final Widget content;
-    if (_preferBlur(context)) {
+    if (blur > 0 && _preferBlur(context)) {
       content = ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Building2, Calendar, Wallet, Shield, ToggleLeft, ToggleRight, LogOut,
+  Users, Building2, Calendar, Wallet, Shield, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {

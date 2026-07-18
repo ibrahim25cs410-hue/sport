@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../domain/enums/owner_payment_gateway.dart';
 import '../../../services/payment_preferences_service.dart';
 import '../../../theme/app_theme.dart';
@@ -48,10 +49,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     return Scaffold(
       appBar: AppBar(title: Text(l10n.paymentMethods)),
-      body: !PaymentPreferencesService.electronicPaymentsEnabled
+      body: PaymentPolicy.cashOnly
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(DesignTokens.spaceXl),
@@ -61,13 +61,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     const Icon(Icons.payments_rounded, size: 52),
                     const SizedBox(height: DesignTokens.spaceMd),
                     Text(
-                      isArabic ? 'الدفع نقداً في الملعب حالياً' : 'Cash at venue is currently available',
+                      l10n.cashOnlyTitle,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: DesignTokens.spaceSm),
                     Text(
-                      isArabic ? 'الدفع الإلكتروني سيتوفر قريباً' : 'Electronic payments are coming soon',
+                      l10n.electronicPaymentsComingSoon,
                       textAlign: TextAlign.center,
                     ),
                   ],

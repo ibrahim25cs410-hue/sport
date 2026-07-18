@@ -1273,4 +1273,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get next => 'التالي';
+
+  @override
+  String get cashOnlyTitle => 'الدفع نقداً في الملعب';
+  @override
+  String get electronicPaymentsComingSoon => 'الدفع الإلكتروني سيتوفر قريباً';
+  @override
+  String get navigationError => 'تعذّر فتح هذه الصفحة.';
+  @override
+  String get unexpectedError => 'حدث خطأ غير متوقع. أعد تشغيل التطبيق وحاول مجدداً.';
+  @override
+  String get privacyPolicy => 'سياسة الخصوصية';
 }

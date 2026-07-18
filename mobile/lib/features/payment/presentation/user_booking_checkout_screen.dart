@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/payment_policy.dart';
 import '../../../core/providers/user_booking_payment_provider.dart';
 import '../../../core/utils/session_key_helper.dart';
 import '../../../domain/enums/owner_payment_gateway.dart';
@@ -139,8 +140,7 @@ class _UserBookingCheckoutScreenState extends ConsumerState<UserBookingCheckoutS
     final l10n = context.l10n;
     final c = context.colors;
     final args = widget.args;
-    if (!PaymentPreferencesService.electronicPaymentsEnabled) {
-      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    if (PaymentPolicy.cashOnly) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.payNow)),
         body: Center(
@@ -152,13 +152,13 @@ class _UserBookingCheckoutScreenState extends ConsumerState<UserBookingCheckoutS
                 const Icon(Icons.money_rounded, size: 52),
                 const SizedBox(height: DesignTokens.spaceMd),
                 Text(
-                  isArabic ? 'الدفع نقداً في الملعب' : 'Pay cash at the venue',
+                  l10n.cashOnlyTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: DesignTokens.spaceSm),
                 Text(
-                  isArabic ? 'الدفع الإلكتروني سيتوفر قريباً' : 'Electronic payments are coming soon',
+                  l10n.electronicPaymentsComingSoon,
                   textAlign: TextAlign.center,
                 ),
               ],

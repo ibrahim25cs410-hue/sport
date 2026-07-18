@@ -175,6 +175,8 @@ function setupAdminBackend(options) {
     commissionRate = 0.10,
     electronicPaymentsEnabled = false,
     creditOwnerForPaidBooking,
+    createInvitation,
+    sendInvitation,
   } = options;
 
   const store = () => getStore();
@@ -240,6 +242,7 @@ function setupAdminBackend(options) {
       resourceType,
       resourceId: resourceId == null ? null : String(resourceId),
       details,
+      requestId: req.id || null,
       ip: String(req.ip || ''),
       ipAddress: String(req.ip || ''),
       userAgent: String(req.headers['user-agent'] || '').slice(0, 500),
@@ -784,8 +787,13 @@ function setupAdminBackend(options) {
     if (!start || start <= new Date() || hours <= 0 || hours > 24) {
       return res.status(400).json({ message: 'وقت أو مدة الحجز غير صالحة' });
     }
+    const idempotencyKey = String(req.headers['idempotency-key'] || '').trim();
+    if (idempotencyKey.length > 200) return res.status(400).json({ message: 'مفتاح التكرار طويل جداً' });
+    const priorIdempotent = idempotencyKey
+      ? (await store().find('bookings')).find((item) => item.idempotencyKey === idempotencyKey)
+      : null;
     const conflict = await bookingConflict(field, start, hours);
-    if (conflict) {
+    if (conflict && !priorIdempotent && (conflict.type === 'maintenance' || !idempotencyKey)) {
       return res.status(409).json({
         message: conflict.type === 'maintenance' ? 'الملعب محظور للصيانة' : 'وقت الحجز متعارض',
         code: conflict.type === 'maintenance' ? 'MAINTENANCE_CONFLICT' : 'BOOKING_CONFLICT',
@@ -811,28 +819,36 @@ function setupAdminBackend(options) {
       && ['online', 'card', 'wallet'].includes(requestedMethod)
       ? requestedMethod
       : 'cash';
-    const booking = await store().insert('bookings', {
-      fieldId: field.id,
-      fieldPublicId: publicNumericId(field),
-      ownerId: Number(field.ownerId) || 0,
-      userId: Number(user.id),
-      startTime: start.toISOString(),
-      hours,
-      totalPrice: req.body?.totalPrice == null
-        ? (Number(field.pricePerHour) || 0) * hours
-        : Math.max(0, Number(req.body.totalPrice) || 0),
-      status: req.body?.status === 'pending' ? 'pending' : 'approved',
-      paymentMethod,
-      paymentStatus: req.body?.paymentStatus === 'paid'
-        ? 'paid'
-        : (paymentMethod === 'cash' ? 'pay_at_venue' : 'unpaid'),
-      referenceCode: `ADM-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
-      source: 'admin',
-      adminNotes: String(req.body?.notes || '').trim() || null,
-      createdByAdminId: Number(req.user.id),
-      createdAt: new Date().toISOString(),
-      walletCredited: false,
-    });
+    let booking;
+    try {
+      ({ booking } = await store().createBookingAtomic({
+        fieldId: field.id,
+        fieldPublicId: publicNumericId(field),
+        ownerId: Number(field.ownerId) || 0,
+        userId: Number(user.id),
+        startTime: start.toISOString(),
+        hours,
+        totalPrice: req.body?.totalPrice == null
+          ? (Number(field.pricePerHour) || 0) * hours
+          : Math.max(0, Number(req.body.totalPrice) || 0),
+        status: req.body?.status === 'pending' ? 'pending' : 'approved',
+        paymentMethod,
+        paymentStatus: req.body?.paymentStatus === 'paid'
+          ? 'paid'
+          : (paymentMethod === 'cash' ? 'pay_at_venue' : 'unpaid'),
+        referenceCode: `ADM-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
+        source: 'admin',
+        adminNotes: String(req.body?.notes || '').trim() || null,
+        createdByAdminId: Number(req.user.id),
+        createdAt: new Date().toISOString(),
+        walletCredited: false,
+      }, idempotencyKey || null));
+    } catch (error) {
+      if (error.code === 'BOOKING_CONFLICT') {
+        return res.status(409).json({ message: 'وقت الحجز متعارض', code: 'BOOKING_CONFLICT' });
+      }
+      throw error;
+    }
     if (booking.paymentStatus === 'paid' && creditOwnerForPaidBooking) {
       await creditOwnerForPaidBooking(booking);
     }
@@ -879,6 +895,18 @@ function setupAdminBackend(options) {
       if (req.body?.[key] !== undefined) patch[key] = req.body[key];
     }
     if (req.body?.totalPrice !== undefined) patch.totalPrice = Math.max(0, Number(req.body.totalPrice) || 0);
+    try {
+      if (['cancelled', 'rejected'].includes(patch.status)) {
+        await store().releaseBookingClaims(booking.id);
+      } else {
+        await store().replaceBookingClaims(booking, patch);
+      }
+    } catch (error) {
+      if (error.code === 'BOOKING_CONFLICT') {
+        return res.status(409).json({ message: 'وقت الحجز متعارض', code: 'BOOKING_CONFLICT' });
+      }
+      throw error;
+    }
     const updated = await store().update('bookings', booking.id, patch);
     if (updated.paymentStatus === 'paid' && creditOwnerForPaidBooking) {
       await creditOwnerForPaidBooking(updated);
@@ -949,6 +977,9 @@ function setupAdminBackend(options) {
         ? { paymentStatus: 'paid', paidAt: new Date().toISOString(), paidByAdminId: Number(req.user.id) }
         : { status: statusByAction[action], updatedAt: new Date().toISOString() };
       const updated = await store().update('bookings', id, patch);
+      if (['cancelled', 'rejected'].includes(updated.status)) {
+        await store().releaseBookingClaims(id);
+      }
       if (updated.paymentStatus === 'paid' && creditOwnerForPaidBooking) {
         await creditOwnerForPaidBooking(updated);
       }
@@ -1688,6 +1719,7 @@ function setupAdminBackend(options) {
       return res.status(400).json({ message: 'الدور غير موجود' });
     }
     const permissions = DEFAULT_ADMIN_ROLES[roleId] || customRole.permissions || [];
+    const invitationToken = createInvitation();
     const invitation = await store().insert('adminInvitations', {
       name,
       email,
@@ -1698,6 +1730,22 @@ function setupAdminBackend(options) {
       invitedBy: Number(req.user.id),
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+      tokenHash: invitationToken.hash,
+      deliveryStatus: 'pending',
+    });
+    let delivery;
+    try {
+      delivery = await sendInvitation({
+        email, name, token: invitationToken.token, expiresAt: invitation.expiresAt,
+      });
+    } catch (error) {
+      delivery = { status: 'failed', error: String(error.message || error).slice(0, 300) };
+    }
+    await store().update('adminInvitations', invitation.id, {
+      deliveryStatus: delivery.status,
+      deliveryProvider: delivery.provider || null,
+      deliveryMessageId: delivery.messageId || null,
+      deliveryError: delivery.error || null,
     });
     await audit(req, 'adminInvitation.created', 'adminInvitation', invitation.id, {
       email, roleId,
@@ -1716,7 +1764,7 @@ function setupAdminBackend(options) {
       roleId: invitation.roleId,
       status: invitation.status,
       expiresAt: invitation.expiresAt,
-      deliveryStatus: 'not_configured',
+      deliveryStatus: delivery.status,
     });
   });
 
@@ -1745,6 +1793,8 @@ function setupAdminBackend(options) {
       patch.customPermissions = [...new Set(req.body.customPermissions)]
         .filter((permission) => ADMIN_PERMISSIONS.includes(permission));
     }
+    patch.sessionVersion = Number(user.sessionVersion || 0) + 1;
+    patch.sessionsRevokedAt = new Date().toISOString();
     const updated = await store().update('users', user.id, patch);
     await audit(req, 'staff.updated', 'user', user.id, patch);
     publish('admin:permissions.updated', { adminId: Number(user.id) });

@@ -11,6 +11,16 @@ import 'package:riyada/services/stadium_service.dart';
 import 'package:riyada/services/token_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _MemorySecureStore implements SecureTokenStore {
+  String? value;
+  @override
+  Future<void> delete({required String key}) async => value = null;
+  @override
+  Future<String?> read({required String key}) async => value;
+  @override
+  Future<void> write({required String key, required String? value}) async => this.value = value;
+}
+
 /// Simulates: Register → Login → Create Stadium → Book → Confirm booking.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,12 +33,12 @@ void main() {
   late StadiumService stadiumService;
   late BookingService bookingService;
 
-  const ownerToken = 'owner-jwt-token';
-  const userToken = 'user-jwt-token';
+  const ownerToken = 'eyJhbGciOiJub25lIn0.eyJleHAiOjQxMDI0NDQ4MDB9.owner';
+  const userToken = 'eyJhbGciOiJub25lIn0.eyJleHAiOjQxMDI0NDQ4MDB9.user';
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    tokenStorage = TokenStorage();
+    tokenStorage = TokenStorage(store: _MemorySecureStore());
     dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000/api'));
     adapter = DioAdapter(dio: dio);
     apiService = ApiService(tokenStorage: tokenStorage, dio: dio);

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../games/penalty_shootout/penalty_launcher.dart';
 import '../games/penalty_flame/penalty_flame_launcher.dart';
+import '../config/payment_policy.dart';
 import '../models/booking_checkout_args.dart';
 import '../models/field.dart';
 import 'overlay_navigation.dart';
@@ -51,20 +52,31 @@ extension AppNavigation on BuildContext {
   void goAdminDashboard() => _router.go(AppRoutes.adminDashboard);
 
   void goOwnerDashboard() => pushOverlay(AppRoutes.ownerDashboard);
-  void goOwnerCommissionCheckout() => pushOverlay(AppRoutes.ownerCommissionCheckout);
+  void goOwnerCommissionCheckout() {
+    if (PaymentPolicy.cashOnly) return;
+    pushOverlay(AppRoutes.ownerCommissionCheckout);
+  }
+
   void goProfile() => pushOverlay(AppRoutes.profile);
   void goAddField() => pushOverlay(AppRoutes.addField);
 
   void goBookingHistory() => pushOverlay(AppRoutes.bookingHistory);
   void goNotifications() => pushOverlay(AppRoutes.notifications);
-  void goPaymentMethods() => pushOverlay(AppRoutes.paymentMethods);
+  void goPaymentMethods() {
+    if (PaymentPolicy.cashOnly) return;
+    pushOverlay(AppRoutes.paymentMethods);
+  }
+
   void goPenaltyShootout() => openPenaltyGame(this);
   void goPenaltyFlame() => openPenaltyFlameGame(this);
 
-  Future<bool?> goBookingCheckout(BookingCheckoutArgs args) =>
-      pushOverlay<bool>(AppRoutes.bookingCheckout, extra: args);
+  Future<bool?> goBookingCheckout(BookingCheckoutArgs args) {
+    if (PaymentPolicy.cashOnly) return Future<bool?>.value(false);
+    return pushOverlay<bool>(AppRoutes.bookingCheckout, extra: args);
+  }
 
-  Future<void> goField(Field field) => pushOverlay(AppRoutes.field(field.id), extra: field);
+  Future<void> goField(Field field) =>
+      pushOverlay(AppRoutes.field(field.id), extra: field);
 
   void goWelcomeClearStack() => _router.go(AppRoutes.welcome);
 

@@ -56,11 +56,7 @@ class FloatingBottomNavigationBar extends StatelessWidget {
   }
 
   Widget _barSurface(BuildContext context, RiyadaColors c, Color muted, Color active, bool isDark) {
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.0),
-      ),
-      child: DecoratedBox(
+    return DecoratedBox(
         decoration: BoxDecoration(
           color: (isDark ? c.surfaceElevated : Colors.white).withValues(alpha: isDark ? 0.85 : 0.92),
           borderRadius: BorderRadius.circular(_radius),
@@ -96,7 +92,6 @@ class FloatingBottomNavigationBar extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -122,9 +117,13 @@ class _FloatingNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = selected ? activeColor : inactiveColor;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
         onTap: () {
           if (!selected) HapticFeedback.selectionClick();
           onTap();
@@ -185,6 +184,7 @@ class _FloatingNavItem extends StatelessWidget {
             ),
           ),
         ),
+        ),
       ),
     );
   }
@@ -193,6 +193,8 @@ class _FloatingNavItem extends StatelessWidget {
 typedef FloatingGlassNavBar = FloatingBottomNavigationBar;
 
 bool _preferBlur(BuildContext context) {
+  const enabled = bool.fromEnvironment('ENABLE_GLASS_BLUR', defaultValue: false);
+  if (!enabled) return false;
   if (MediaQuery.disableAnimationsOf(context)) return false;
   if (kIsWeb) return false;
   try {

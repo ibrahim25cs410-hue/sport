@@ -27,7 +27,11 @@ class FakeAuthRepository extends AuthRepository {
   bool loginCalled = false;
 
   @override
-  Future<({String token, User user, Field? field})> login(String email, String password) async {
+  Future<({String token, User user, Field? field})> login(
+    String email,
+    String password, {
+    String? expectedRole,
+  }) async {
     loginCalled = true;
     return (token: 'fake-token', user: _testUser, field: null);
   }
