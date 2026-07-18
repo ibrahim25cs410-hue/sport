@@ -59,13 +59,17 @@ if (!Array.isArray(fields) && !Array.isArray(fields?.items)) {
   throw new Error('/api/fields did not return a collection');
 }
 
+const isHtmlDocument = (body) => (
+  typeof body === 'string' && /<!doctype\s+html/i.test(body)
+);
+
 const panel = await get('/panel/');
-if (typeof panel !== 'string' || !panel.includes('<!doctype html')) {
+if (!isHtmlDocument(panel)) {
   throw new Error('/panel/ did not return the admin application');
 }
 if (expectCustomerWeb) {
   const customerWeb = await get('/app/');
-  if (typeof customerWeb !== 'string' || !customerWeb.includes('<!doctype html')) {
+  if (!isHtmlDocument(customerWeb)) {
     throw new Error('/app/ did not return the customer application');
   }
 }
