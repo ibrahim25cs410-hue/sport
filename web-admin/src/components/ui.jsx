@@ -110,6 +110,22 @@ export function Modal({ title, children, onClose }) {
   );
 }
 
+export function ConfirmDialog({ open, title, message, confirmLabel, cancelLabel, tone = 'danger', busy, onConfirm, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[75] flex items-center justify-center bg-pitch-950/55 p-4 backdrop-blur-sm" role="presentation" onMouseDown={onClose}>
+      <div className="panel w-full max-w-md p-5" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" onMouseDown={(e) => e.stopPropagation()}>
+        <h2 id="confirm-title" className="text-lg font-bold">{title}</h2>
+        {message ? <p className="mt-2 text-sm text-pitch-600 dark:text-pitch-300">{message}</p> : null}
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" className="btn-ghost" onClick={onClose}>{cancelLabel}</button>
+          <button type="button" className={tone === 'danger' ? 'btn-danger' : 'btn-primary'} disabled={busy} onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Toolbar({ children }) {
   return (
     <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-pitch-200/70 bg-white/70 p-3 dark:border-pitch-800 dark:bg-pitch-950/60 lg:flex-row lg:items-center lg:justify-between">

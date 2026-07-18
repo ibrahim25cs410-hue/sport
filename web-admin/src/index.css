@@ -32,6 +32,15 @@ html.dark {
 
 * { box-sizing: border-box; }
 
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
 html, body, #root { min-height: 100%; }
 
 body {
@@ -85,9 +94,25 @@ html.dark body {
     @apply bg-pitch-50/90 text-pitch-700 dark:bg-pitch-900/80 dark:text-pitch-300;
   }
   .table-row {
-    @apply border-t border-pitch-100 dark:border-pitch-800;
+    @apply border-t border-pitch-100 transition-colors hover:bg-pitch-50/60 dark:border-pitch-800 dark:hover:bg-pitch-900/40;
   }
   .chip {
     @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media print {
+  aside, header, button { display: none !important; }
+  main { max-width: none !important; padding: 0 !important; }
+  body { background: white !important; }
+  .panel { box-shadow: none !important; break-inside: avoid; }
 }

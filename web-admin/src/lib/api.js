@@ -45,7 +45,16 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, auth = true } = {}) {
+function queryString(params = {}) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') q.set(key, value);
+  });
+  const value = q.toString();
+  return value ? `?${value}` : '';
+}
+
+async function request(path, { method = 'GET', body, auth = true, signal } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) {
     const session = getSession();
@@ -56,10 +65,15 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
     method,
     headers,
     body: body != null ? JSON.stringify(body) : undefined,
+    signal,
   });
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    if (res.status === 401 && auth) {
+      clearSession();
+      window.dispatchEvent(new CustomEvent('riyada:unauthorized'));
+    }
     throw new ApiError(data.message || 'فشل الطلب', res.status, data);
   }
   return data;
@@ -75,15 +89,7 @@ export const api = {
   me: () => request('/me'),
   stats: () => request('/admin/stats'),
   financials: () => request('/admin/financials'),
-  users: (params = {}) => {
-    const q = new URLSearchParams();
-    if (params.role) q.set('role', params.role);
-    if (params.q) q.set('q', params.q);
-    if (params.page) q.set('page', params.page);
-    if (params.limit) q.set('limit', params.limit);
-    const s = q.toString();
-    return request(`/admin/users${s ? `?${s}` : ''}`);
-  },
+  users: (params = {}) => request(`/admin/users${queryString(params)}`),
   user: (id) => request(`/admin/users/${id}`),
   owners: () => request('/admin/owners'),
   owner: (id) => request(`/admin/owners/${id}`),
@@ -93,15 +99,7 @@ export const api = {
   fields: () => request('/admin/fields'),
   toggleField: (id) => request(`/admin/fields/${id}/toggle`, { method: 'PATCH' }),
   updateField: (id, body) => request(`/fields/${id}`, { method: 'PUT', body }),
-  bookings: (params = {}) => {
-    const q = new URLSearchParams();
-    if (params.status) q.set('status', params.status);
-    if (params.q) q.set('q', params.q);
-    if (params.page) q.set('page', params.page);
-    if (params.limit) q.set('limit', params.limit || 50);
-    const s = q.toString();
-    return request(`/admin/bookings${s ? `?${s}` : ''}`);
-  },
+  bookings: (params = {}) => request(`/admin/bookings${queryString({ limit: 50, ...params })}`),
   pendingBookings: () => request('/admin/bookings/pending'),
   approveBooking: (bookingId) => request('/bookings/approve', { method: 'POST', body: { bookingId } }),
   rejectBooking: (bookingId) => request('/bookings/reject', { method: 'POST', body: { bookingId } }),
@@ -110,4 +108,37 @@ export const api = {
     request('/bookings/pay/verify', { method: 'POST', body: { bookingId } }),
   topUp: (ownerId, amount, note) =>
     request('/admin/wallets/top-up', { method: 'POST', body: { ownerId, amount, note } }),
+  dashboardAnalytics: (params) => request(`/admin/analytics/dashboard${queryString(params)}`),
+  permissions: () => request('/admin/permissions'),
+  preferences: () => request('/admin/preferences'),
+  updatePreferences: (body) => request('/admin/preferences', { method: 'PUT', body }),
+  calendar: (params) => request(`/admin/calendar${queryString(params)}`),
+  alerts: (params) => request(`/admin/alerts${queryString(params)}`),
+  markAlertRead: (id) => request(`/admin/alerts/${id}/read`, { method: 'PATCH' }),
+  markAllAlertsRead: () => request('/admin/alerts/read-all', { method: 'PATCH' }),
+  updateAlert: (id, body) => request(`/admin/alerts/${id}`, { method: 'PATCH', body }),
+  reports: (params) => request(`/admin/reports${queryString(params)}`),
+  exportReport: (body) => request('/admin/reports/exports', { method: 'POST', body }),
+  settlements: (params) => request(`/admin/settlements${queryString(params)}`),
+  settlement: (id) => request(`/admin/settlements/${id}`),
+  createSettlement: (body) => request('/admin/settlements', { method: 'POST', body }),
+  updateSettlement: (id, body) => request(`/admin/settlements/${id}`, { method: 'PATCH', body }),
+  staff: (params) => request(`/admin/staff${queryString(params)}`),
+  inviteStaff: (body) => request('/admin/staff/invitations', { method: 'POST', body }),
+  updateStaff: (id, body) => request(`/admin/staff/${id}`, { method: 'PATCH', body }),
+  roles: () => request('/admin/roles'),
+  createRole: (body) => request('/admin/roles', { method: 'POST', body }),
+  updateRole: (id, body) => request(`/admin/roles/${id}`, { method: 'PUT', body }),
+  auditLog: (params) => request(`/admin/audit-logs${queryString(params)}`),
+  globalSearch: (q) => request(`/admin/search${queryString({ q })}`),
+  booking: (id) => request(`/admin/bookings/${id}`),
+  createBooking: (body) => request('/admin/bookings', { method: 'POST', body }),
+  updateBooking: (id, body) => request(`/admin/bookings/${id}`, { method: 'PATCH', body }),
+  rescheduleBooking: (id, body) => request(`/admin/bookings/${id}/reschedule`, { method: 'POST', body }),
+  bulkBookings: (bookingIds, action) => request('/admin/bookings/bulk', { method: 'POST', body: { bookingIds, action } }),
+  maintenance: (params) => request(`/admin/maintenance-blocks${queryString(params)}`),
+  createMaintenance: (body) => request('/admin/maintenance-blocks', { method: 'POST', body }),
+  updateMaintenance: (id, body) => request(`/admin/maintenance-blocks/${id}`, { method: 'PATCH', body }),
+  deleteMaintenance: (id) => request(`/admin/maintenance-blocks/${id}`, { method: 'DELETE' }),
+  realtimeToken: () => request('/admin/realtime/token'),
 };

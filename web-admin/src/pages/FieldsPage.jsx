@@ -3,9 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { EmptyBlock, ErrorBlock, LoadingBlock, Modal, PageHeader, StatusBadge } from '../components/ui';
 import { useLocale } from '../context/LocaleContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function FieldsPage() {
   const { t } = useLocale();
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission('fields.manage');
   const qc = useQueryClient();
   const [edit, setEdit] = useState(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', pricePerHour: '' });
@@ -51,12 +54,12 @@ export default function FieldsPage() {
                 </div>
                 <StatusBadge status={f.isActive ? 'active' : 'blocked'} />
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
+              {canManage ? <div className="mt-4 flex flex-wrap gap-2">
                 <button type="button" className="btn-ghost !text-xs" onClick={() => { setEdit(f); setForm({ name: f.name || '', address: f.address || '', phone: '', pricePerHour: '' }); }}>{t('fields.edit')}</button>
                 <button type="button" className={f.isActive ? 'btn-danger !text-xs' : 'btn-primary !text-xs'} onClick={() => toggle.mutate(f.id)}>
                   {f.isActive ? t('fields.disable') : t('fields.enable')}
                 </button>
-              </div>
+              </div> : null}
             </div>
           ))}
         </div>

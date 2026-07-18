@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { EmptyBlock, ErrorBlock, FilterChips, LoadingBlock, PageHeader, Toolbar } from '../components/ui';
 import { useLocale } from '../context/LocaleContext';
 
 export default function UsersPage() {
   const { t } = useLocale();
-  const [q, setQ] = useState('');
-  const [role, setRole] = useState('user');
+  const [searchParams] = useSearchParams();
+  const [q, setQ] = useState(() => searchParams.get('q') || '');
+  const [role, setRole] = useState(() => searchParams.get('q') ? '' : 'user');
   const users = useQuery({
     queryKey: ['admin-users', role, q],
     queryFn: () => api.users({ role, q, limit: 100 }),

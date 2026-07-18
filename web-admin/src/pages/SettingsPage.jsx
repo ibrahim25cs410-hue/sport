@@ -85,11 +85,14 @@ export default function SettingsPage() {
             <p className="mt-1 text-sm text-pitch-600 dark:text-pitch-300">{t('settings.permissionsHint')}</p>
           </div>
         </div>
-        <ul className="mt-4 space-y-2 text-sm text-pitch-700 dark:text-pitch-200">
-          <li className="rounded-xl bg-pitch-50 px-3 py-2 dark:bg-pitch-900/70">• {t('settings.p1')}</li>
-          <li className="rounded-xl bg-pitch-50 px-3 py-2 dark:bg-pitch-900/70">• {t('settings.p2')}</li>
-          <li className="rounded-xl bg-pitch-50 px-3 py-2 dark:bg-pitch-900/70">• {t('settings.p3')}</li>
-          <li className="rounded-xl bg-pitch-50 px-3 py-2 dark:bg-pitch-900/70">• {t('settings.p4')}</li>
+        <ul className="mt-4 flex flex-wrap gap-2 text-sm text-pitch-700 dark:text-pitch-200">
+          {Array.isArray(user?.permissions) ? user.permissions.map((permission) => (
+            <li key={permission} className="rounded-lg bg-pitch-50 px-2.5 py-1.5 font-mono text-xs dark:bg-pitch-900/70">{permission}</li>
+          )) : (
+            <li className="rounded-xl bg-pitch-50 px-3 py-2 dark:bg-pitch-900/70">
+              {locale === 'ar' ? 'جلسة مدير قديمة متوافقة — صلاحيات كاملة' : 'Legacy compatible admin session — full access'}
+            </li>
+          )}
         </ul>
       </section>
 

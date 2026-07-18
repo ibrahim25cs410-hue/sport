@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
 import { api, clearSession, getSession, setSession } from '../lib/api';
 
 const AuthContext = createContext(null);
@@ -34,6 +34,42 @@ export function AuthProvider({ children }) {
     setSessionState(null);
   }, []);
 
+  useEffect(() => {
+    window.addEventListener('riyada:unauthorized', logout);
+    return () => window.removeEventListener('riyada:unauthorized', logout);
+  }, [logout]);
+
+  useEffect(() => {
+    if (!session?.token || session.user?.permissions) return;
+    let active = true;
+    api.permissions().then((data) => {
+      if (!active) return;
+      const next = {
+        ...session,
+        user: {
+          ...session.user,
+          permissions: data.permissions || [],
+          availablePermissions: data.availablePermissions || [],
+          adminRole: data.adminRole || session.user.adminRole,
+        },
+      };
+      setSession(next);
+      setSessionState(next);
+    }).catch((requestError) => {
+      if (!active || requestError?.status === 404) return;
+      const next = { ...session, user: { ...session.user, permissions: [] } };
+      setSession(next);
+      setSessionState(next);
+      // Only a missing endpoint indicates a legacy server; authorization failures are restrictive.
+    });
+    return () => { active = false; };
+  }, [session]);
+
+  const hasPermission = useCallback((permission) => {
+    const permissions = session?.user?.permissions;
+    return !Array.isArray(permissions) || permissions.includes('*') || permissions.includes(permission);
+  }, [session]);
+
   const value = useMemo(() => ({
     session,
     user: session?.user || null,
@@ -42,8 +78,9 @@ export function AuthProvider({ children }) {
     error,
     login,
     logout,
+    hasPermission,
     setError,
-  }), [session, busy, error, login, logout]);
+  }), [session, busy, error, login, logout, hasPermission]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

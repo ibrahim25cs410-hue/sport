@@ -8,6 +8,7 @@ import {
 import { api, formatDate, formatMoney } from '../lib/api';
 import { ErrorBlock, LoadingBlock, StatCard, StatusBadge } from '../components/ui';
 import { BarChart, DonutChart, ProgressBar } from '../components/Charts';
+import DashboardInsights from '../components/DashboardInsights';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../context/LocaleContext';
 
@@ -24,7 +25,7 @@ function Section({ title, action, children }) {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { t, locale } = useLocale();
   const qc = useQueryClient();
   const money = (v) => formatMoney(v, locale);
@@ -123,12 +124,12 @@ export default function DashboardPage() {
           <button type="button" className="btn-ghost" onClick={refreshAll}>
             <RefreshCw className="h-4 w-4" /> {t('refresh')}
           </button>
-          <Link to="/bookings?status=pending" className="btn-warn">
+          {hasPermission('bookings.read') ? <Link to="/bookings?status=pending" className="btn-warn">
             <AlertTriangle className="h-4 w-4" /> {t('dash.pending')} ({pendingList.length})
-          </Link>
-          <Link to="/bookings" className="btn-primary">
+          </Link> : null}
+          {hasPermission('bookings.read') ? <Link to="/bookings" className="btn-primary">
             {t('dash.allBookings')} <ArrowUpRight className="h-4 w-4" />
-          </Link>
+          </Link> : null}
         </div>
       </div>
 
@@ -183,10 +184,12 @@ export default function DashboardPage() {
                       <td className="px-4 py-3 whitespace-nowrap">{date(b.startTime)}</td>
                       <td className="px-4 py-3 whitespace-nowrap font-semibold">{money(b.totalPrice)}</td>
                       <td className="px-4 py-3">
+                        {hasPermission('bookings.manage') ? (
                         <div className="flex flex-wrap gap-1.5">
                           <button type="button" className="btn-primary !px-2.5 !py-1.5 !text-xs" disabled={approve.isPending} onClick={() => approve.mutate(b.id)}>{t('dash.approve')}</button>
                           <button type="button" className="btn-danger !px-2.5 !py-1.5 !text-xs" disabled={reject.isPending} onClick={() => reject.mutate(b.id)}>{t('dash.reject')}</button>
                         </div>
+                        ) : '—'}
                       </td>
                     </tr>
                   ))}
@@ -196,6 +199,8 @@ export default function DashboardPage() {
           )}
         </div>
       </Section>
+
+      <DashboardInsights userId={user?.id} bookings={allBookings} />
 
       {/* 5. Analytics */}
       <Section title={t('section.analytics')}>

@@ -23,6 +23,12 @@ const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { Server: SocketServer } = require('socket.io');
+const {
+  ADMIN_PERMISSIONS,
+  effectivePermissions,
+  hasPermission,
+  setupAdminBackend,
+} = require('./admin-backend');
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -227,13 +233,33 @@ function emitToField(fieldId, event, payload) {
   io.to(fieldRoom(fieldId)).emit(event, payload);
 }
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token || socket.handshake.query?.token;
   if (!token) return next(new Error('Authentication required'));
   try {
     const payload = jwt.verify(token, EFFECTIVE_JWT_SECRET);
     socket.user = { ...payload, id: Number(payload.id) };
     if (!Number.isFinite(socket.user.id)) return next(new Error('Invalid token'));
+    if (store) {
+      const current = await store.findById('users', socket.user.id);
+      if (!current) return next(new Error('Invalid user'));
+      if (current.role === 'admin' && current.adminStatus === 'suspended') {
+        return next(new Error('Admin account suspended'));
+      }
+      let currentPermissions = current.customPermissions;
+      if (current.role === 'admin' && current.adminRole === 'custom' && current.customRoleId) {
+        const customRole = await store.findById('adminRoles', current.customRoleId);
+        currentPermissions = customRole && customRole.status !== 'deleted'
+          ? customRole.permissions || []
+          : [];
+      }
+      socket.user = {
+        ...socket.user,
+        role: current.role,
+        adminRole: current.adminRole,
+        permissions: effectivePermissions({ ...current, customPermissions: currentPermissions }),
+      };
+    }
     return next();
   } catch {
     return next(new Error('Invalid or expired token'));
@@ -243,6 +269,12 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
   const userId = Number(socket.user.id);
   registerSocket(userId, socket.id);
+  if (socket.user.role === 'admin') {
+    socket.join('admin');
+    socket.emit('admin:ready', {
+      permissions: socket.user.permissions || ADMIN_PERMISSIONS,
+    });
+  }
   socket.emit('connected', { userId, socketId: socket.id });
 
   socket.on('joinField', (fieldId) => {
@@ -269,13 +301,18 @@ io.on('connection', (socket) => {
 /* ================================================================== */
 
 let store;
+let adminBackend;
 
 function createMemoryStore() {
   const data = {
     users: [], fields: [], bookings: [], notifications: [], reviews: [], walletTransactions: [],
+    auditLogs: [], maintenanceBlocks: [], settlements: [], adminPreferences: [], adminAlerts: [],
+    paymentCredits: [], adminRoles: [], adminInvitations: [],
   };
   const seq = {
     users: 0, fields: 0, bookings: 0, notifications: 0, reviews: 0, walletTransactions: 0,
+    auditLogs: 0, maintenanceBlocks: 0, settlements: 0, adminPreferences: 0, adminAlerts: 0,
+    paymentCredits: 0, adminRoles: 0, adminInvitations: 0,
   };
   const clone = (o) => (o ? JSON.parse(JSON.stringify(o)) : o);
   return {
@@ -301,6 +338,17 @@ function createMemoryStore() {
       if (!rec) return null;
       Object.assign(rec, patch);
       return clone(rec);
+    },
+    async applyWalletDeltaOnce(ownerId, idempotencyKey, amount) {
+      const rec = data.users.find((user) => sameId(user.id, ownerId));
+      if (!rec) return { applied: false, user: null };
+      rec.appliedWalletKeys = Array.isArray(rec.appliedWalletKeys) ? rec.appliedWalletKeys : [];
+      if (rec.appliedWalletKeys.includes(idempotencyKey)) {
+        return { applied: false, user: clone(rec) };
+      }
+      rec.walletBalance = Number(rec.walletBalance || 0) + Number(amount);
+      rec.appliedWalletKeys.push(idempotencyKey);
+      return { applied: true, user: clone(rec) };
     },
     async deleteAll(col) {
       const n = data[col].length;
@@ -330,8 +378,34 @@ async function createMongoStore(uri) {
     notifications: mongoose.model('Notification', new Schema({}, schemaOpts)),
     reviews: mongoose.model('Review', new Schema({}, schemaOpts)),
     walletTransactions: mongoose.model('WalletTransaction', new Schema({}, schemaOpts)),
+    auditLogs: mongoose.model('AuditLog', new Schema({}, schemaOpts)),
+    maintenanceBlocks: mongoose.model('MaintenanceBlock', new Schema({}, schemaOpts)),
+    settlements: mongoose.model('Settlement', new Schema({}, schemaOpts)),
+    adminPreferences: mongoose.model('AdminPreference', new Schema({}, schemaOpts)),
+    adminAlerts: mongoose.model('AdminAlert', new Schema({}, schemaOpts)),
+    paymentCredits: mongoose.model('PaymentCredit', new Schema({}, schemaOpts)),
+    adminRoles: mongoose.model('AdminRole', new Schema({}, schemaOpts)),
+    adminInvitations: mongoose.model('AdminInvitation', new Schema({}, schemaOpts)),
   };
   const Counter = mongoose.model('Counter', new Schema({ _id: String, n: Number }));
+
+  // Safe, additive indexes. Sparse uniqueness preserves old documents that do not have these fields.
+  await Promise.all([
+    models.paymentCredits.collection.createIndex(
+      { idempotencyKey: 1 },
+      { unique: true, sparse: true, name: 'payment_credit_idempotency' },
+    ),
+    models.walletTransactions.collection.createIndex(
+      { idempotencyKey: 1 },
+      { unique: true, sparse: true, name: 'wallet_transaction_idempotency' },
+    ),
+    models.settlements.collection.createIndex(
+      { idempotencyKey: 1 },
+      { unique: true, sparse: true, name: 'settlement_idempotency' },
+    ),
+    models.auditLogs.collection.createIndex({ createdAt: -1 }, { name: 'audit_created_at' }),
+    models.adminAlerts.collection.createIndex({ status: 1, createdAt: -1 }, { name: 'alerts_status_created' }),
+  ]);
 
   async function nextId(col) {
     const c = await Counter.findByIdAndUpdate(col, { $inc: { n: 1 } }, { new: true, upsert: true });
@@ -378,6 +452,25 @@ async function createMongoStore(uri) {
         if (byNum) return byNum;
       }
       return out(await models[col].findOneAndUpdate({ id: String(id) }, patch, { new: true }));
+    },
+    async applyWalletDeltaOnce(ownerId, idempotencyKey, amount) {
+      const numericId = Number(ownerId);
+      const idQuery = Number.isFinite(numericId)
+        ? { $in: [numericId, String(ownerId)] }
+        : String(ownerId);
+      const updated = await models.users.findOneAndUpdate(
+        { id: idQuery, appliedWalletKeys: { $ne: idempotencyKey } },
+        {
+          $inc: { walletBalance: Number(amount) },
+          $addToSet: { appliedWalletKeys: idempotencyKey },
+        },
+        { new: true },
+      );
+      if (updated) return { applied: true, user: out(updated) };
+      return {
+        applied: false,
+        user: out(await models.users.findOne({ id: idQuery })),
+      };
     },
     async deleteAll(col) {
       const result = await models[col].deleteMany({});
@@ -451,13 +544,18 @@ async function walletTxByOwner(ownerId) {
 
 function sign(user) {
   return jwt.sign(
-    { id: Number(user.id), role: user.role, name: user.name },
+    {
+      id: Number(user.id),
+      role: user.role,
+      name: user.name,
+      ...(user.role === 'admin' ? { adminRole: user.adminRole || 'admin' } : {}),
+    },
     EFFECTIVE_JWT_SECRET,
     { expiresIn: '30d' },
   );
 }
 
-function auth(req, res, next) {
+async function auth(req, res, next) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : null;
   if (!token) return res.status(401).json({ message: 'مطلوب تسجيل الدخول' });
@@ -467,6 +565,29 @@ function auth(req, res, next) {
     if (!Number.isFinite(req.user.id)) {
       return res.status(401).json({ message: 'انتهت الجلسة' });
     }
+    // Load mutable authorization state on every request so permission changes and role revocation
+    // take effect immediately instead of waiting for a long-lived JWT to expire.
+    const current = await store.findById('users', req.user.id);
+    if (!current) return res.status(401).json({ message: 'الحساب غير موجود' });
+    if (current.role === 'admin' && current.adminStatus === 'suspended') {
+      return res.status(403).json({ message: 'الحساب الإداري موقوف' });
+    }
+    let currentPermissions = current.customPermissions;
+    if (current.role === 'admin' && current.adminRole === 'custom' && current.customRoleId) {
+      const customRole = await store.findById('adminRoles', current.customRoleId);
+      currentPermissions = customRole && customRole.status !== 'deleted'
+        ? customRole.permissions || []
+        : [];
+    }
+    req.user = {
+      ...req.user,
+      role: current.role,
+      name: current.name,
+      email: current.email,
+      adminRole: current.adminRole,
+      customPermissions: currentPermissions,
+      deniedPermissions: current.deniedPermissions,
+    };
     return next();
   } catch {
     return res.status(401).json({ message: 'انتهت الجلسة' });
@@ -492,11 +613,33 @@ function requireAdmin(req, res, next) {
   return next();
 }
 
+function requireAdminPermission(permission) {
+  return (req, res, next) => {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({ message: 'غير مصرح — للمدير فقط' });
+    }
+    if (!hasPermission(req.user, permission)) {
+      return res.status(403).json({
+        message: 'لا تملك الصلاحية المطلوبة',
+        requiredPermission: permission,
+      });
+    }
+    return next();
+  };
+}
+
 function requireOwnerOrAdmin(req, res, next) {
   if (req.user?.role !== 'owner' && req.user?.role !== 'admin') {
     return res.status(403).json({ message: 'غير مصرح' });
   }
   return next();
+}
+
+function requireOwnerOrAdminPermission(permission) {
+  return (req, res, next) => {
+    if (req.user?.role === 'owner') return next();
+    return requireAdminPermission(permission)(req, res, next);
+  };
 }
 
 function safeError(res, status, message) {
@@ -511,6 +654,10 @@ const publicUser = (u) => ({
   id: Number(u.id), name: u.name, email: u.email, phone: u.phone || '',
   province: u.province || 'نينوى', image: u.image || null,
   role: u.role, loyaltyPoints: u.loyaltyPoints || 0,
+  ...(u.role === 'admin' ? {
+    adminRole: u.adminRole || 'admin',
+    permissions: effectivePermissions(u),
+  } : {}),
 });
 
 function flutterStableId(field) {
@@ -741,23 +888,46 @@ async function ensureOwnerWallet(ownerId) {
   return user;
 }
 
-async function addWalletTx({ ownerId, amount, type, typeLabel, description, bookingId, bookingReference, adminNote }) {
+async function addWalletTx({
+  ownerId, amount, type, typeLabel, description, bookingId, bookingReference, adminNote,
+  idempotencyKey,
+}) {
+  if (idempotencyKey) {
+    const existing = (await store.find('walletTransactions'))
+      .find((tx) => tx.idempotencyKey === idempotencyKey);
+    if (existing) {
+      return { user: await store.findById('users', ownerId), tx: existing, duplicate: true };
+    }
+  }
   const user = await ensureOwnerWallet(ownerId);
   if (!user) throw new Error('المالك غير موجود');
-  const balance = Number(user.walletBalance || 0) + Number(amount);
-  const status = user.walletStatus || 'active';
-  await store.update('users', ownerId, { walletBalance: balance, walletStatus: status });
-  const tx = await store.insert('walletTransactions', {
-    ownerId: Number(ownerId),
-    amount: Number(amount),
-    type,
-    typeLabel,
-    description,
-    bookingId: bookingId != null ? Number(bookingId) : null,
-    bookingReference: bookingReference || null,
-    adminNote: adminNote || null,
-    createdAt: new Date().toISOString(),
-  });
+  if (idempotencyKey) {
+    await store.applyWalletDeltaOnce(ownerId, idempotencyKey, amount);
+  } else {
+    const balance = Number(user.walletBalance || 0) + Number(amount);
+    const status = user.walletStatus || 'active';
+    await store.update('users', ownerId, { walletBalance: balance, walletStatus: status });
+  }
+  let tx;
+  try {
+    tx = await store.insert('walletTransactions', {
+      ownerId: Number(ownerId),
+      amount: Number(amount),
+      type,
+      typeLabel,
+      description,
+      bookingId: bookingId != null ? Number(bookingId) : null,
+      bookingReference: bookingReference || null,
+      adminNote: adminNote || null,
+      ...(idempotencyKey ? { idempotencyKey } : {}),
+      createdAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    if (!idempotencyKey || String(error?.code) !== '11000') throw error;
+    tx = (await store.find('walletTransactions'))
+      .find((item) => item.idempotencyKey === idempotencyKey);
+    if (!tx) throw error;
+  }
   return { user: await store.findById('users', ownerId), tx };
 }
 
@@ -785,33 +955,95 @@ async function walletDetailDto(ownerId) {
   };
 }
 
+const paymentCreditLocks = new Map();
+
+async function creditOwnerForPaidBooking(booking) {
+  if (!booking?.ownerId || booking.walletCredited || booking.paymentStatus !== 'paid') return null;
+  const key = `booking:${booking.id}:paid:v1`;
+  if (paymentCreditLocks.has(key)) return paymentCreditLocks.get(key);
+
+  const task = (async () => {
+    const fresh = await store.findById('bookings', booking.id);
+    if (!fresh || fresh.walletCredited || fresh.paymentStatus !== 'paid') return null;
+    const existingCredits = await store.find('paymentCredits');
+    const existing = existingCredits.find((credit) => credit.idempotencyKey === key);
+    if (existing?.status === 'completed') {
+      await store.update('bookings', fresh.id, {
+        walletCredited: true,
+        walletCreditedAt: existing.completedAt || existing.createdAt,
+      });
+      return existing;
+    }
+    if (existing?.status === 'processing'
+      && Date.now() - new Date(existing.createdAt || 0).getTime() < 5 * 60 * 1000) {
+      return existing;
+    }
+
+    let credit = existing;
+    if (!credit) {
+      try {
+        credit = await store.insert('paymentCredits', {
+          idempotencyKey: key,
+          bookingId: Number(fresh.id),
+          ownerId: Number(fresh.ownerId),
+          grossAmountIqd: Number(fresh.totalPrice) || 0,
+          commissionRate: COMMISSION_RATE,
+          status: 'processing',
+          createdAt: new Date().toISOString(),
+        });
+      } catch (error) {
+        // A different process may have inserted the unique key. Re-read and avoid double crediting.
+        const afterRace = (await store.find('paymentCredits'))
+          .find((item) => item.idempotencyKey === key);
+        if (afterRace) return afterRace;
+        throw error;
+      }
+    }
+
+    const total = Number(fresh.totalPrice) || 0;
+    const commission = Math.round(total * COMMISSION_RATE);
+    if (total > 0) {
+      await addWalletTx({
+        ownerId: fresh.ownerId,
+        amount: total,
+        type: 'booking_credit',
+        typeLabel: 'إيراد محقق',
+        description: `إيراد حجز مدفوع ${fresh.referenceCode || fresh.id}`,
+        bookingId: fresh.id,
+        bookingReference: fresh.referenceCode,
+        idempotencyKey: `${key}:gross`,
+      });
+    }
+    if (commission > 0) {
+      await addWalletTx({
+        ownerId: fresh.ownerId,
+        amount: -commission,
+        type: 'commission_debit',
+        typeLabel: 'عمولة المنصة',
+        description: `عمولة 10% على حجز مدفوع ${fresh.referenceCode || fresh.id}`,
+        bookingId: fresh.id,
+        bookingReference: fresh.referenceCode,
+        idempotencyKey: `${key}:commission`,
+      });
+    }
+    const completedAt = new Date().toISOString();
+    const completed = await store.update('paymentCredits', credit.id, {
+      status: 'completed',
+      netAmountIqd: total - commission,
+      commissionAmountIqd: commission,
+      completedAt,
+    });
+    await store.update('bookings', fresh.id, { walletCredited: true, walletCreditedAt: completedAt });
+    return completed;
+  })().finally(() => paymentCreditLocks.delete(key));
+
+  paymentCreditLocks.set(key, task);
+  return task;
+}
+
+// Kept as an internal compatibility alias for old approval call sites.
 async function creditOwnerForApprovedBooking(booking) {
-  if (!booking?.ownerId || booking.walletCredited) return;
-  const total = Number(booking.totalPrice) || 0;
-  const commission = Math.round(total * COMMISSION_RATE);
-  if (total > 0) {
-    await addWalletTx({
-      ownerId: booking.ownerId,
-      amount: total,
-      type: 'booking_credit',
-      typeLabel: 'إيراد حجز',
-      description: `إيراد حجز ${booking.referenceCode || booking.id}`,
-      bookingId: booking.id,
-      bookingReference: booking.referenceCode,
-    });
-  }
-  if (commission > 0) {
-    await addWalletTx({
-      ownerId: booking.ownerId,
-      amount: -commission,
-      type: 'commission_debit',
-      typeLabel: 'عمولة المنصة',
-      description: `عمولة 10% على حجز ${booking.referenceCode || booking.id}`,
-      bookingId: booking.id,
-      bookingReference: booking.referenceCode,
-    });
-  }
-  await store.update('bookings', booking.id, { walletCredited: true });
+  return creditOwnerForPaidBooking(booking);
 }
 
 async function refreshFieldRatings(field) {
@@ -836,6 +1068,23 @@ app.get('/api/health', (_req, res) => res.json({
   realtime: true,
   env: IS_PROD ? 'production' : 'development',
 }));
+
+// Capture successful legacy admin mutations as well as the new modular admin routes.
+// The response listener is deliberately best-effort and never changes the API response.
+app.use('/api', (req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  res.on('finish', () => {
+    if (res.statusCode >= 400 || req.user?.role !== 'admin' || req.auditRecorded || !adminBackend) return;
+    adminBackend.audit(
+      req,
+      `${req.method.toLowerCase()}.${req.path.replace(/^\/+/, '').replace(/[/:]+/g, '.')}`,
+      'api',
+      req.params?.id || req.params?.bookingId || req.params?.ownerId || null,
+      { statusCode: res.statusCode },
+    ).catch((error) => console.warn('تعذر تسجيل التدقيق:', error.message || error));
+  });
+  return next();
+});
 
 app.post('/api/register-user', authLimiter, async (req, res) => {
   try {
@@ -977,6 +1226,9 @@ app.post('/api/fields', auth, async (req, res) => {
     if (req.user.role !== 'owner' && req.user.role !== 'admin') {
       return safeError(res, 403, 'غير مصرح — حساب صاحب ملعب فقط');
     }
+    if (req.user.role === 'admin' && !hasPermission(req.user, 'fields.manage')) {
+      return safeError(res, 403, 'لا تملك صلاحية إدارة الملاعب');
+    }
     const { name, address, phone, pricePerHour, image, latitude, longitude } = req.body || {};
     if (!name || !String(name).trim()) return safeError(res, 400, 'اسم الملعب مطلوب');
     const price = Number(pricePerHour);
@@ -993,6 +1245,10 @@ app.post('/api/fields', auth, async (req, res) => {
       latitude: latitude != null ? Number(latitude) : null,
       longitude: longitude != null ? Number(longitude) : null,
       isActive: true,
+    });
+    adminBackend.publish('admin:field.created', {
+      field: publicField(field),
+      actorId: Number(req.user.id),
     });
     res.status(201).json(publicField(field));
   } catch (e) {
@@ -1021,6 +1277,9 @@ app.put('/api/fields/:id', auth, async (req, res) => {
   if (!sameId(f.ownerId, req.user.id) && req.user.role !== 'admin') {
     return safeError(res, 403, 'غير مصرح');
   }
+  if (req.user.role === 'admin' && !hasPermission(req.user, 'fields.manage')) {
+    return safeError(res, 403, 'لا تملك صلاحية إدارة الملاعب');
+  }
   const { name, address, phone, pricePerHour, image } = req.body || {};
   const patch = {};
   if (name != null) patch.name = name;
@@ -1031,6 +1290,10 @@ app.put('/api/fields/:id', auth, async (req, res) => {
   const updated = f.id != null
     ? await store.update('fields', f.id, patch)
     : { ...f, ...patch };
+  adminBackend.publish('admin:field.updated', {
+    field: publicField(updated),
+    actorId: Number(req.user.id),
+  });
   res.json(publicField(updated));
 });
 
@@ -1041,11 +1304,17 @@ app.get('/api/fields/:id/schedule', optionalAuth, async (req, res) => {
     const fieldKey = f.id != null ? f.id : publicNumericId(f);
     const publicId = publicNumericId(f);
     const booked = (await bookingsByField(fieldKey)).filter((b) => b.status === 'pending' || b.status === 'approved');
-    const bookedKeys = new Set(booked.map((b) => new Date(b.startTime).toISOString().slice(0, 13)));
+    const maintenanceDefinitions = (await store.find('maintenanceBlocks')).filter((block) => (
+      block.status !== 'cancelled'
+      && (sameId(block.fieldId, f.id) || sameId(block.fieldId, publicId))
+    ));
     purgeExpiredHolds();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const maintenanceBlocks = maintenanceDefinitions.flatMap((block) => (
+      adminBackend.expandMaintenanceBlock(block, today, new Date(today.getTime() + 7 * 86400000))
+    ));
     const schedule = [];
     for (let d = 0; d < 7; d++) {
       const day = new Date(today.getTime() + d * 86400000);
@@ -1053,15 +1322,26 @@ app.get('/api/fields/:id/schedule', optionalAuth, async (req, res) => {
       for (let h = 10; h <= 22; h++) {
         const start = new Date(day); start.setHours(h, 0, 0, 0);
         const end = new Date(start.getTime() + 3600000);
-        const key = start.toISOString().slice(0, 13);
         const hold = getActiveHold(publicId, start.toISOString());
         const heldByOther = hold && (!req.user || Number(hold.userId) !== Number(req.user.id));
+        const bookingConflict = booked.some((booking) => {
+          const bookingStart = new Date(booking.startTime);
+          const bookingEnd = new Date(bookingStart.getTime() + (Number(booking.hours) || 1) * 3600000);
+          return start < bookingEnd && end > bookingStart;
+        });
+        const maintenance = maintenanceBlocks.find((block) => {
+          const blockStart = new Date(block.startTime);
+          const blockEnd = new Date(block.endTime);
+          return !Number.isNaN(blockStart.getTime()) && !Number.isNaN(blockEnd.getTime())
+            && start < blockEnd && end > blockStart;
+        });
         slots.push({
           startTime: start.toISOString(),
           endTime: end.toISOString(),
-          isAvailable: !bookedKeys.has(key) && !heldByOther && start > new Date(),
-          status: hold ? 'held' : null,
+          isAvailable: !bookingConflict && !heldByOther && !maintenance && start > new Date(),
+          status: maintenance ? 'maintenance' : (hold ? 'held' : null),
           heldUntil: hold?.expiresAt || null,
+          maintenanceReason: maintenance?.reason || null,
         });
       }
       schedule.push({ date: day.toISOString(), slots });
@@ -1220,6 +1500,16 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
     .filter((b) => b.status === 'pending' || b.status === 'approved');
   const clash = existing.some((b) => new Date(b.startTime).toISOString().slice(0, 13) === start.slice(0, 13));
   if (clash) return res.status(409).json({ code: 'ConflictError', messageKey: 'slotJustBooked' });
+  const adminConflict = adminBackend
+    ? await adminBackend.bookingConflict(field, start, hrs)
+    : null;
+  if (adminConflict) {
+    return res.status(409).json({
+      code: adminConflict.type === 'maintenance' ? 'MaintenanceConflict' : 'ConflictError',
+      messageKey: adminConflict.type === 'maintenance' ? 'fieldUnderMaintenance' : 'slotJustBooked',
+      conflictId: Number(adminConflict.record.id),
+    });
+  }
 
   const hourlyRate = field.pricePerHour || 0;
   const totalPrice = hourlyRate * hrs;
@@ -1262,6 +1552,30 @@ app.post('/api/bookings', auth, bookingLimiter, async (req, res) => {
   });
   emitBookingUpdated(ownerId, booking, 'bookingPending', 'newBookingRequest', {
     fieldName: field.name,
+  });
+  adminBackend.publish('admin:booking.created', {
+    bookingId: Number(booking.id),
+    referenceCode: booking.referenceCode,
+    fieldId: resolvedFieldId,
+    fieldName: field.name,
+    ownerId,
+    userId: Number(req.user.id),
+    startTime: booking.startTime,
+    status: booking.status,
+    paymentStatus: booking.paymentStatus,
+    totalPrice: booking.totalPrice,
+    source: 'app',
+  });
+  await adminBackend.createAlert({
+    type: 'booking',
+    severity: 'info',
+    title: 'طلب حجز جديد',
+    message: `${field.name} — ${booking.referenceCode || booking.id}`,
+    actionUrl: `/bookings/${booking.id}`,
+    entityType: 'booking',
+    entityId: booking.id,
+    dedupeKey: `booking:${booking.id}:pending`,
+    data: { bookingId: booking.id, fieldId: resolvedFieldId, ownerId },
   });
 
   res.status(201).json({
@@ -1313,6 +1627,7 @@ app.get('/api/bookings/user/me/history', auth, async (req, res) => {
 
 app.get('/api/bookings/user/:userId', auth, async (req, res) => {
   if (req.user.role === 'admin') {
+    if (!hasPermission(req.user, 'bookings.read')) return safeError(res, 403, 'لا تملك صلاحية عرض الحجوزات');
     return res.json(await listUserBookings(Number(req.params.userId), {
       activeOnly: true, page: req.query.page, limit: req.query.limit,
     }));
@@ -1327,6 +1642,7 @@ app.get('/api/bookings/user/:userId', auth, async (req, res) => {
 
 app.get('/api/bookings/user/:userId/history', auth, async (req, res) => {
   if (req.user.role === 'admin') {
+    if (!hasPermission(req.user, 'bookings.read')) return safeError(res, 403, 'لا تملك صلاحية عرض الحجوزات');
     return res.json(await listUserBookings(Number(req.params.userId), {
       page: req.query.page, limit: req.query.limit,
     }));
@@ -1346,6 +1662,12 @@ app.post('/api/bookings/cancel', auth, async (req, res) => {
   if (!sameId(b.userId, req.user.id) && req.user.role !== 'admin') {
     return safeError(res, 403, 'غير مصرح');
   }
+  if (req.user.role === 'admin' && !hasPermission(req.user, 'bookings.manage')) {
+    return safeError(res, 403, 'لا تملك صلاحية إدارة الحجوزات');
+  }
+  if (b.status === 'cancelled') {
+    return res.json({ message: 'تم الإلغاء مسبقاً', tier: 'free', penaltyIqd: 0, ownerShareIqd: 0, platformShareIqd: 0 });
+  }
   const updated = await store.update('bookings', b.id, { status: 'cancelled' });
   await notify(b.ownerId, 'إلغاء حجز', 'قام المستخدم بإلغاء حجز');
   emitBookingUpdated(b.userId, updated || { ...b, status: 'cancelled' }, 'bookingCancelled', 'bookingCancelled');
@@ -1357,6 +1679,13 @@ app.post('/api/bookings/cancel', auth, async (req, res) => {
       hours: b.hours || 1,
     });
   }
+  adminBackend.publish('admin:booking.cancelled', {
+    bookingId: Number(b.id),
+    status: 'cancelled',
+    actorId: Number(req.user.id),
+    actorRole: req.user.role,
+  });
+  await adminBackend.closeEntityAlerts('booking', b.id, 'dismissed', 'booking_cancelled', 'booking');
   res.json({ message: 'تم الإلغاء', tier: 'free', penaltyIqd: 0, ownerShareIqd: 0, platformShareIqd: 0 });
 });
 
@@ -1402,7 +1731,7 @@ async function buildOwnerDashboard(ownerId) {
   };
 }
 
-app.get('/api/bookings/owner/me', auth, requireOwnerOrAdmin, async (req, res) => {
+app.get('/api/bookings/owner/me', auth, requireOwnerOrAdminPermission('bookings.read'), async (req, res) => {
   try {
     res.json(await buildOwnerDashboard(authedOwnerId(req)));
   } catch (e) {
@@ -1414,6 +1743,7 @@ app.get('/api/bookings/owner/me', auth, requireOwnerOrAdmin, async (req, res) =>
 app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
   try {
     if (req.user.role === 'admin') {
+      if (!hasPermission(req.user, 'bookings.read')) return safeError(res, 403, 'لا تملك صلاحية عرض الحجوزات');
       return res.json(await buildOwnerDashboard(Number(req.params.ownerId)));
     }
     if (req.user.role !== 'owner') return safeError(res, 403, 'غير مصرح');
@@ -1424,10 +1754,14 @@ app.get('/api/bookings/owner/:ownerId', auth, async (req, res) => {
   }
 });
 
-app.post('/api/bookings/approve', auth, requireOwnerOrAdmin, async (req, res) => {
+app.post('/api/bookings/approve', auth, requireOwnerOrAdminPermission('bookings.manage'), async (req, res) => {
   const { bookingId, referenceCode } = req.body || {};
   const b = await resolveBooking(bookingId, referenceCode);
   if (!b) return safeError(res, 404, 'الحجز غير موجود');
+  if (b.status === 'approved') {
+    await creditOwnerForPaidBooking(b);
+    return res.json({ ok: true, unchanged: true });
+  }
   const owned = await fieldsByOwner(req.user.id);
   const ownsBooking = req.user.role === 'admin' || bookingBelongsToOwner(b, req.user.id, owned);
   if (!ownsBooking) return safeError(res, 403, 'غير مصرح');
@@ -1444,13 +1778,21 @@ app.post('/api/bookings/approve', auth, requireOwnerOrAdmin, async (req, res) =>
       : 'تمت الموافقة على حجزك — يمكنك مراجعته من قائمة الحجوزات',
   );
   emitBookingUpdated(b.userId, updated || { ...b, status: 'approved' }, 'bookingApproved', 'bookingApproved');
+  adminBackend.publish('admin:booking.approved', {
+    bookingId: Number(b.id),
+    status: 'approved',
+    actorId: Number(req.user.id),
+    actorRole: req.user.role,
+  });
+  await adminBackend.closeEntityAlerts('booking', b.id, 'resolved', 'booking_approved', 'booking');
   res.json({ ok: true });
 });
 
-app.post('/api/bookings/reject', auth, requireOwnerOrAdmin, async (req, res) => {
+app.post('/api/bookings/reject', auth, requireOwnerOrAdminPermission('bookings.manage'), async (req, res) => {
   const { bookingId, referenceCode } = req.body || {};
   const b = await resolveBooking(bookingId, referenceCode);
   if (!b) return safeError(res, 404, 'الحجز غير موجود');
+  if (b.status === 'rejected') return res.json({ ok: true, unchanged: true });
   const owned = await fieldsByOwner(req.user.id);
   const ownsBooking = req.user.role === 'admin' || bookingBelongsToOwner(b, req.user.id, owned);
   if (!ownsBooking) return safeError(res, 403, 'غير مصرح');
@@ -1467,6 +1809,13 @@ app.post('/api/bookings/reject', auth, requireOwnerOrAdmin, async (req, res) => 
       hours: b.hours || 1,
     });
   }
+  adminBackend.publish('admin:booking.rejected', {
+    bookingId: Number(b.id),
+    status: 'rejected',
+    actorId: Number(req.user.id),
+    actorRole: req.user.role,
+  });
+  await adminBackend.closeEntityAlerts('booking', b.id, 'dismissed', 'booking_rejected', 'booking');
   res.json({ ok: true });
 });
 
@@ -1480,6 +1829,9 @@ app.post('/api/bookings/:bookingId/pay/initiate', auth, async (req, res) => {
   if (!b) return safeError(res, 404, 'الحجز غير موجود');
   if (!sameId(b.userId, req.user.id) && req.user.role !== 'admin') {
     return safeError(res, 403, 'غير مصرح');
+  }
+  if (req.user.role === 'admin' && !hasPermission(req.user, 'finance.manage')) {
+    return safeError(res, 403, 'لا تملك صلاحية إدارة المدفوعات');
   }
   if (b.paymentStatus === 'paid') {
     return res.json({
@@ -1527,6 +1879,15 @@ app.post('/api/bookings/pay/verify', auth, async (req, res) => {
   }
 
   if (!b) return safeError(res, 404, 'الحجز غير موجود');
+  if (b.paymentStatus === 'paid') {
+    return res.json({
+      success: true,
+      status: 'paid',
+      invoiceId: `INV-${b.id}`,
+      outstandingAmount: 0,
+      message: 'الحجز مدفوع مسبقاً',
+    });
+  }
 
   const owned = await fieldsByOwner(req.user.id);
   const isOwner = req.user.role === 'admin' || bookingBelongsToOwner(b, req.user.id, owned);
@@ -1552,8 +1913,36 @@ app.post('/api/bookings/pay/verify', auth, async (req, res) => {
         : 'غير مصرح',
     });
   }
+  if (req.user.role === 'admin' && !hasPermission(req.user, 'finance.manage')) {
+    return res.status(403).json({
+      success: false, status: 'forbidden', message: 'لا تملك صلاحية إدارة المدفوعات',
+    });
+  }
 
-  await store.update('bookings', b.id, { paymentStatus: 'paid' });
+  const paidBooking = await store.update('bookings', b.id, {
+    paymentStatus: 'paid',
+    paidAt: b.paidAt || new Date().toISOString(),
+    paymentConfirmedBy: Number(req.user.id),
+  });
+  await creditOwnerForPaidBooking(paidBooking || { ...b, paymentStatus: 'paid' });
+  adminBackend.publish('admin:payment.verified', {
+    bookingId: Number(b.id),
+    ownerId: Number(b.ownerId) || null,
+    amountIqd: Number(b.totalPrice) || 0,
+    paymentStatus: 'paid',
+    confirmedBy: Number(req.user.id),
+  });
+  await adminBackend.createAlert({
+    type: 'finance',
+    severity: 'info',
+    title: 'تم تأكيد دفعة',
+    message: `تم تحقيق إيراد الحجز ${b.referenceCode || b.id}`,
+    actionUrl: `/bookings/${b.id}`,
+    entityType: 'booking',
+    entityId: b.id,
+    dedupeKey: `booking:${b.id}:paid`,
+    data: { bookingId: b.id, ownerId: b.ownerId, amountIqd: Number(b.totalPrice) || 0 },
+  });
   if (token) pendingPayments.delete(token);
   res.json({
     success: true,
@@ -1564,7 +1953,7 @@ app.post('/api/bookings/pay/verify', auth, async (req, res) => {
   });
 });
 
-app.get('/api/payments/owner/me/account', auth, requireOwnerOrAdmin, async (req, res) => {
+app.get('/api/payments/owner/me/account', auth, requireOwnerOrAdminPermission('finance.read'), async (req, res) => {
   const dash = await buildOwnerDashboard(authedOwnerId(req));
   res.json({
     outstandingAmount: dash.appCommission,
@@ -1578,7 +1967,10 @@ app.get('/api/payments/owner/me/account', auth, requireOwnerOrAdmin, async (req,
 
 app.get('/api/payments/owner/:ownerId/account', auth, async (req, res) => {
   let ownerId = Number(req.user.id);
-  if (req.user.role === 'admin') ownerId = Number(req.params.ownerId);
+  if (req.user.role === 'admin') {
+    if (!hasPermission(req.user, 'finance.read')) return safeError(res, 403, 'لا تملك صلاحية عرض البيانات المالية');
+    ownerId = Number(req.params.ownerId);
+  }
   else if (req.user.role !== 'owner') return safeError(res, 403, 'غير مصرح');
   const dash = await buildOwnerDashboard(ownerId);
   res.json({
@@ -1615,6 +2007,9 @@ app.get('/api/stats/user/:userId', auth, async (req, res) => {
   if (req.user.role !== 'admin' && !sameId(req.params.userId, req.user.id)) {
     return safeError(res, 403, 'غير مصرح');
   }
+  if (req.user.role === 'admin' && !hasPermission(req.user, 'users.read')) {
+    return safeError(res, 403, 'لا تملك صلاحية عرض المستخدمين');
+  }
   const uid = req.user.role === 'admin' ? Number(req.params.userId) : Number(req.user.id);
   const list = await bookingsByUser(uid);
   const notifs = await notificationsByUser(uid);
@@ -1639,6 +2034,9 @@ app.get('/api/notifications/:userId', auth, async (req, res) => {
   if (req.user.role !== 'admin' && !sameId(req.params.userId, req.user.id)) {
     return safeError(res, 403, 'غير مصرح');
   }
+  if (req.user.role === 'admin' && !hasPermission(req.user, 'users.read')) {
+    return safeError(res, 403, 'لا تملك صلاحية عرض المستخدمين');
+  }
   const uid = req.user.role === 'admin' ? Number(req.params.userId) : Number(req.user.id);
   const list = (await notificationsByUser(uid))
     .filter((n) => !String(n.title || '').startsWith('__'))
@@ -1653,6 +2051,10 @@ app.post('/api/notifications/:id/read', auth, async (req, res) => {
   if (!sameId(n.userId, req.user.id) && req.user.role !== 'admin') {
     return safeError(res, 403, 'غير مصرح');
   }
+  if (req.user.role === 'admin' && !sameId(n.userId, req.user.id)
+    && !hasPermission(req.user, 'users.manage')) {
+    return safeError(res, 403, 'لا تملك صلاحية إدارة المستخدمين');
+  }
   await store.update('notifications', n.id, { isRead: true });
   res.json({ ok: true });
 });
@@ -1660,6 +2062,10 @@ app.post('/api/notifications/:id/read', auth, async (req, res) => {
 app.post('/api/notifications/user/:userId/read-all', auth, async (req, res) => {
   if (req.user.role !== 'admin' && !sameId(req.params.userId, req.user.id)) {
     return safeError(res, 403, 'غير مصرح');
+  }
+  if (req.user.role === 'admin' && !sameId(req.params.userId, req.user.id)
+    && !hasPermission(req.user, 'users.manage')) {
+    return safeError(res, 403, 'لا تملك صلاحية إدارة المستخدمين');
   }
   const uid = req.user.role === 'admin' ? Number(req.params.userId) : Number(req.user.id);
   const list = await notificationsByUser(uid);
@@ -1681,7 +2087,7 @@ app.post('/api/users/update-token', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/owner/wallet/status', auth, requireOwnerOrAdmin, async (req, res) => {
+app.get('/api/owner/wallet/status', auth, requireOwnerOrAdminPermission('finance.read'), async (req, res) => {
   const detail = await walletDetailDto(authedOwnerId(req));
   if (!detail) return safeError(res, 404, 'غير موجود');
   res.json({
@@ -1692,7 +2098,7 @@ app.get('/api/owner/wallet/status', auth, requireOwnerOrAdmin, async (req, res) 
   });
 });
 
-app.get('/api/owner/wallet', auth, requireOwnerOrAdmin, async (req, res) => {
+app.get('/api/owner/wallet', auth, requireOwnerOrAdminPermission('finance.read'), async (req, res) => {
   const detail = await walletDetailDto(authedOwnerId(req));
   if (!detail) return safeError(res, 404, 'غير موجود');
   res.json(detail);
@@ -1702,14 +2108,15 @@ app.get('/api/owner/wallet', auth, requireOwnerOrAdmin, async (req, res) => {
 /* Admin                                                                */
 /* ================================================================== */
 
-app.get('/api/admin/stats', auth, requireAdmin, async (_req, res) => {
+app.get('/api/admin/stats', auth, requireAdminPermission('dashboard.read'), async (_req, res) => {
   const users = await store.find('users');
   const fields = await allFields({ includeInactive: true });
   const bookings = await store.find('bookings');
   const owners = users.filter((u) => u.role === 'owner');
   const approved = bookings.filter((b) => b.status === 'approved');
-  const paid = bookings.filter((b) => b.paymentStatus === 'paid' || b.paymentStatus === 'pay_at_venue');
+  const paid = bookings.filter((b) => b.paymentStatus === 'paid');
   const totalRevenueIqd = approved.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
+  const realizedRevenueIqd = paid.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
   res.json({
     totalUsers: users.filter((u) => u.role === 'user').length,
     totalOwners: owners.length,
@@ -1717,23 +2124,31 @@ app.get('/api/admin/stats', auth, requireAdmin, async (_req, res) => {
     totalBookings: bookings.length,
     paidBookings: paid.length,
     totalRevenueIqd,
+    expectedRevenueIqd: totalRevenueIqd,
+    realizedRevenueIqd,
     platformCommissionIqd: Math.round(totalRevenueIqd * COMMISSION_RATE),
+    realizedPlatformCommissionIqd: Math.round(realizedRevenueIqd * COMMISSION_RATE),
   });
 });
 
-app.get('/api/admin/financials', auth, requireAdmin, async (_req, res) => {
+app.get('/api/admin/financials', auth, requireAdminPermission('finance.read'), async (_req, res) => {
   const bookings = await store.find('bookings');
   const approved = bookings.filter((b) => b.status === 'approved');
-  const paid = bookings.filter((b) => b.paymentStatus === 'paid' || b.paymentStatus === 'pay_at_venue');
+  const paid = bookings.filter((b) => b.paymentStatus === 'paid');
   const totalRevenueIqd = approved.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
+  const realizedRevenueIqd = paid.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
   res.json({
     paidBookings: paid.length,
     totalRevenueIqd,
+    expectedRevenueIqd: totalRevenueIqd,
+    realizedRevenueIqd,
+    outstandingRevenueIqd: Math.max(0, totalRevenueIqd - realizedRevenueIqd),
     platformCommissionIqd: Math.round(totalRevenueIqd * COMMISSION_RATE),
+    realizedPlatformCommissionIqd: Math.round(realizedRevenueIqd * COMMISSION_RATE),
   });
 });
 
-app.get('/api/admin/owners', auth, requireAdmin, async (_req, res) => {
+app.get('/api/admin/owners', auth, requireAdminPermission('users.read'), async (_req, res) => {
   const users = await store.find('users');
   const fields = await allFields({ includeInactive: true });
   const owners = [];
@@ -1752,7 +2167,7 @@ app.get('/api/admin/owners', auth, requireAdmin, async (_req, res) => {
   res.json(owners);
 });
 
-app.get('/api/admin/owners/:ownerId', auth, requireAdmin, async (req, res) => {
+app.get('/api/admin/owners/:ownerId', auth, requireAdminPermission('users.read'), async (req, res) => {
   const ownerId = Number(req.params.ownerId);
   const owner = await store.findById('users', ownerId);
   if (!owner || owner.role !== 'owner') return safeError(res, 404, 'المالك غير موجود');
@@ -1776,7 +2191,7 @@ app.get('/api/admin/owners/:ownerId', auth, requireAdmin, async (req, res) => {
   });
 });
 
-app.get('/api/admin/owners/:ownerId/wallet', auth, requireAdmin, async (req, res) => {
+app.get('/api/admin/owners/:ownerId/wallet', auth, requireAdminPermission('finance.read'), async (req, res) => {
   const ownerId = Number(req.params.ownerId);
   const owner = await store.findById('users', ownerId);
   if (!owner || owner.role !== 'owner') return safeError(res, 404, 'المالك غير موجود');
@@ -1784,7 +2199,7 @@ app.get('/api/admin/owners/:ownerId/wallet', auth, requireAdmin, async (req, res
   res.json(detail);
 });
 
-app.patch('/api/admin/owners/:ownerId/wallet-status', auth, requireAdmin, async (req, res) => {
+app.patch('/api/admin/owners/:ownerId/wallet-status', auth, requireAdminPermission('finance.manage'), async (req, res) => {
   const ownerId = Number(req.params.ownerId);
   const owner = await store.findById('users', ownerId);
   if (!owner || owner.role !== 'owner') return safeError(res, 404, 'المالك غير موجود');
@@ -1794,7 +2209,7 @@ app.patch('/api/admin/owners/:ownerId/wallet-status', auth, requireAdmin, async 
   res.json(detail);
 });
 
-app.get('/api/admin/users', auth, requireAdmin, async (req, res) => {
+app.get('/api/admin/users', auth, requireAdminPermission('users.read'), async (req, res) => {
   const role = String(req.query.role || '').trim().toLowerCase();
   const q = String(req.query.q || '').trim().toLowerCase();
   let users = await store.find('users');
@@ -1821,7 +2236,7 @@ app.get('/api/admin/users', auth, requireAdmin, async (req, res) => {
   res.json(paged(items, req.query.page, req.query.limit));
 });
 
-app.get('/api/admin/users/:userId', auth, requireAdmin, async (req, res) => {
+app.get('/api/admin/users/:userId', auth, requireAdminPermission('users.read'), async (req, res) => {
   const user = await store.findById('users', req.params.userId);
   if (!user) return safeError(res, 404, 'المستخدم غير موجود');
   const stats = await bookingsByUser(user.id);
@@ -1837,44 +2252,12 @@ app.get('/api/admin/users/:userId', auth, requireAdmin, async (req, res) => {
   });
 });
 
-app.get('/api/admin/bookings', auth, requireAdmin, async (req, res) => {
-  const status = String(req.query.status || '').trim().toLowerCase();
-  const q = String(req.query.q || '').trim().toLowerCase();
-  let bookings = await store.find('bookings');
-  if (status && status !== 'all') {
-    bookings = bookings.filter((b) => String(b.status) === status);
-  }
-  const items = [];
-  for (const b of bookings.sort((a, c) => new Date(c.startTime) - new Date(a.startTime))) {
-    const user = await store.findById('users', b.userId);
-    const field = await store.findById('fields', b.fieldId)
-      ?? (await allFields({ includeInactive: true })).find((f) => bookingBelongsToField(b, f));
-    const row = {
-      id: Number(b.id),
-      referenceCode: b.referenceCode || null,
-      fieldId: Number(b.fieldPublicId || b.fieldId) || 0,
-      fieldName: field?.name || b.fieldName || '',
-      ownerId: Number(b.ownerId) || Number(field?.ownerId) || 0,
-      userId: Number(b.userId) || 0,
-      userName: user?.name || '',
-      userPhone: user?.phone || '',
-      startTime: b.startTime,
-      hours: b.hours,
-      totalPrice: b.totalPrice,
-      status: b.status,
-      paymentStatus: b.paymentStatus || 'unpaid',
-      paymentMethod: b.paymentMethod || 'online',
-    };
-    if (q) {
-      const hay = `${row.fieldName} ${row.userName} ${row.referenceCode || ''} ${row.id}`.toLowerCase();
-      if (!hay.includes(q)) continue;
-    }
-    items.push(row);
-  }
-  res.json(paged(items, req.query.page, req.query.limit));
+app.get('/api/admin/bookings', auth, requireAdminPermission('bookings.read'), async (req, res) => {
+  const items = await adminBackend.hydratedBookings(req.query);
+  res.json(adminBackend.paginate(items, req.query));
 });
 
-app.get('/api/admin/bookings/pending', auth, requireAdmin, async (_req, res) => {
+app.get('/api/admin/bookings/pending', auth, requireAdminPermission('bookings.read'), async (_req, res) => {
   const bookings = (await store.find('bookings')).filter((b) => b.status === 'pending');
   const items = [];
   for (const b of bookings) {
@@ -1893,7 +2276,7 @@ app.get('/api/admin/bookings/pending', auth, requireAdmin, async (_req, res) => 
   res.json(items);
 });
 
-app.get('/api/admin/fields', auth, requireAdmin, async (_req, res) => {
+app.get('/api/admin/fields', auth, requireAdminPermission('fields.read'), async (_req, res) => {
   const fields = await allFields({ includeInactive: true });
   const items = [];
   for (const f of fields) {
@@ -1910,15 +2293,38 @@ app.get('/api/admin/fields', auth, requireAdmin, async (_req, res) => {
   res.json(items);
 });
 
-app.patch('/api/admin/fields/:id/toggle', auth, requireAdmin, async (req, res) => {
+app.patch('/api/admin/fields/:id/toggle', auth, requireAdminPermission('fields.manage'), async (req, res) => {
   const f = await resolveField(req.params.id);
   if (!f || f.id == null) return safeError(res, 404, 'الملعب غير موجود');
   const isActive = f.isActive === false;
-  await store.update('fields', f.id, { isActive });
+  const updated = await store.update('fields', f.id, { isActive });
+  adminBackend.publish('admin:field.toggled', {
+    fieldId: publicNumericId(f),
+    isActive,
+    fieldName: updated?.name || f.name,
+    actorId: Number(req.user.id),
+  });
+  if (!isActive) {
+    await adminBackend.createAlert({
+      type: 'field',
+      severity: 'warning',
+      title: 'تم تعطيل ملعب',
+      message: `${updated?.name || f.name} غير متاح للحجوزات`,
+      actionUrl: '/fields',
+      entityType: 'field',
+      entityId: publicNumericId(f),
+      dedupeKey: `field:${publicNumericId(f)}:inactive`,
+      data: { fieldId: publicNumericId(f), isActive: false },
+    });
+  } else {
+    await adminBackend.closeEntityAlerts(
+      'field', publicNumericId(f), 'resolved', 'field_reactivated', 'field',
+    );
+  }
   res.json({ isActive });
 });
 
-app.post('/api/admin/wallets/top-up', auth, requireAdmin, async (req, res) => {
+app.post('/api/admin/wallets/top-up', auth, requireAdminPermission('finance.manage'), async (req, res) => {
   const ownerId = Number(req.body?.ownerId);
   const amount = Number(req.body?.amount);
   const note = String(req.body?.note || '').trim();
@@ -1935,7 +2341,39 @@ app.post('/api/admin/wallets/top-up', auth, requireAdmin, async (req, res) => {
     adminNote: note || null,
   });
   const detail = await walletDetailDto(ownerId);
+  adminBackend.publish('admin:wallet.topped-up', {
+    ownerId,
+    amountIqd: Math.round(amount),
+    balanceIqd: detail.balance,
+    actorId: Number(req.user.id),
+  });
+  await adminBackend.createAlert({
+    type: 'finance',
+    severity: 'info',
+    title: 'شحن محفظة إداري',
+    message: `تم شحن ${Math.round(amount)} د.ع لمحفظة ${owner.name}`,
+    actionUrl: `/owners/${ownerId}`,
+    entityType: 'owner',
+    entityId: ownerId,
+    dedupeKey: `wallet-topup:${ownerId}:${Date.now()}`,
+    data: { ownerId, amountIqd: Math.round(amount), balanceIqd: detail.balance },
+  });
   res.json(detail);
+});
+
+adminBackend = setupAdminBackend({
+  app,
+  auth,
+  getStore: () => store,
+  io,
+  resolveField,
+  publicNumericId,
+  bookingBelongsToField,
+  notify,
+  emitBookingUpdated,
+  emitToField,
+  commissionRate: COMMISSION_RATE,
+  creditOwnerForPaidBooking,
 });
 
 /**
@@ -1954,7 +2392,12 @@ app.post('/api/admin/bootstrap', async (req, res) => {
   const user = await findUserByEmail(email);
   if (!user) return safeError(res, 404, 'المستخدم غير موجود — سجّل الحساب أولاً');
   if (user.role === 'admin') return res.json({ ok: true, message: 'الحساب أدمن مسبقاً' });
-  await store.update('users', user.id, { role: 'admin' });
+  await store.update('users', user.id, {
+    role: 'admin',
+    adminRole: user.adminRole || 'super_admin',
+    customPermissions: user.customPermissions || [],
+    deniedPermissions: user.deniedPermissions || [],
+  });
   console.log(`تمت ترقية ${email} إلى أدمن عبر bootstrap`);
   res.json({ ok: true, message: 'تمت الترقية إلى أدمن' });
 });
@@ -2016,6 +2459,7 @@ async function seedAdmin() {
   if (existing) {
     await store.update('users', existing.id, {
       role: 'admin',
+      adminRole: existing.adminRole || 'super_admin',
       password: hashed,
       name: existing.name || ADMIN_NAME,
     });
@@ -2025,6 +2469,7 @@ async function seedAdmin() {
   await store.insert('users', {
     name: ADMIN_NAME, email: ADMIN_EMAIL, password: hashed, phone: '',
     province: 'نينوى', image: null, role: 'admin', loyaltyPoints: 0,
+    adminRole: 'super_admin', customPermissions: [], deniedPermissions: [],
     walletBalance: 0, walletStatus: 'active',
   });
   console.log(`تم إنشاء حساب أدمن: ${ADMIN_EMAIL}`);
@@ -2042,6 +2487,7 @@ async function ensureAdminFromEnv(email, password) {
   if (user) {
     user = await store.update('users', user.id, {
       role: 'admin',
+      adminRole: user.adminRole || 'super_admin',
       password: hashed,
       name: user.name || ADMIN_NAME,
     });
@@ -2049,11 +2495,53 @@ async function ensureAdminFromEnv(email, password) {
     user = await store.insert('users', {
       name: ADMIN_NAME, email: ADMIN_EMAIL, password: hashed, phone: '',
       province: 'نينوى', image: null, role: 'admin', loyaltyPoints: 0,
+      adminRole: 'super_admin', customPermissions: [], deniedPermissions: [],
       walletBalance: 0, walletStatus: 'active',
     });
   }
   console.log(`تم تأكيد أدمن عبر Environment عند تسجيل الدخول: ${ADMIN_EMAIL}`);
   return user;
+}
+
+async function backfillAdminData() {
+  const [users, bookings, credits] = await Promise.all([
+    store.find('users'),
+    store.find('bookings'),
+    store.find('paymentCredits'),
+  ]);
+  for (const user of users) {
+    if (user.role === 'admin' && !user.adminRole) {
+      await store.update('users', user.id, {
+        adminRole: 'admin',
+        customPermissions: Array.isArray(user.customPermissions) ? user.customPermissions : [],
+        deniedPermissions: Array.isArray(user.deniedPermissions) ? user.deniedPermissions : [],
+      });
+    }
+  }
+
+  // Ledger markers for old wallet credits prevent the new paid-credit path from crediting them twice.
+  const creditKeys = new Set(credits.map((credit) => credit.idempotencyKey));
+  for (const booking of bookings) {
+    if (!booking.walletCredited || !booking.id) continue;
+    const idempotencyKey = `booking:${booking.id}:paid:v1`;
+    if (creditKeys.has(idempotencyKey)) continue;
+    try {
+      await store.insert('paymentCredits', {
+        idempotencyKey,
+        bookingId: Number(booking.id),
+        ownerId: Number(booking.ownerId) || null,
+        grossAmountIqd: Number(booking.totalPrice) || 0,
+        commissionRate: COMMISSION_RATE,
+        status: 'completed',
+        legacy: true,
+        createdAt: booking.createdAt || new Date().toISOString(),
+        completedAt: booking.walletCreditedAt || new Date().toISOString(),
+      });
+      creditKeys.add(idempotencyKey);
+    } catch (error) {
+      if (String(error?.code) !== '11000') throw error;
+    }
+  }
 }
 
 async function start() {
@@ -2072,6 +2560,11 @@ async function start() {
     await seedAdmin();
   } catch (e) {
     console.warn('تحذير: فشل بذر الأدمن:', e.message || e);
+  }
+  try {
+    await backfillAdminData();
+  } catch (e) {
+    console.warn('تحذير: فشل ترحيل بيانات الأدمن الآمن:', e.message || e);
   }
 
   server.listen(PORT, () => {

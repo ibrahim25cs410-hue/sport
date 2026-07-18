@@ -4,9 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, formatMoney } from '../lib/api';
 import { EmptyBlock, ErrorBlock, LoadingBlock, Modal, PageHeader, StatusBadge } from '../components/ui';
 import { useLocale } from '../context/LocaleContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function OwnersPage() {
   const { t, locale } = useLocale();
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission('finance.manage');
   const qc = useQueryClient();
   const money = (v) => formatMoney(v, locale);
   const [topUp, setTopUp] = useState(null);
@@ -66,7 +69,8 @@ export default function OwnersPage() {
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1.5">
                       <Link className="btn-ghost !px-2.5 !py-1.5 !text-xs" to={`/owners/${o.id}`}>{t('owners.details')}</Link>
-                      <button type="button" className="btn-primary !px-2.5 !py-1.5 !text-xs" onClick={() => setTopUp(o)}>{t('owners.topUp')}</button>
+                      {canManage ? <button type="button" className="btn-primary !px-2.5 !py-1.5 !text-xs" onClick={() => setTopUp(o)}>{t('owners.topUp')}</button> : null}
+                      {canManage ? (
                       <button
                         type="button"
                         className={o.walletStatus === 'blocked' ? 'btn-primary !px-2.5 !py-1.5 !text-xs' : 'btn-danger !px-2.5 !py-1.5 !text-xs'}
@@ -74,6 +78,7 @@ export default function OwnersPage() {
                       >
                         {o.walletStatus === 'blocked' ? t('owners.enable') : t('owners.disable')}
                       </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

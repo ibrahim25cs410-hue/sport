@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "test:admin": "node tests/admin-backend-smoke.js",
     "build": "npm --prefix web-admin install --no-audit --no-fund && npm --prefix web-admin run build && node scripts/copy-admin.js",
     "build:admin": "npm --prefix web-admin run build && node scripts/copy-admin.js"
   },

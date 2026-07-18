@@ -240,6 +240,11 @@ export const translations = {
       pay_at_venue: 'نقداً في الملعب',
       active: 'نشط',
       blocked: 'موقوف',
+      suspended: 'معلّق الصلاحية',
+      invited: 'مدعو',
+      resolved: 'محلول',
+      open: 'مفتوح',
+      completed: 'مكتمل',
     },
   },
 
@@ -484,6 +489,11 @@ export const translations = {
       pay_at_venue: 'Pay at venue',
       active: 'Active',
       blocked: 'Blocked',
+      suspended: 'Suspended',
+      invited: 'Invited',
+      resolved: 'Resolved',
+      open: 'Open',
+      completed: 'Completed',
     },
   },
 };
