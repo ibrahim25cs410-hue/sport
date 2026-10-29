@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// خطوط العلامة: Cairo للعربية، Inter للإنجليزية.
+/// Typography uses the platform font so authentication remains usable offline.
 abstract final class AppTypography {
-  static bool isArabic(Locale? locale) => locale?.languageCode == 'ar';
-
   static TextTheme textTheme(Brightness brightness, [Locale? locale]) {
     final textColor = AppColors.typography(brightness);
     final base = TextTheme(
@@ -26,13 +23,15 @@ abstract final class AppTypography {
       labelMedium: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textColor),
       labelSmall: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, letterSpacing: 0.3, color: textColor),
     );
-    return isArabic(locale) ? GoogleFonts.cairoTextTheme(base) : GoogleFonts.interTextTheme(base);
+    return base;
   }
 
   static TextStyle appBarTitle(Brightness brightness, [Locale? locale]) {
     final textColor = AppColors.typography(brightness);
-    return isArabic(locale)
-        ? GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700, color: textColor)
-        : GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: textColor);
+    return TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w700,
+      color: textColor,
+    );
   }
 }

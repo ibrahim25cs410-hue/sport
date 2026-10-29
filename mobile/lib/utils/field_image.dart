@@ -7,18 +7,23 @@ import '../theme/design_tokens.dart';
 import '../theme/riyada_theme_extension.dart';
 
 const _maxCachedFieldImages = 32;
-final _fieldImageCache = <int, ImageProvider>{};
+final _fieldImageCache = <(int, int, int), ImageProvider>{};
 
-ImageProvider? fieldImageProvider(Field field) {
+ImageProvider? fieldImageProvider(Field field, {int cacheWidth = 1280}) {
   if (field.image == null || !field.image!.startsWith('data:')) return null;
 
-  final cached = _fieldImageCache[field.id];
+  final key = (field.id, field.image.hashCode, cacheWidth);
+  final cached = _fieldImageCache[key];
   if (cached != null) return cached;
 
   try {
     final bytes = base64Decode(field.image!.split(',').last);
-    final image = ResizeImage.resizeIfNeeded(1280, null, MemoryImage(bytes));
-    _fieldImageCache[field.id] = image;
+    final image = ResizeImage.resizeIfNeeded(
+      cacheWidth,
+      null,
+      MemoryImage(bytes),
+    );
+    _fieldImageCache[key] = image;
     while (_fieldImageCache.length > _maxCachedFieldImages) {
       _fieldImageCache.remove(_fieldImageCache.keys.first);
     }
@@ -28,10 +33,17 @@ ImageProvider? fieldImageProvider(Field field) {
   }
 }
 
-Widget fieldHeroImage(BuildContext context, Field field, {double height = 220}) {
+Widget fieldHeroImage(
+  BuildContext context,
+  Field field, {
+  double height = 220,
+}) {
   final c = context.colors;
   final gradient = DesignTokens.gradientFor(field.id);
-  final provider = fieldImageProvider(field);
+  final media = MediaQuery.of(context);
+  final cacheWidth =
+      (media.size.width * media.devicePixelRatio).ceil().clamp(1, 2048).toInt();
+  final provider = fieldImageProvider(field, cacheWidth: cacheWidth);
   return SizedBox(
     height: height,
     child: Stack(
@@ -42,7 +54,13 @@ Widget fieldHeroImage(BuildContext context, Field field, {double height = 220}) 
         else
           DecoratedBox(
             decoration: BoxDecoration(gradient: gradient),
-            child: Center(child: Icon(Icons.stadium_rounded, size: 80, color: c.onInverse.withValues(alpha: 0.85))),
+            child: Center(
+              child: Icon(
+                Icons.stadium_rounded,
+                size: 80,
+                color: c.onInverse.withValues(alpha: 0.85),
+              ),
+            ),
           ),
         Container(
           decoration: BoxDecoration(

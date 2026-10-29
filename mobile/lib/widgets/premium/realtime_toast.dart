@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/design_tokens.dart';
 import '../../theme/riyada_theme_extension.dart';
@@ -130,12 +129,12 @@ class _RealtimeToastState extends State<_RealtimeToast> with SingleTickerProvide
                           children: [
                             Text(
                               widget.title,
-                              style: GoogleFonts.cairo(fontWeight: FontWeight.w800, fontSize: 14, color: textColor),
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: textColor),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               widget.message,
-                              style: GoogleFonts.cairo(fontSize: 12, color: textColor.withValues(alpha: 0.75), height: 1.3),
+                              style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.75), height: 1.3),
                             ),
                           ],
                         ),

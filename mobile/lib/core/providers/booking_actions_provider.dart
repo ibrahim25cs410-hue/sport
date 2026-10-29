@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/booking/booking_result.dart';
@@ -17,15 +15,36 @@ import '../providers/repository_providers.dart';
 import '../repositories/booking_repository.dart';
 
 /// قائمة الملاعب — عبر المستودع فقط.
-final fieldsListProvider =
-    AsyncNotifierProvider.family<FieldsListNotifier, List<Field>, UserSessionKey>(
-  FieldsListNotifier.new,
-);
+final fieldsListProvider = AsyncNotifierProvider.family<
+  FieldsListNotifier,
+  List<Field>,
+  UserSessionKey
+>(FieldsListNotifier.new);
 
-class FieldsListNotifier extends FamilyAsyncNotifier<List<Field>, UserSessionKey> {
+class FieldRefreshFreshness {
+  FieldRefreshFreshness({
+    this.ttl = const Duration(seconds: 45),
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
+
+  final Duration ttl;
+  final DateTime Function() _clock;
+  DateTime? _lastRefresh;
+
+  bool shouldRefresh({bool force = false}) =>
+      force ||
+      _lastRefresh == null ||
+      _clock().difference(_lastRefresh!) >= ttl;
+
+  void markRefreshed() => _lastRefresh = _clock();
+}
+
+class FieldsListNotifier
+    extends FamilyAsyncNotifier<List<Field>, UserSessionKey> {
   int _page = 1;
   bool _hasMore = true;
   bool _loadingMore = false;
+  final FieldRefreshFreshness _freshness = FieldRefreshFreshness();
 
   bool get hasMore => _hasMore;
   bool get loadingMore => _loadingMore;
@@ -34,9 +53,35 @@ class FieldsListNotifier extends FamilyAsyncNotifier<List<Field>, UserSessionKey
   Future<List<Field>> build(UserSessionKey arg) async {
     _page = 1;
     _hasMore = true;
-    final items = await ref.read(authRepositoryProvider).getFields(page: 1, limit: defaultPageSize);
+    final items = await ref
+        .read(authRepositoryProvider)
+        .getFields(page: 1, limit: defaultPageSize);
     _hasMore = inferHasMore(items.length, defaultPageSize);
+    _freshness.markRefreshed();
     return items;
+  }
+
+  Future<void> refreshIfStale() => _refresh(force: false);
+
+  Future<void> forceRefresh() => _refresh(force: true);
+
+  Future<void> _refresh({required bool force}) async {
+    if (!_freshness.shouldRefresh(force: force)) return;
+    final previous = state.valueOrNull;
+    try {
+      _page = 1;
+      final items = await ref
+          .read(authRepositoryProvider)
+          .getFields(page: 1, limit: defaultPageSize);
+      _hasMore = inferHasMore(items.length, defaultPageSize);
+      _freshness.markRefreshed();
+      state = AsyncData(items);
+    } catch (error, stackTrace) {
+      state =
+          previous == null
+              ? AsyncError(error, stackTrace)
+              : AsyncData(previous);
+    }
   }
 
   Future<void> loadMore() async {
@@ -45,7 +90,9 @@ class FieldsListNotifier extends FamilyAsyncNotifier<List<Field>, UserSessionKey
     final current = state.valueOrNull ?? [];
     try {
       final nextPage = _page + 1;
-      final more = await ref.read(authRepositoryProvider).getFields(page: nextPage, limit: defaultPageSize);
+      final more = await ref
+          .read(authRepositoryProvider)
+          .getFields(page: nextPage, limit: defaultPageSize);
       _page = nextPage;
       _hasMore = inferHasMore(more.length, defaultPageSize);
       state = AsyncData([...current, ...more]);
@@ -56,10 +103,11 @@ class FieldsListNotifier extends FamilyAsyncNotifier<List<Field>, UserSessionKey
 }
 
 /// جدول ملعب.
-final fieldScheduleProvider =
-    AsyncNotifierProvider.family<FieldScheduleNotifier, FieldSchedule, FieldScheduleKey>(
-  FieldScheduleNotifier.new,
-);
+final fieldScheduleProvider = AsyncNotifierProvider.family<
+  FieldScheduleNotifier,
+  FieldSchedule,
+  FieldScheduleKey
+>(FieldScheduleNotifier.new);
 
 class FieldScheduleKey {
   const FieldScheduleKey({required this.session, required this.fieldId});
@@ -68,16 +116,21 @@ class FieldScheduleKey {
 
   @override
   bool operator ==(Object other) =>
-      other is FieldScheduleKey && other.session == session && other.fieldId == fieldId;
+      other is FieldScheduleKey &&
+      other.session == session &&
+      other.fieldId == fieldId;
 
   @override
   int get hashCode => Object.hash(session, fieldId);
 }
 
-class FieldScheduleNotifier extends FamilyAsyncNotifier<FieldSchedule, FieldScheduleKey> {
+class FieldScheduleNotifier
+    extends FamilyAsyncNotifier<FieldSchedule, FieldScheduleKey> {
   @override
   Future<FieldSchedule> build(FieldScheduleKey arg) async {
-    return ref.read(bookingRepositoryProvider(arg.session.client)).getSchedule(arg.fieldId);
+    return ref
+        .read(bookingRepositoryProvider(arg.session.client))
+        .getSchedule(arg.fieldId);
   }
 
   Future<void> reload() async {
@@ -97,7 +150,8 @@ class BookingActions {
   final Ref _ref;
   final UserSessionKey _session;
 
-  BookingRepository get _repo => _ref.read(bookingRepositoryProvider(_session.client));
+  BookingRepository get _repo =>
+      _ref.read(bookingRepositoryProvider(_session.client));
 
   Future<BookingResult<CreateBookingResult>> createBooking({
     required int fieldId,
@@ -132,10 +186,15 @@ class BookingActions {
       paymentStatus: paymentMethod == 'cash' ? 'pay_at_venue' : 'unpaid',
       paymentMethod: paymentMethod,
       remainingHours: hours.toDouble(),
-      canCancel: BookingPolicy.canCancel(startTime: startTime, status: 'pending'),
+      canCancel: BookingPolicy.canCancel(
+        startTime: startTime,
+        status: 'pending',
+      ),
     );
 
-    _ref.read(userBookingsProvider(_session).notifier).optimisticPrepend(optimistic);
+    _ref
+        .read(userBookingsProvider(_session).notifier)
+        .optimisticPrepend(optimistic);
 
     final result = await _repo.createPendingBooking(
       fieldId: fieldId,
@@ -150,7 +209,9 @@ class BookingActions {
       final created = result.valueOrNull!;
       if (created.id <= 0) {
         _ref.invalidate(userBookingsProvider(_session));
-        return const BookingErr(BookingFailure(code: BookingFailureCode.unknown));
+        return const BookingErr(
+          BookingFailure(code: BookingFailureCode.unknown),
+        );
       }
       final confirmed = Booking(
         id: created.id,
@@ -166,10 +227,14 @@ class BookingActions {
         paymentStatus: created.paymentStatus,
         paymentMethod: created.paymentMethod,
         remainingHours: hours.toDouble(),
-        canCancel: BookingPolicy.canCancel(startTime: startTime, status: 'pending'),
+        canCancel: BookingPolicy.canCancel(
+          startTime: startTime,
+          status: 'pending',
+        ),
       );
-      _ref.read(userBookingsProvider(_session).notifier).confirmCreated(confirmed);
-      unawaited(_ref.read(userBookingsProvider(_session).notifier).refreshPreservingData());
+      _ref
+          .read(userBookingsProvider(_session).notifier)
+          .confirmCreated(confirmed);
       _ref.invalidate(userStatsProvider(_session));
     } else {
       // أزل الحجز المؤقت عند الفشل
@@ -179,8 +244,12 @@ class BookingActions {
     return result;
   }
 
-  Future<BookingResult<CancelBookingResult>> cancelBooking(Booking booking) async {
-    _ref.read(userBookingsProvider(_session).notifier).optimisticUpdateStatus(booking.id, 'cancelled');
+  Future<BookingResult<CancelBookingResult>> cancelBooking(
+    Booking booking,
+  ) async {
+    _ref
+        .read(userBookingsProvider(_session).notifier)
+        .optimisticUpdateStatus(booking.id, 'cancelled');
 
     final result = await _repo.cancelIfAllowed(booking);
 
@@ -194,7 +263,9 @@ class BookingActions {
   }
 
   Future<void> approveBooking(int bookingId, {String? referenceCode}) async {
-    _ref.read(ownerDashboardProvider(_session).notifier).optimisticUpdateBookingStatus(bookingId, 'approved');
+    _ref
+        .read(ownerDashboardProvider(_session).notifier)
+        .optimisticUpdateBookingStatus(bookingId, 'approved');
     try {
       await _repo.approveBooking(bookingId, referenceCode: referenceCode);
       _ref.invalidate(ownerDashboardProvider(_session));
@@ -205,7 +276,9 @@ class BookingActions {
   }
 
   Future<void> rejectBooking(int bookingId, {String? referenceCode}) async {
-    _ref.read(ownerDashboardProvider(_session).notifier).optimisticUpdateBookingStatus(bookingId, 'rejected');
+    _ref
+        .read(ownerDashboardProvider(_session).notifier)
+        .optimisticUpdateBookingStatus(bookingId, 'rejected');
     try {
       await _repo.rejectBooking(bookingId, referenceCode: referenceCode);
       _ref.invalidate(ownerDashboardProvider(_session));

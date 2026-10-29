@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +28,7 @@ class _AddFieldScreenState extends ConsumerState<AddFieldScreen> {
   final _phone = TextEditingController();
   final _price = TextEditingController();
   String? _imageBase64;
+  Uint8List? _imagePreviewBytes;
 
   @override
   void dispose() {
@@ -38,10 +40,17 @@ class _AddFieldScreenState extends ConsumerState<AddFieldScreen> {
   }
 
   Future<void> _pickImage() async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 75);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      imageQuality: 75,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
-    setState(() => _imageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}');
+    setState(() {
+      _imagePreviewBytes = bytes;
+      _imageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    });
   }
 
   Future<void> _submit() async {
@@ -53,7 +62,9 @@ class _AddFieldScreenState extends ConsumerState<AddFieldScreen> {
       return;
     }
 
-    final ok = await ref.read(authProvider.notifier).createField(
+    final ok = await ref
+        .read(authProvider.notifier)
+        .createField(
           name: _name.text.trim(),
           address: _address.text.trim(),
           phone: _phone.text.trim(),
@@ -67,9 +78,9 @@ class _AddFieldScreenState extends ConsumerState<AddFieldScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.fieldAddedSuccess)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.fieldAddedSuccess)));
     Navigator.of(context).pop(true);
   }
 
@@ -93,25 +104,36 @@ class _AddFieldScreenState extends ConsumerState<AddFieldScreen> {
                   color: context.colors.surfaceVariant,
                   borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
                 ),
-                child: _imageBase64 != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(DesignTokens.radiusMd),
-                        child: Image.memory(
-                          base64Decode(_imageBase64!.split(',').last),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
+                child:
+                    _imagePreviewBytes != null
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            DesignTokens.radiusMd,
+                          ),
+                          child: Image.memory(
+                            _imagePreviewBytes!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            cacheWidth:
+                                (MediaQuery.sizeOf(context).width *
+                                        MediaQuery.devicePixelRatioOf(context))
+                                    .ceil(),
+                          ),
+                        )
+                        : Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.add_a_photo_outlined,
+                                size: 36,
+                                color: context.accentColor,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(l10n.addFieldPhoto),
+                            ],
+                          ),
                         ),
-                      )
-                    : Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined, size: 36, color: context.accentColor),
-                            const SizedBox(height: 8),
-                            Text(l10n.addFieldPhoto),
-                          ],
-                        ),
-                      ),
               ),
             ),
             const SizedBox(height: DesignTokens.spaceLg),
@@ -127,7 +149,11 @@ class _AddFieldScreenState extends ConsumerState<AddFieldScreen> {
               validator: (v) => validateRequired(v, label: l10n.addressLabel),
             ),
             const SizedBox(height: DesignTokens.spaceSm),
-            PhoneFormField(controller: _phone, label: l10n.fieldPhoneLabel, validator: validateIraqiPhone),
+            PhoneFormField(
+              controller: _phone,
+              label: l10n.fieldPhoneLabel,
+              validator: validateIraqiPhone,
+            ),
             const SizedBox(height: DesignTokens.spaceSm),
             TextFormField(
               controller: _price,

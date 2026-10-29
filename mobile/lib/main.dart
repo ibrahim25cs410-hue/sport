@@ -28,35 +28,43 @@ import 'widgets/ambient_green_background.dart';
 import 'widgets/theme_sync.dart';
 
 Future<void> main() async {
-  await runZonedGuarded(() async {
-    await CrashReporting.initialize(() async {
-      AppBootstrapResult boot;
-      try {
-        boot = await AppBootstrap.run();
-      } catch (error, stack) {
-        await CrashReporting.capture(error, stack);
-        runApp(const _StartupFailureApp());
-        return;
-      }
+  await runZonedGuarded(
+    () async {
+      await CrashReporting.initialize(() async {
+        AppBootstrapResult boot;
+        try {
+          boot = AppBootstrap.create();
+        } catch (error, stack) {
+          await CrashReporting.capture(error, stack);
+          runApp(const _StartupFailureApp());
+          return;
+        }
 
-      ErrorWidget.builder = (details) => const _CrashFallback();
-      runApp(
-        UncontrolledProviderScope(
-          container: boot.container,
-          child: legacy.MultiProvider(
-            providers: [
-              legacy.ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
-              legacy.ChangeNotifierProvider.value(value: boot.themeProvider),
-              legacy.ChangeNotifierProvider.value(value: boot.localeProvider),
-            ],
-            child: const RiyadaApp(),
+        ErrorWidget.builder = (details) => const _CrashFallback();
+        runApp(
+          UncontrolledProviderScope(
+            container: boot.container,
+            child: legacy.MultiProvider(
+              providers: [
+                legacy.ChangeNotifierProvider(
+                  create: (_) => ConnectivityProvider(),
+                ),
+                legacy.ChangeNotifierProvider.value(value: boot.themeProvider),
+                legacy.ChangeNotifierProvider.value(value: boot.localeProvider),
+              ],
+              child: const RiyadaApp(),
+            ),
           ),
-        ),
-      );
-    });
-  }, (error, stack) {
-    unawaited(CrashReporting.capture(error, stack));
-  });
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(AppBootstrap.initializeDeferred(boot));
+        });
+      });
+    },
+    (error, stack) {
+      unawaited(CrashReporting.capture(error, stack));
+    },
+  );
 }
 
 class _StartupFailureApp extends StatelessWidget {
@@ -73,17 +81,18 @@ class _StartupFailureApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                AppLocalizations.of(context).unexpectedError,
-                textAlign: TextAlign.center,
+        builder:
+            (context) => Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    AppLocalizations.of(context).unexpectedError,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
       ),
     );
   }
@@ -123,7 +132,10 @@ class RiyadaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(servicesReadyProvider);
     ref.watch(authInterceptorProvider);
-    ref.listen(pushNotificationProvider.select((s) => s.generation), (prev, next) {
+    ref.listen(pushNotificationProvider.select((s) => s.generation), (
+      prev,
+      next,
+    ) {
       if (prev == next) return;
       final key = watchSessionKey(ref);
       if (key != null) ref.invalidate(userNotificationsProvider(key));
@@ -153,17 +165,26 @@ class RiyadaApp extends ConsumerWidget {
       builder: (context, child) {
         final media = MediaQuery.of(context);
         final accessibleMedia = media.copyWith(
-          textScaler: media.textScaler.clamp(minScaleFactor: 0.8, maxScaleFactor: 2.0),
+          textScaler: media.textScaler.clamp(
+            minScaleFactor: 0.8,
+            maxScaleFactor: 2.0,
+          ),
         );
         final base = Theme.of(context);
         final isDark = base.brightness == Brightness.dark;
         final textColor = AppColors.typography(base.brightness);
         final branded = base.copyWith(
-          scaffoldBackgroundColor: isDark ? RiyadaBrandColors.scaffoldNavy : base.scaffoldBackgroundColor,
+          scaffoldBackgroundColor:
+              isDark
+                  ? RiyadaBrandColors.scaffoldNavy
+                  : base.scaffoldBackgroundColor,
           colorScheme: base.colorScheme.copyWith(
             primary: RiyadaBrandColors.primaryTeal,
             secondary: RiyadaBrandColors.secondaryMint,
-            surface: isDark ? RiyadaBrandColors.surfaceSlate : base.colorScheme.surface,
+            surface:
+                isDark
+                    ? RiyadaBrandColors.surfaceSlate
+                    : base.colorScheme.surface,
             onSurface: textColor,
             onSurfaceVariant: textColor,
             onPrimary: RiyadaBrandColors.onPrimary,

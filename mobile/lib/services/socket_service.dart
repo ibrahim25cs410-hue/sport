@@ -13,36 +13,58 @@ typedef NotificationHandler = void Function(AppNotification notification);
 
 /// Socket.io client — notifications, booking updates, and slot sync.
 class SocketService {
-  SocketService({TokenStorage? tokenStorage}) : _tokens = tokenStorage ?? TokenStorage();
+  SocketService({TokenStorage? tokenStorage})
+    : _tokens = tokenStorage ?? TokenStorage();
 
   final TokenStorage _tokens;
   io.Socket? _socket;
+  Future<void>? _connectInFlight;
   int? _joinedFieldId;
   int? _joinedStadiumId;
 
   final _notificationController = StreamController<AppNotification>.broadcast();
-  final _bookingUpdatedController = StreamController<BookingUpdatedEvent>.broadcast();
-  final _slotSelectionController = StreamController<SlotSelectionEvent>.broadcast();
+  final _bookingUpdatedController =
+      StreamController<BookingUpdatedEvent>.broadcast();
+  final _slotSelectionController =
+      StreamController<SlotSelectionEvent>.broadcast();
   final _slotReleaseController = StreamController<SlotReleaseEvent>.broadcast();
-  final _statusController = StreamController<RealtimeConnectionStatus>.broadcast();
+  final _statusController =
+      StreamController<RealtimeConnectionStatus>.broadcast();
 
   RealtimeConnectionStatus _status = RealtimeConnectionStatus.disconnected;
 
   bool get isConnected => _socket?.connected ?? false;
   RealtimeConnectionStatus get status => _status;
 
-  Stream<AppNotification> get notificationStream => _notificationController.stream;
-  Stream<BookingUpdatedEvent> get bookingUpdatedStream => _bookingUpdatedController.stream;
-  Stream<SlotSelectionEvent> get slotSelectionStream => _slotSelectionController.stream;
-  Stream<SlotReleaseEvent> get slotReleaseStream => _slotReleaseController.stream;
-  Stream<RealtimeConnectionStatus> get connectionStatusStream => _statusController.stream;
+  Stream<AppNotification> get notificationStream =>
+      _notificationController.stream;
+  Stream<BookingUpdatedEvent> get bookingUpdatedStream =>
+      _bookingUpdatedController.stream;
+  Stream<SlotSelectionEvent> get slotSelectionStream =>
+      _slotSelectionController.stream;
+  Stream<SlotReleaseEvent> get slotReleaseStream =>
+      _slotReleaseController.stream;
+  Stream<RealtimeConnectionStatus> get connectionStatusStream =>
+      _statusController.stream;
 
   void _setStatus(RealtimeConnectionStatus next) {
     _status = next;
     if (!_statusController.isClosed) _statusController.add(next);
   }
 
-  Future<void> connect() async {
+  Future<void> connect() {
+    final inFlight = _connectInFlight;
+    if (inFlight != null) return inFlight;
+
+    late final Future<void> guarded;
+    guarded = _connect().whenComplete(() {
+      if (identical(_connectInFlight, guarded)) _connectInFlight = null;
+    });
+    _connectInFlight = guarded;
+    return guarded;
+  }
+
+  Future<void> _connect() async {
     final token = await _tokens.read();
     if (token == null || token.isEmpty) {
       apiLog('SocketService.connect skipped — no token');
@@ -83,8 +105,12 @@ class SocketService {
       _setStatus(RealtimeConnectionStatus.connected);
       _rejoinRooms();
     });
-    socket.onReconnectAttempt((_) => _setStatus(RealtimeConnectionStatus.reconnecting));
-    socket.onReconnectError((_) => _setStatus(RealtimeConnectionStatus.reconnecting));
+    socket.onReconnectAttempt(
+      (_) => _setStatus(RealtimeConnectionStatus.reconnecting),
+    );
+    socket.onReconnectError(
+      (_) => _setStatus(RealtimeConnectionStatus.reconnecting),
+    );
 
     socket.on('connected', (data) => apiLog('Socket handshake', data));
     socket.on('notification', _onNotification);
@@ -132,24 +158,27 @@ class SocketService {
   }
 
   void _onNotification(dynamic payload) => _parseMap(payload, (map) {
-        _notificationController.add(AppNotification.fromJson(map));
-      });
+    _notificationController.add(AppNotification.fromJson(map));
+  });
 
   void _onBookingUpdated(dynamic payload) => _parseMap(payload, (map) {
-        final event = BookingUpdatedEvent.fromJson(map);
-        apiLog('Socket bookingUpdated', '${event.bookingId} ${event.status}');
-        _bookingUpdatedController.add(event);
-      });
+    final event = BookingUpdatedEvent.fromJson(map);
+    apiLog('Socket bookingUpdated', '${event.bookingId} ${event.status}');
+    _bookingUpdatedController.add(event);
+  });
 
   void _onSlotSelection(dynamic payload) => _parseMap(payload, (map) {
-        _slotSelectionController.add(SlotSelectionEvent.fromJson(map));
-      });
+    _slotSelectionController.add(SlotSelectionEvent.fromJson(map));
+  });
 
   void _onSlotRelease(dynamic payload) => _parseMap(payload, (map) {
-        _slotReleaseController.add(SlotReleaseEvent.fromJson(map));
-      });
+    _slotReleaseController.add(SlotReleaseEvent.fromJson(map));
+  });
 
-  void _parseMap(dynamic payload, void Function(Map<String, dynamic> map) onMap) {
+  void _parseMap(
+    dynamic payload,
+    void Function(Map<String, dynamic> map) onMap,
+  ) {
     if (payload is! Map) return;
     try {
       onMap(Map<String, dynamic>.from(payload));

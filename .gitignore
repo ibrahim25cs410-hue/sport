@@ -8,6 +8,7 @@ build/
 .env
 .env.local
 .env.*.local
+tmp_login.json
 
 # OS / IDE
 .DS_Store
@@ -34,3 +35,6 @@ SportsApp/**/obj/
 # Misc
 sport/
 *.db
+
+# Local media review exports
+_video_review/

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,51 +33,19 @@ class AppBootstrapResult {
   final LocaleProvider localeProvider;
 }
 
-/// Ordered, fault-tolerant app startup. Never throws — logs and continues.
+/// Splits startup into synchronous app creation and fault-tolerant deferred work.
 abstract final class AppBootstrap {
-  static Future<AppBootstrapResult> run() async {
+  /// Creates everything needed by [runApp] without waiting on I/O.
+  static AppBootstrapResult create() {
     WidgetsFlutterBinding.ensureInitialized();
-
-    // إيقاظ خادم Render مبكراً (بدون انتظار) لتقليل تأخير "الإقلاع البارد".
-    _warmUpServer();
-
-    await _safe('Firebase', () async {
-      await FirebaseAppService.initialize();
-    });
-    await _safe('FCM', FcmService.initialize);
-    await _safe('Arabic date formatting', () => initializeDateFormatting('ar', null));
-    await _safe('English date formatting', () => initializeDateFormatting('en', null));
 
     final themeProvider = ThemeProvider();
     final localeProvider = LocaleProvider();
-    await Future.wait<void>([
-      _safe('Theme', themeProvider.load),
-      _safe('Locale', localeProvider.load),
-      _safe('Local notifications', LocalNotificationService.init),
-    ]);
-
     final tokenStorage = TokenStorage();
-    final onboardingComplete = await _safeValue(
-      'Onboarding',
-      OnboardingService().isComplete,
-      fallback: false,
-    );
     final container = ProviderContainer(
       overrides: [tokenStorageProvider.overrideWithValue(tokenStorage)],
     );
-    container.read(onboardingCompleteProvider.notifier).state = onboardingComplete;
-
     container.read(globalLoadingProvider.notifier).reset();
-
-    await container.read(authProvider.notifier).bootstrap();
-    final auth = container.read(authProvider);
-    apiLog(
-      'Auth bootstrap',
-      auth.isLoggedIn ? 'session active → /home' : 'no session → /login',
-    );
-
-    ServiceBootstrap.initialize(container);
-    NotificationBootstrap.wire(container);
 
     return AppBootstrapResult(
       container: container,
@@ -84,15 +54,78 @@ abstract final class AppBootstrap {
     );
   }
 
+  /// Starts local restoration and remote services after Flutter paints once.
+  static Future<void> initializeDeferred(AppBootstrapResult boot) async {
+    _warmUpServer();
+
+    ServiceBootstrap.initialize(boot.container);
+    NotificationBootstrap.wire(boot.container);
+
+    final authBootstrap =
+        boot.container.read(authProvider.notifier).bootstrap();
+    unawaited(_initializePushNotifications(boot.container, authBootstrap));
+    unawaited(_safe('Local notifications', LocalNotificationService.init));
+
+    await Future.wait<void>([
+      _safe('Theme', boot.themeProvider.load),
+      _safe('Locale', boot.localeProvider.load),
+      _safe(
+        'Arabic date formatting',
+        () => initializeDateFormatting('ar', null),
+      ),
+      _safe(
+        'English date formatting',
+        () => initializeDateFormatting('en', null),
+      ),
+      _loadOnboarding(boot.container),
+      authBootstrap,
+    ]);
+
+    final auth = boot.container.read(authProvider);
+    apiLog(
+      'Auth bootstrap',
+      auth.isLoggedIn ? 'session active → /home' : 'no session → /login',
+    );
+  }
+
+  static Future<void> _initializePushNotifications(
+    ProviderContainer container,
+    Future<void> authBootstrap,
+  ) async {
+    await _safe('Firebase', () async {
+      await FirebaseAppService.initialize();
+    });
+    await _safe('FCM', FcmService.initialize);
+    await authBootstrap;
+    if (container.read(authProvider).isLoggedIn) {
+      await _safe(
+        'FCM token sync',
+        () =>
+            FcmService.syncTokenWithServer(container.read(apiServiceProvider)),
+      );
+    }
+  }
+
+  static Future<void> _loadOnboarding(ProviderContainer container) async {
+    final complete = await _safeValue(
+      'Onboarding',
+      OnboardingService().isComplete,
+      fallback: true,
+    );
+    container.read(onboardingCompleteProvider.notifier).state = complete;
+  }
+
   /// نداء "إيقاظ" غير محجوب — يُطلق طلباً خفيفاً كي يبدأ خادم Render بالإقلاع
   /// بينما يُكمل التطبيق تهيئته، فتصبح أول عملية للمستخدم أسرع.
   static void _warmUpServer() {
     () async {
       try {
-        final dio = Dio(BaseOptions(
-          connectTimeout: const Duration(seconds: 8),
-          receiveTimeout: const Duration(seconds: 8),
-        ));
+        final dio = Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 8),
+            receiveTimeout: const Duration(seconds: 8),
+          ),
+        );
         await dio.get<dynamic>('${ApiConfig.baseUrl}/health');
       } catch (_) {
         // متوقع أثناء الإقلاع البارد — الغرض مجرد إيقاظ الخادم.
@@ -100,7 +133,10 @@ abstract final class AppBootstrap {
     }();
   }
 
-  static Future<void> _safe(String label, Future<void> Function() action) async {
+  static Future<void> _safe(
+    String label,
+    Future<void> Function() action,
+  ) async {
     try {
       await action();
     } catch (e, st) {

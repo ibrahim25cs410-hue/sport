@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
@@ -15,7 +13,9 @@ class AmbientGreenBackground extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DecoratedBox(
-      decoration: BoxDecoration(gradient: DesignTokens.ambientBackgroundGradient(isDark)),
+      decoration: BoxDecoration(
+        gradient: DesignTokens.ambientBackgroundGradient(isDark),
+      ),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -23,19 +23,25 @@ class AmbientGreenBackground extends StatelessWidget {
             top: -72,
             right: -48,
             size: 260,
-            color: DesignTokens.primaryTeal.withValues(alpha: isDark ? 0.20 : 0.14),
+            color: DesignTokens.primaryTeal.withValues(
+              alpha: isDark ? 0.20 : 0.14,
+            ),
           ),
           _GlowBlob(
             bottom: -96,
             left: -64,
             size: 300,
-            color: DesignTokens.secondaryMint.withValues(alpha: isDark ? 0.12 : 0.10),
+            color: DesignTokens.secondaryMint.withValues(
+              alpha: isDark ? 0.12 : 0.10,
+            ),
           ),
           _GlowBlob(
             top: MediaQuery.sizeOf(context).height * 0.35,
             left: -80,
             size: 200,
-            color: DesignTokens.primaryTeal.withValues(alpha: isDark ? 0.07 : 0.06),
+            color: DesignTokens.primaryTeal.withValues(
+              alpha: isDark ? 0.07 : 0.06,
+            ),
           ),
           child,
         ],
@@ -70,14 +76,16 @@ class _GlowBlob extends StatelessWidget {
       bottom: bottom,
       width: size,
       height: size,
-      child: ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: 48, sigmaY: 48),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [color, color.withValues(alpha: 0)],
-            ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color,
+              color.withValues(alpha: color.a * 0.45),
+              color.withValues(alpha: 0),
+            ],
+            stops: const [0, 0.42, 1],
           ),
         ),
       ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:line_icons/line_icons.dart';
 import '../../theme/design_tokens.dart';
 import '../../theme/riyada_theme_extension.dart';
@@ -254,7 +253,7 @@ class _ImagePanel extends StatelessWidget {
                   children: [
                     Text(
                       rating!.toStringAsFixed(1),
-                      style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w800, color: onAccent),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: onAccent),
                     ),
                     const SizedBox(width: 3),
                     Icon(LineIcons.starAlt, size: 11, color: onAccent),
@@ -276,7 +275,7 @@ class _ImagePanel extends StatelessWidget {
                 child: Text(
                   badgeLabel!,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: onAccent),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: onAccent),
                 ),
               ),
             ),
@@ -304,7 +303,7 @@ class _FeatureChip extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           amenity.label,
-          style: GoogleFonts.cairo(fontSize: size, color: textColor, height: 1.0),
+          style: TextStyle(fontSize: size, color: textColor, height: 1.0),
         ),
       ],
     );
@@ -331,7 +330,7 @@ class _BookChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Text(
             label,
-            style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w800, color: onAccent),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: onAccent),
           ),
         ),
       ),

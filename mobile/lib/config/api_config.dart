@@ -25,7 +25,13 @@ abstract final class ApiConfig {
 
   /// يُحمَّل من SharedPreferences عند بدء التطبيق (تطوير فقط).
   static Future<void> load() async {
-    if (kReleaseMode) return;
+    // A build-time endpoint is authoritative, even in debug APKs distributed
+    // for testing. Never let an old localhost preference override it.
+    if (kReleaseMode || baseUrlOverride.isNotEmpty || hostOverride.isNotEmpty) {
+      _runtimeHost = null;
+      _runtimeBaseUrl = null;
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     _runtimeHost = prefs.getString(_hostKey);
     _runtimeBaseUrl = prefs.getString(_baseUrlKey);
@@ -67,24 +73,22 @@ abstract final class ApiConfig {
       (_runtimeBaseUrl?.isNotEmpty == true) ||
       (_runtimeHost?.isNotEmpty == true);
 
-  /// الرابط الفعّال — تفضيلات المستخدم (تطوير) ثم dart-define.
+  /// الرابط الفعّال — dart-define أولاً، ثم تفضيلات التطوير فقط عند غيابه.
   static String get baseUrl {
-    if (!kReleaseMode) {
-      if (_runtimeBaseUrl?.isNotEmpty == true) {
-        return normalizeBaseUrl(_runtimeBaseUrl!);
-      }
-      final host = hostOverride.isNotEmpty
-          ? hostOverride
-          : (_runtimeHost?.isNotEmpty == true ? _runtimeHost : null);
-      if (host != null) {
-        return '$scheme://$host:$port/api';
-      }
-    }
     if (baseUrlOverride.isNotEmpty) {
       return normalizeBaseUrl(baseUrlOverride);
     }
     if (hostOverride.isNotEmpty) {
       return normalizeBaseUrl('$scheme://$hostOverride:$port/api');
+    }
+    if (!kReleaseMode) {
+      if (_runtimeBaseUrl?.isNotEmpty == true) {
+        return normalizeBaseUrl(_runtimeBaseUrl!);
+      }
+      final host = _runtimeHost?.isNotEmpty == true ? _runtimeHost : null;
+      if (host != null) {
+        return '$scheme://$host:$port/api';
+      }
     }
     if (kReleaseMode) {
       return normalizeBaseUrl('https://sports-x7v7.onrender.com/api');

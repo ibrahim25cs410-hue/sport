@@ -19,12 +19,13 @@ import '../utils/error_messages.dart';
 import '../providers/socket_provider.dart';
 import 'service_providers.dart';
 
-export 'service_providers.dart' show
-    apiServiceProvider,
-    apiClientProvider,
-    authServiceProvider,
-    tokenStorageProvider,
-    socketServiceProvider;
+export 'service_providers.dart'
+    show
+        apiServiceProvider,
+        apiClientProvider,
+        authServiceProvider,
+        tokenStorageProvider,
+        socketServiceProvider;
 
 /// حالة الجلسة — مصدر واحد للمصادقة عبر Riverpod.
 class AuthState {
@@ -63,18 +64,19 @@ class AuthState {
     bool clearUser = false,
     bool clearField = false,
     bool clearError = false,
-  }) =>
-      AuthState(
-        user: clearUser ? null : (user ?? this.user),
-        ownerField: clearField ? null : (ownerField ?? this.ownerField),
-        loading: loading ?? this.loading,
-        bootstrapping: bootstrapping ?? this.bootstrapping,
-        hasStoredToken: hasStoredToken ?? this.hasStoredToken,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => AuthState(
+    user: clearUser ? null : (user ?? this.user),
+    ownerField: clearField ? null : (ownerField ?? this.ownerField),
+    loading: loading ?? this.loading,
+    bootstrapping: bootstrapping ?? this.bootstrapping,
+    hasStoredToken: hasStoredToken ?? this.hasStoredToken,
+    error: clearError ? null : (error ?? this.error),
+  );
 }
 
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);
 
 /// Wires the Dio 401 handler to [AuthService.logout] and session cleanup.
 final authInterceptorProvider = Provider<void>((ref) {
@@ -96,7 +98,7 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthRepository get _repo => ref.read(authRepositoryProvider);
 
   @override
-  AuthState build() => const AuthState();
+  AuthState build() => const AuthState(bootstrapping: true);
 
   /// Restores the session once at app launch. Token is only cleared on HTTP 401.
   Future<void> bootstrap() async {
@@ -114,16 +116,23 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
+      // Route from the cached identity first; remote validation may be slow or
+      // unavailable and must not discard a still-usable offline session.
+      await _restoreCachedSession();
+
       try {
         final session = await _repo.bootstrapFromToken();
         state = state.copyWith(user: session.user, ownerField: session.field);
         await SessionStorage.save(session.user, session.field);
-        await _syncPushTokenSafely();
       } on DioException catch (e) {
         if (AuthInterceptor.isStrictUnauthorized(e)) {
           await authService.logout();
           await SessionStorage.clear();
-          state = state.copyWith(clearUser: true, clearField: true, hasStoredToken: false);
+          state = state.copyWith(
+            clearUser: true,
+            clearField: true,
+            hasStoredToken: false,
+          );
         } else {
           await _restoreCachedSession();
         }
@@ -140,7 +149,11 @@ class AuthNotifier extends Notifier<AuthState> {
     } catch (e, st) {
       apiLogError('auth bootstrap failed safely', e, st);
       await SessionStorage.clear();
-      state = state.copyWith(clearUser: true, clearField: true, hasStoredToken: false);
+      state = state.copyWith(
+        clearUser: true,
+        clearField: true,
+        hasStoredToken: false,
+      );
     } finally {
       state = state.copyWith(bootstrapping: false);
     }
@@ -166,43 +179,64 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith();
   }
 
-  Future<bool> login(String email, String password, {String? expectedRole}) => _run(() async {
-        final r = await _repo.login(email, password, expectedRole: expectedRole);
-        final role = expectedRole?.trim().toLowerCase();
-        if (role == 'owner' && !r.user.isOwner && !r.user.isAdmin) {
-          await ref.read(authServiceProvider).logout();
-          throw Exception('هذا حساب مستخدم — استخدم تسجيل دخول المستخدم');
-        }
-        if (role == 'user' && r.user.isOwner) {
-          await ref.read(authServiceProvider).logout();
-          throw Exception('هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب');
-        }
-        state = state.copyWith(user: r.user, ownerField: r.field, hasStoredToken: true);
-        await SessionStorage.save(r.user, r.field);
-        await _syncPushTokenSafely();
-        await _connectSocketSafely();
-      });
+  Future<bool> login(
+    String email,
+    String password, {
+    String? expectedRole,
+  }) => _run(() async {
+    final r = await _repo.login(email, password, expectedRole: expectedRole);
+    final role = expectedRole?.trim().toLowerCase();
+    if (role == 'owner' && !r.user.isOwner && !r.user.isAdmin) {
+      await ref.read(authServiceProvider).logout();
+      throw Exception('هذا حساب مستخدم — استخدم تسجيل دخول المستخدم');
+    }
+    if (role == 'user' && r.user.isOwner) {
+      await ref.read(authServiceProvider).logout();
+      throw Exception('هذا حساب صاحب ملعب — استخدم تسجيل دخول أصحاب الملاعب');
+    }
+    state = state.copyWith(
+      user: r.user,
+      ownerField: r.field,
+      hasStoredToken: true,
+    );
+    await SessionStorage.save(r.user, r.field);
+    await _syncPushTokenSafely();
+    await _connectSocketSafely();
+  });
 
   Future<bool> registerUser(Map<String, dynamic> body) => _run(() async {
-        final r = await _repo.registerUser(body);
-        state = state.copyWith(user: r.user, clearField: true, hasStoredToken: true);
-        await SessionStorage.save(r.user, null);
-        await _syncPushTokenSafely();
-        await _connectSocketSafely();
-      });
+    final r = await _repo.registerUser(body);
+    state = state.copyWith(
+      user: r.user,
+      clearField: true,
+      hasStoredToken: true,
+    );
+    await SessionStorage.save(r.user, null);
+    await _syncPushTokenSafely();
+    await _connectSocketSafely();
+  });
 
   Future<bool> registerOwner(Map<String, dynamic> body) => _run(() async {
-        final r = await _repo.registerOwner(body);
-        state = state.copyWith(user: r.user, ownerField: r.field, hasStoredToken: true);
-        await SessionStorage.save(r.user, r.field);
-        await _syncPushTokenSafely();
-        await _connectSocketSafely();
-      });
+    final r = await _repo.registerOwner(body);
+    state = state.copyWith(
+      user: r.user,
+      ownerField: r.field,
+      hasStoredToken: true,
+    );
+    await SessionStorage.save(r.user, r.field);
+    await _syncPushTokenSafely();
+    await _connectSocketSafely();
+  });
 
   /// Clears in-memory session state without touching the stored JWT.
   Future<void> clearSession() async {
     await SessionStorage.clear();
-    state = state.copyWith(clearUser: true, clearField: true, clearError: true, hasStoredToken: false);
+    state = state.copyWith(
+      clearUser: true,
+      clearField: true,
+      clearError: true,
+      hasStoredToken: false,
+    );
   }
 
   Future<void> logout() async {
@@ -216,17 +250,16 @@ class AuthNotifier extends Notifier<AuthState> {
     required String phone,
     String? image,
     String? password,
-  }) =>
-      _run(() async {
-        final updated = await _repo.updateProfile(
-          name: name,
-          phone: phone,
-          image: image,
-          password: password,
-        );
-        state = state.copyWith(user: updated);
-        await SessionStorage.save(updated, state.ownerField);
-      });
+  }) => _run(() async {
+    final updated = await _repo.updateProfile(
+      name: name,
+      phone: phone,
+      image: image,
+      password: password,
+    );
+    state = state.copyWith(user: updated);
+    await SessionStorage.save(updated, state.ownerField);
+  });
 
   Future<bool> updateField({
     required String name,
@@ -257,20 +290,19 @@ class AuthNotifier extends Notifier<AuthState> {
     required String phone,
     required int pricePerHour,
     String? image,
-  }) =>
-      _run(() async {
-        final created = await _repo.createField(
-          name: name,
-          address: address,
-          phone: phone,
-          pricePerHour: pricePerHour,
-          image: image,
-        );
-        state = state.copyWith(ownerField: created);
-        if (state.user != null) await SessionStorage.save(state.user!, created);
-        // حدّث قائمة الملاعب عند كل الجلسات المحلية فوراً
-        ref.invalidate(fieldsListProvider);
-      });
+  }) => _run(() async {
+    final created = await _repo.createField(
+      name: name,
+      address: address,
+      phone: phone,
+      pricePerHour: pricePerHour,
+      image: image,
+    );
+    state = state.copyWith(ownerField: created);
+    if (state.user != null) await SessionStorage.save(state.user!, created);
+    // حدّث قائمة الملاعب عند كل الجلسات المحلية فوراً
+    ref.invalidate(fieldsListProvider);
+  });
 
   Future<bool> _run(Future<void> Function() fn) async {
     state = state.copyWith(loading: true, clearError: true);

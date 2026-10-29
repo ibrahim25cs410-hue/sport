@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +30,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late final TextEditingController _pass;
   String? _imageBase64;
   String? _fieldImageBase64;
+  Uint8List? _imagePreviewBytes;
+  Uint8List? _fieldImagePreviewBytes;
   bool _editing = false;
   bool _editingField = false;
   late final TextEditingController _fieldName;
@@ -55,12 +58,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _name.text = u.name;
     _phone.text = u.phone;
     _imageBase64 = u.image;
+    _imagePreviewBytes = _decodeDataImage(u.image);
     final f = auth.ownerField;
     _fieldName.text = f?.name ?? '';
     _fieldAddress.text = f?.address ?? '';
     _fieldPhone.text = f?.phone ?? '';
     _fieldPrice.text = f != null ? '${f.pricePerHour}' : '';
     _fieldImageBase64 = f?.image;
+    _fieldImagePreviewBytes = _decodeDataImage(f?.image);
     _initialized = true;
   }
 
@@ -77,17 +82,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 512, imageQuality: 70);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      imageQuality: 70,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
-    setState(() => _imageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}');
+    setState(() {
+      _imagePreviewBytes = bytes;
+      _imageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    });
   }
 
   Future<void> _pickFieldImage() async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 75);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      imageQuality: 75,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
-    setState(() => _fieldImageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}');
+    setState(() {
+      _fieldImagePreviewBytes = bytes;
+      _fieldImageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    });
   }
 
   Future<void> _saveField() async {
@@ -98,7 +117,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       showAppError(context, l10n.invalidPrice);
       return;
     }
-    final ok = await ref.read(authProvider.notifier).updateField(
+    final ok = await ref
+        .read(authProvider.notifier)
+        .updateField(
           name: _fieldName.text.trim(),
           address: _fieldAddress.text.trim(),
           phone: normalizeIraqiPhone(_fieldPhone.text),
@@ -117,7 +138,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final l10n = context.l10n;
-    final ok = await ref.read(authProvider.notifier).updateProfile(
+    final ok = await ref
+        .read(authProvider.notifier)
+        .updateProfile(
           name: _name.text.trim(),
           phone: normalizeIraqiPhone(_phone.text),
           image: _imageBase64,
@@ -152,7 +175,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onPressed: () => setState(() => _editing = true),
             )
           else
-            TextButton(onPressed: () => setState(() => _editing = false), child: Text(l10n.cancel)),
+            TextButton(
+              onPressed: () => setState(() => _editing = false),
+              child: Text(l10n.cancel),
+            ),
         ],
       ),
       body: Form(
@@ -163,7 +189,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Center(
               child: Stack(
                 children: [
-                  UserAvatar(image: _imageBase64, name: user.name, radius: 56),
+                  UserAvatar(
+                    image: _imageBase64,
+                    previewBytes: _imagePreviewBytes,
+                    name: user.name,
+                    radius: 56,
+                  ),
                   if (_editing)
                     PositionedDirectional(
                       bottom: 0,
@@ -173,7 +204,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: CircleAvatar(
                           radius: 18,
                           backgroundColor: context.colors.primaryLight,
-                          child: Icon(Icons.camera_alt_rounded, size: 18, color: context.colors.onPrimary),
+                          child: Icon(
+                            Icons.camera_alt_rounded,
+                            size: 18,
+                            color: context.colors.onPrimary,
+                          ),
                         ),
                       ),
                     ),
@@ -183,20 +218,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: DesignTokens.spaceSm),
             Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: context.colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(user.roleLabel, style: TextStyle(color: context.colors.primaryLight, fontWeight: FontWeight.w700)),
+                child: Text(
+                  user.roleLabel,
+                  style: TextStyle(
+                    color: context.colors.primaryLight,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: DesignTokens.spaceLg),
             if (_editing) ...[
               TextFormField(
                 controller: _name,
-                decoration: InputDecoration(labelText: l10n.nameShort, prefixIcon: const Icon(Icons.badge_outlined)),
-                validator: (v) => (v == null || v.trim().length < 2) ? l10n.fieldRequired : null,
+                decoration: InputDecoration(
+                  labelText: l10n.nameShort,
+                  prefixIcon: const Icon(Icons.badge_outlined),
+                ),
+                validator:
+                    (v) =>
+                        (v == null || v.trim().length < 2)
+                            ? l10n.fieldRequired
+                            : null,
               ),
               const SizedBox(height: DesignTokens.spaceSm),
               PhoneFormField(controller: _phone, validator: validateIraqiPhone),
@@ -204,80 +255,158 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               PasswordFormField(
                 controller: _pass,
                 label: l10n.newPasswordOptional,
-                validator: (v) => v != null && v.isNotEmpty && v.length < 6 ? l10n.passwordMinChars : null,
+                validator:
+                    (v) =>
+                        v != null && v.isNotEmpty && v.length < 6
+                            ? l10n.passwordMinChars
+                            : null,
               ),
               const SizedBox(height: DesignTokens.spaceLg),
-              LoadingButton(loading: loading, onPressed: _save, label: l10n.saveChanges, icon: Icons.save_rounded),
+              LoadingButton(
+                loading: loading,
+                onPressed: _save,
+                label: l10n.saveChanges,
+                icon: Icons.save_rounded,
+              ),
             ] else ...[
-              _infoCard(Icons.person_outline_rounded, l10n.nameShort, user.name),
-              _infoCard(Icons.email_outlined, l10n.email, user.email, ltr: true),
+              _infoCard(
+                Icons.person_outline_rounded,
+                l10n.nameShort,
+                user.name,
+              ),
+              _infoCard(
+                Icons.email_outlined,
+                l10n.email,
+                user.email,
+                ltr: true,
+              ),
               _infoCard(Icons.phone_outlined, l10n.phone, user.phone),
               _infoCard(Icons.map_outlined, l10n.province, user.province),
               if (user.isOwner) ...[
                 const SizedBox(height: DesignTokens.spaceMd),
                 if (ownerField != null) ...[
-                SectionHeader(
-                  title: l10n.yourField,
-                  trailing: IconButton(
-                    icon: Icon(_editingField ? Icons.close_rounded : Icons.edit_rounded),
-                    onPressed: () => setState(() => _editingField = !_editingField),
+                  SectionHeader(
+                    title: l10n.yourField,
+                    trailing: IconButton(
+                      icon: Icon(
+                        _editingField
+                            ? Icons.close_rounded
+                            : Icons.edit_rounded,
+                      ),
+                      onPressed:
+                          () => setState(() => _editingField = !_editingField),
+                    ),
                   ),
-                ),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(DesignTokens.spaceMd),
-                    child: _editingField
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              GestureDetector(
-                                onTap: _pickFieldImage,
-                                child: Container(
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    color: context.colors.surfaceVariant,
-                                    borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(DesignTokens.spaceMd),
+                      child:
+                          _editingField
+                              ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  GestureDetector(
+                                    onTap: _pickFieldImage,
+                                    child: Container(
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        color: context.colors.surfaceVariant,
+                                        borderRadius: BorderRadius.circular(
+                                          DesignTokens.radiusSm,
+                                        ),
+                                      ),
+                                      child:
+                                          _fieldImagePreviewBytes != null
+                                              ? ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      DesignTokens.radiusSm,
+                                                    ),
+                                                child: Image.memory(
+                                                  _fieldImagePreviewBytes!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  cacheWidth:
+                                                      (MediaQuery.sizeOf(
+                                                                context,
+                                                              ).width *
+                                                              MediaQuery.devicePixelRatioOf(
+                                                                context,
+                                                              ))
+                                                          .ceil(),
+                                                ),
+                                              )
+                                              : const Center(
+                                                child: Icon(
+                                                  Icons.add_a_photo_outlined,
+                                                  size: 32,
+                                                ),
+                                              ),
+                                    ),
                                   ),
-                                  child: _fieldImageBase64 != null
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(DesignTokens.radiusSm),
-                                          child: Image.memory(
-                                            base64Decode(_fieldImageBase64!.split(',').last),
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
-                                          ),
-                                        )
-                                      : const Center(child: Icon(Icons.add_a_photo_outlined, size: 32)),
-                                ),
+                                  const SizedBox(height: DesignTokens.spaceSm),
+                                  TextFormField(
+                                    controller: _fieldName,
+                                    decoration: InputDecoration(
+                                      labelText: l10n.fieldNameLabel,
+                                    ),
+                                  ),
+                                  const SizedBox(height: DesignTokens.spaceSm),
+                                  TextFormField(
+                                    controller: _fieldAddress,
+                                    decoration: InputDecoration(
+                                      labelText: l10n.addressLabel,
+                                    ),
+                                  ),
+                                  const SizedBox(height: DesignTokens.spaceSm),
+                                  PhoneFormField(
+                                    controller: _fieldPhone,
+                                    label: l10n.fieldPhoneLabel,
+                                  ),
+                                  const SizedBox(height: DesignTokens.spaceSm),
+                                  TextFormField(
+                                    controller: _fieldPrice,
+                                    decoration: InputDecoration(
+                                      labelText: l10n.pricePerHourLabel,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                  const SizedBox(height: DesignTokens.spaceSm),
+                                  LoadingButton(
+                                    loading: loading,
+                                    onPressed: _saveField,
+                                    label: l10n.saveField,
+                                    icon: Icons.save_rounded,
+                                  ),
+                                ],
+                              )
+                              : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    ownerField.name,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: DesignTokens.spaceSm),
+                                  InfoTile(
+                                    icon: Icons.location_on_outlined,
+                                    text: ownerField.address,
+                                  ),
+                                  InfoTile(
+                                    icon: Icons.phone_outlined,
+                                    text: ownerField.phone,
+                                  ),
+                                  InfoTile(
+                                    icon: Icons.payments_outlined,
+                                    text: l10n.pricePerHourDisplay(
+                                      ownerField.pricePerHour,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: DesignTokens.spaceSm),
-                              TextFormField(controller: _fieldName, decoration: InputDecoration(labelText: l10n.fieldNameLabel)),
-                              const SizedBox(height: DesignTokens.spaceSm),
-                              TextFormField(controller: _fieldAddress, decoration: InputDecoration(labelText: l10n.addressLabel)),
-                              const SizedBox(height: DesignTokens.spaceSm),
-                              PhoneFormField(controller: _fieldPhone, label: l10n.fieldPhoneLabel),
-                              const SizedBox(height: DesignTokens.spaceSm),
-                              TextFormField(
-                                controller: _fieldPrice,
-                                decoration: InputDecoration(labelText: l10n.pricePerHourLabel),
-                                keyboardType: TextInputType.number,
-                              ),
-                              const SizedBox(height: DesignTokens.spaceSm),
-                              LoadingButton(loading: loading, onPressed: _saveField, label: l10n.saveField, icon: Icons.save_rounded),
-                            ],
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(ownerField.name, style: Theme.of(context).textTheme.titleMedium),
-                              const SizedBox(height: DesignTokens.spaceSm),
-                              InfoTile(icon: Icons.location_on_outlined, text: ownerField.address),
-                              InfoTile(icon: Icons.phone_outlined, text: ownerField.phone),
-                              InfoTile(icon: Icons.payments_outlined, text: l10n.pricePerHourDisplay(ownerField.pricePerHour)),
-                            ],
-                          ),
+                    ),
                   ),
-                ),
                 ],
                 const SizedBox(height: DesignTokens.spaceSm),
                 OutlinedButton.icon(
@@ -293,41 +422,80 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _infoCard(IconData icon, String label, String value, {bool ltr = false}) => Card(
-        margin: const EdgeInsets.only(bottom: 10),
-        child: ListTile(
-          leading: Icon(icon, color: context.colors.primaryLight),
-          title: Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          subtitle: Text(value, style: Theme.of(context).textTheme.titleMedium, textDirection: ltr ? TextDirection.ltr : null),
-        ),
-      );
+  Widget _infoCard(
+    IconData icon,
+    String label,
+    String value, {
+    bool ltr = false,
+  }) => Card(
+    margin: const EdgeInsets.only(bottom: 10),
+    child: ListTile(
+      leading: Icon(icon, color: context.colors.primaryLight),
+      title: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+      subtitle: Text(
+        value,
+        style: Theme.of(context).textTheme.titleMedium,
+        textDirection: ltr ? TextDirection.ltr : null,
+      ),
+    ),
+  );
 }
 
 class UserAvatar extends StatelessWidget {
-  const UserAvatar({super.key, this.image, required this.name, this.radius = 24});
+  const UserAvatar({
+    super.key,
+    this.image,
+    this.previewBytes,
+    required this.name,
+    this.radius = 24,
+  });
 
   final String? image;
+  final Uint8List? previewBytes;
   final String name;
   final double radius;
 
   @override
   Widget build(BuildContext context) {
     ImageProvider? provider;
-    if (image != null && image!.startsWith('data:')) {
+    if (previewBytes != null) {
+      provider = MemoryImage(previewBytes!);
+    } else if (image != null && image!.startsWith('data:')) {
       try {
         provider = MemoryImage(base64Decode(image!.split(',').last));
       } catch (_) {}
+    }
+    if (provider != null) {
+      provider = ResizeImage.resizeIfNeeded(
+        (radius * 2 * MediaQuery.devicePixelRatioOf(context)).ceil(),
+        null,
+        provider,
+      );
     }
     return CircleAvatar(
       radius: radius,
       backgroundColor: context.colors.primary.withValues(alpha: 0.15),
       backgroundImage: provider,
-      child: provider == null
-          ? Text(
-              name.isNotEmpty ? name[0] : '?',
-              style: TextStyle(fontSize: radius * 0.7, fontWeight: FontWeight.bold, color: context.colors.primary),
-            )
-          : null,
+      child:
+          provider == null
+              ? Text(
+                name.isNotEmpty ? name[0] : '?',
+                style: TextStyle(
+                  fontSize: radius * 0.7,
+                  fontWeight: FontWeight.bold,
+                  color: context.colors.primary,
+                ),
+              )
+              : null,
     );
+  }
+}
+
+Uint8List? _decodeDataImage(String? image) {
+  if (image == null || !image.startsWith('data:')) return null;
+  try {
+    return base64Decode(image.split(',').last);
+  } catch (_) {
+    return null;
   }
 }

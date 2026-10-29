@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 
@@ -26,7 +25,7 @@ class PriceText extends StatelessWidget {
     FontWeight fontWeight = FontWeight.w800,
     double? height,
   }) =>
-      GoogleFonts.cairo(
+      TextStyle(
         fontSize: base?.fontSize ?? fontSize,
         fontWeight: base?.fontWeight ?? fontWeight,
         height: base?.height ?? height ?? 1.1,

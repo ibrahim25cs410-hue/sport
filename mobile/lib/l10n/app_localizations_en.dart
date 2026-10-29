@@ -1276,12 +1276,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashOnlyTitle => 'Pay cash at the venue';
+
   @override
   String get electronicPaymentsComingSoon => 'Electronic payments are coming soon';
+
   @override
   String get navigationError => 'This page could not be opened.';
+
   @override
   String get unexpectedError => 'Something went wrong. Please restart the app and try again.';
+
   @override
   String get privacyPolicy => 'Privacy policy';
 }

@@ -27,6 +27,7 @@ class FieldCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final rating = field.reviewCount > 0 ? field.averageRating : null;
+    final cacheWidth = (148 * MediaQuery.devicePixelRatioOf(context)).ceil();
 
     return StadiumCard(
       name: field.name,
@@ -34,19 +35,20 @@ class FieldCard extends StatelessWidget {
       priceLabel: '${formatMoney(field.pricePerHour)} ${l10n.perHour}',
       bookLabel: l10n.bookNow,
       onTap: onTap,
-      image: fieldImageProvider(field),
+      image: fieldImageProvider(field, cacheWidth: cacheWidth),
       imageGradient: DesignTokens.gradientFor(field.id),
       rating: rating,
       isFavorite: isFavorite,
       onFavoriteToggle: onFavoriteToggle,
-      amenities: rating != null
-          ? [
-              StadiumAmenity(
-                icon: LineIcons.star,
-                label: '${rating.toStringAsFixed(1)} (${field.reviewCount})',
-              ),
-            ]
-          : const [],
+      amenities:
+          rating != null
+              ? [
+                StadiumAmenity(
+                  icon: LineIcons.star,
+                  label: '${rating.toStringAsFixed(1)} (${field.reviewCount})',
+                ),
+              ]
+              : const [],
     );
   }
 }

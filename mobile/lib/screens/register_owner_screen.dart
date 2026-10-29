@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +18,8 @@ class RegisterOwnerScreen extends ConsumerStatefulWidget {
   const RegisterOwnerScreen({super.key});
 
   @override
-  ConsumerState<RegisterOwnerScreen> createState() => _RegisterOwnerScreenState();
+  ConsumerState<RegisterOwnerScreen> createState() =>
+      _RegisterOwnerScreenState();
 }
 
 class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
@@ -31,20 +33,37 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
   final _fieldPhone = TextEditingController();
   final _price = TextEditingController();
   String? _stadiumImageBase64;
+  Uint8List? _stadiumPreviewBytes;
 
   @override
   void dispose() {
-    for (final c in [_name, _email, _phone, _pass, _fieldName, _address, _fieldPhone, _price]) {
+    for (final c in [
+      _name,
+      _email,
+      _phone,
+      _pass,
+      _fieldName,
+      _address,
+      _fieldPhone,
+      _price,
+    ]) {
       c.dispose();
     }
     super.dispose();
   }
 
   Future<void> _pickStadiumImage() async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 75);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      imageQuality: 75,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
-    setState(() => _stadiumImageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}');
+    setState(() {
+      _stadiumPreviewBytes = bytes;
+      _stadiumImageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    });
   }
 
   Future<void> _submit() async {
@@ -85,13 +104,29 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             _sectionTitle(Icons.person_outline_rounded, l10n.yourInfo),
-            TextFormField(controller: _name, decoration: InputDecoration(labelText: l10n.nameShort), validator: (v) => validateRequired(v, label: l10n.nameShort)),
+            TextFormField(
+              controller: _name,
+              decoration: InputDecoration(labelText: l10n.nameShort),
+              validator: (v) => validateRequired(v, label: l10n.nameShort),
+            ),
             const SizedBox(height: 12),
-            EmailFormField(controller: _email, label: l10n.email, validator: validateEmail),
+            EmailFormField(
+              controller: _email,
+              label: l10n.email,
+              validator: validateEmail,
+            ),
             const SizedBox(height: 12),
-            PhoneFormField(controller: _phone, label: l10n.phone, validator: validateIraqiPhone),
+            PhoneFormField(
+              controller: _phone,
+              label: l10n.phone,
+              validator: validateIraqiPhone,
+            ),
             const SizedBox(height: 12),
-            PasswordFormField(controller: _pass, validator: validatePassword, showStrength: true),
+            PasswordFormField(
+              controller: _pass,
+              validator: validatePassword,
+              showStrength: true,
+            ),
             const SizedBox(height: 24),
             _sectionTitle(Icons.stadium_outlined, l10n.fieldInfo),
             Center(
@@ -103,39 +138,83 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
                   decoration: BoxDecoration(
                     color: context.colors.surfaceVariant,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.colors.primary.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: context.colors.primary.withValues(alpha: 0.2),
+                    ),
                   ),
-                  child: _stadiumImageBase64 != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.memory(base64Decode(_stadiumImageBase64!.split(',').last), fit: BoxFit.cover, width: double.infinity),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo_outlined, size: 36, color: context.colors.primaryLight),
-                            const SizedBox(height: 8),
-                            Text(l10n.addFieldPhoto, style: Theme.of(context).textTheme.bodyMedium),
-                          ],
-                        ),
+                  child:
+                      _stadiumPreviewBytes != null
+                          ? ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.memory(
+                              _stadiumPreviewBytes!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              cacheWidth:
+                                  (MediaQuery.sizeOf(context).width *
+                                          MediaQuery.devicePixelRatioOf(
+                                            context,
+                                          ))
+                                      .ceil(),
+                            ),
+                          )
+                          : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_a_photo_outlined,
+                                size: 36,
+                                color: context.colors.primaryLight,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                l10n.addFieldPhoto,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            TextFormField(controller: _fieldName, decoration: InputDecoration(labelText: l10n.fieldNameLabel), validator: (v) => validateRequired(v, label: l10n.fieldNameLabel)),
+            TextFormField(
+              controller: _fieldName,
+              decoration: InputDecoration(labelText: l10n.fieldNameLabel),
+              validator: (v) => validateRequired(v, label: l10n.fieldNameLabel),
+            ),
             const SizedBox(height: 12),
-            TextFormField(controller: _address, decoration: InputDecoration(labelText: l10n.addressLabel), validator: (v) => validateRequired(v, label: l10n.addressLabel)),
+            TextFormField(
+              controller: _address,
+              decoration: InputDecoration(labelText: l10n.addressLabel),
+              validator: (v) => validateRequired(v, label: l10n.addressLabel),
+            ),
             const SizedBox(height: 12),
-            PhoneFormField(controller: _fieldPhone, label: l10n.fieldPhoneLabel, validator: validateIraqiPhone),
+            PhoneFormField(
+              controller: _fieldPhone,
+              label: l10n.fieldPhoneLabel,
+              validator: validateIraqiPhone,
+            ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _price,
-              decoration: InputDecoration(labelText: l10n.pricePerHourLabel, prefixIcon: const Icon(Icons.payments_outlined)),
+              decoration: InputDecoration(
+                labelText: l10n.pricePerHourLabel,
+                prefixIcon: const Icon(Icons.payments_outlined),
+              ),
               keyboardType: TextInputType.number,
-              validator: (v) => (int.tryParse(v ?? '') ?? 0) < 1000 ? l10n.invalidPrice : null,
+              validator:
+                  (v) =>
+                      (int.tryParse(v ?? '') ?? 0) < 1000
+                          ? l10n.invalidPrice
+                          : null,
             ),
             const SizedBox(height: 28),
-            LoadingButton(loading: loading, onPressed: _submit, label: l10n.createOwnerAccount, icon: Icons.storefront_rounded),
+            LoadingButton(
+              loading: loading,
+              onPressed: _submit,
+              label: l10n.createOwnerAccount,
+              icon: Icons.storefront_rounded,
+            ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => context.goLoginOwner(),
@@ -150,14 +229,19 @@ class _RegisterOwnerScreenState extends ConsumerState<RegisterOwnerScreen> {
   Widget _sectionTitle(IconData icon, String title) {
     final c = context.colors;
     return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(
-          children: [
-            Icon(icon, color: c.primary, size: 22),
-            const SizedBox(width: 8),
-            Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: c.primary)),
-          ],
-        ),
-      );
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: c.primary, size: 22),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: c.primary),
+          ),
+        ],
+      ),
+    );
   }
 }

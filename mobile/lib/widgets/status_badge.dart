@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/riyada_theme_extension.dart';
 import '../utils/l10n_extension.dart';
 
@@ -31,7 +30,7 @@ class StatusBadge extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
-          Text(label ?? labelFromStatus, style: GoogleFonts.cairo(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
+          Text(label ?? labelFromStatus, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12)),
         ],
       ),
     );

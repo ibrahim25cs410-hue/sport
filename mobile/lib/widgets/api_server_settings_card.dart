@@ -71,6 +71,10 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (ApiConfig.baseUrlOverride.isNotEmpty ||
+        ApiConfig.hostOverride.isNotEmpty) {
+      return const SizedBox.shrink();
+    }
     final l10n = context.l10n;
     return Card(
       child: Padding(
@@ -120,11 +124,18 @@ class _ApiServerSettingsCardState extends ConsumerState<ApiServerSettingsCard> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: _testing ? null : _test,
-                  child: _testing
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.wifi_find_rounded),
+                SizedBox(
+                  width: 54,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(54, 54),
+                      padding: EdgeInsets.zero,
+                    ),
+                    onPressed: _testing ? null : _test,
+                    child: _testing
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.wifi_find_rounded),
+                  ),
                 ),
               ],
             ),

@@ -90,9 +90,6 @@ android {
         }
     }
 
-    androidResources {
-        noCompress += "bin"
-    }
 }
 
 flutter {

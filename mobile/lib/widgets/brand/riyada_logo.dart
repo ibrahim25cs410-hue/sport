@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/design_tokens.dart';
 import '../../theme/riyada_theme_extension.dart';
@@ -23,30 +22,31 @@ class RiyadaLogo extends StatelessWidget {
   static const _pngLogo = 'assets/brand/riyada_logo.png';
 
   String _iconAsset() => switch (variant) {
-        RiyadaLogoVariant.splash => _pngLogo,
-        RiyadaLogoVariant.favicon => 'assets/logo/riyada_favicon.svg',
-        RiyadaLogoVariant.full => _pngLogo,
-        RiyadaLogoVariant.compact => _pngLogo,
-      };
+    RiyadaLogoVariant.splash => _pngLogo,
+    RiyadaLogoVariant.favicon => 'assets/logo/riyada_favicon.svg',
+    RiyadaLogoVariant.full => _pngLogo,
+    RiyadaLogoVariant.compact => _pngLogo,
+  };
 
-  bool get _usesPng => variant == RiyadaLogoVariant.splash ||
+  bool get _usesPng =>
+      variant == RiyadaLogoVariant.splash ||
       variant == RiyadaLogoVariant.full ||
       variant == RiyadaLogoVariant.compact;
 
   double get _iconSize => switch (variant) {
-        RiyadaLogoVariant.splash => size,
-        RiyadaLogoVariant.favicon => size,
-        RiyadaLogoVariant.compact => size,
-        RiyadaLogoVariant.full => size,
-      };
+    RiyadaLogoVariant.splash => size,
+    RiyadaLogoVariant.favicon => size,
+    RiyadaLogoVariant.compact => size,
+    RiyadaLogoVariant.full => size,
+  };
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final label = isArabic ? 'رياضة' : 'Riyada';
     final textColor = light ? DesignTokens.textPrimary : c.onSurface;
-    final fontFamily = isArabic ? GoogleFonts.cairo : GoogleFonts.inter;
 
     final Widget icon;
     if (_usesPng) {
@@ -57,6 +57,8 @@ class RiyadaLogo extends StatelessWidget {
           width: _iconSize,
           height: _iconSize,
           fit: BoxFit.cover,
+          cacheWidth: (_iconSize * pixelRatio).ceil(),
+          cacheHeight: (_iconSize * pixelRatio).ceil(),
         ),
       );
     } else {
@@ -68,7 +70,9 @@ class RiyadaLogo extends StatelessWidget {
     }
 
     // الشعار PNG يحتوي النص مسبقاً — لا نكرّره.
-    if (_usesPng || variant == RiyadaLogoVariant.compact || variant == RiyadaLogoVariant.favicon) {
+    if (_usesPng ||
+        variant == RiyadaLogoVariant.compact ||
+        variant == RiyadaLogoVariant.favicon) {
       return icon;
     }
 
@@ -79,7 +83,7 @@ class RiyadaLogo extends StatelessWidget {
         SizedBox(height: size * 0.18),
         Text(
           label,
-          style: fontFamily(
+          style: TextStyle(
             fontSize: size * 0.24,
             fontWeight: FontWeight.w800,
             color: textColor,
@@ -93,7 +97,12 @@ class RiyadaLogo extends StatelessWidget {
 
 /// @deprecated استخدم [RiyadaLogo] — يبقى للتوافق.
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.size = 72, this.showLabel = true, this.light = false});
+  const AppLogo({
+    super.key,
+    this.size = 72,
+    this.showLabel = true,
+    this.light = false,
+  });
 
   final double size;
   final bool showLabel;

@@ -53,15 +53,16 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       final user = ref.read(authProvider).user;
       if (user == null) return;
-      final key = UserSessionKey(client: ref.read(apiClientProvider), userId: user.id);
-      ref.invalidate(fieldsListProvider(key));
+      final key = UserSessionKey(
+        client: ref.read(apiClientProvider),
+        userId: user.id,
+      );
+      ref.read(fieldsListProvider(key).notifier).refreshIfStale();
     }
   }
 
-  Future<void> _refresh(UserSessionKey key) async {
-    ref.invalidate(fieldsListProvider(key));
-    await ref.read(fieldsListProvider(key).future);
-  }
+  Future<void> _refresh(UserSessionKey key) =>
+      ref.read(fieldsListProvider(key).notifier).forceRefresh();
 
   void _scrollToFields() {
     HapticFeedback.selectionClick();
@@ -99,13 +100,13 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
+    final user = ref.watch(authProvider.select((state) => state.user));
     final key = watchSessionKey(ref);
     if (user == null || key == null) return const SizedBox.shrink();
 
     ref.listen<int>(shellTabProvider, (prev, next) {
       if (next == 0 && prev != null && prev != 0) {
-        ref.invalidate(fieldsListProvider(key));
+        ref.read(fieldsListProvider(key).notifier).refreshIfStale();
       }
     });
 
@@ -113,21 +114,33 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
     final theme = Theme.of(context);
     final fieldsAsync = ref.watch(fieldsListProvider(key));
     final notificationsAsync = ref.watch(userNotificationsProvider(key));
-    final shell = ref.watch(shellProvider);
-    final search = shell.search;
-    final category = shell.selectedCategory;
-    final favorites = shell.favorites;
+    final filters = ref.watch(
+      shellProvider.select(
+        (shell) => (
+          search: shell.search,
+          category: shell.selectedCategory,
+          minPrice: shell.minPrice,
+          maxPrice: shell.maxPrice,
+          minRating: shell.minRating,
+          availableOnly: shell.availableOnly,
+          hasActiveFilters: shell.hasActiveFilters,
+        ),
+      ),
+    );
+    final search = filters.search;
+    final category = filters.category;
 
     final fields = fieldsAsync.valueOrNull ?? <Field>[];
-    final unread = (notificationsAsync.valueOrNull ?? []).where((n) => !n.isRead).length;
+    final unread =
+        (notificationsAsync.valueOrNull ?? []).where((n) => !n.isRead).length;
     final filtered = filterFields(
       fields,
       search: search,
       category: category,
-      minPrice: shell.minPrice,
-      maxPrice: shell.maxPrice,
-      minRating: shell.minRating,
-      availableOnly: shell.availableOnly,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      minRating: filters.minRating,
+      availableOnly: filters.availableOnly,
     );
     final loading = fieldsAsync.isLoading && fields.isEmpty;
 
@@ -140,10 +153,11 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
     ];
 
     return ColoredBox(
-        color: Colors.transparent,
-        child: loading
-            ? const FieldsListSkeleton()
-            : RefreshIndicator(
+      color: Colors.transparent,
+      child:
+          loading
+              ? const FieldsListSkeleton()
+              : RefreshIndicator(
                 onRefresh: () => _refresh(key),
                 color: context.accentColor,
                 child: CustomScrollView(
@@ -160,18 +174,28 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
                             onNotifications: () => context.goNotifications(),
                           ),
                           PremiumSearchBar(
-                            onChanged: (v) => ref.read(shellProvider.notifier).setSearch(v),
+                            onChanged:
+                                (v) => ref
+                                    .read(shellProvider.notifier)
+                                    .setSearch(v),
                             onFilter: _openFilters,
                             hasQuery: search.isNotEmpty,
-                            hasActiveFilters: shell.hasActiveFilters,
-                            onClear: () => ref.read(shellProvider.notifier).clearSearch(),
+                            hasActiveFilters: filters.hasActiveFilters,
+                            onClear:
+                                () =>
+                                    ref
+                                        .read(shellProvider.notifier)
+                                        .clearSearch(),
                           ),
                           PremiumHeroBanner(onBook: _scrollToFields),
                           const SizedBox(height: DesignTokens.spaceMd),
                           CategoryChipsRow(
                             selected: category,
                             labels: categories,
-                            onSelected: (c) => ref.read(shellProvider.notifier).setCategory(c),
+                            onSelected:
+                                (c) => ref
+                                    .read(shellProvider.notifier)
+                                    .setCategory(c),
                           ),
                           const SizedBox(height: DesignTokens.spaceMd),
                           PremiumFeaturesGrid(
@@ -197,7 +221,9 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
                             ),
                             child: Text(
                               l10n.popularFields,
-                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ],
@@ -226,7 +252,9 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
                         delegate: SliverChildBuilderDelegate(
                           (_, i) {
                             if (i == filtered.length) {
-                              final notifier = ref.read(fieldsListProvider(key).notifier);
+                              final notifier = ref.read(
+                                fieldsListProvider(key).notifier,
+                              );
                               return LoadMoreScrollNotification(
                                 hasMore: notifier.hasMore,
                                 loading: notifier.loadingMore,
@@ -234,16 +262,15 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
                               );
                             }
                             final field = filtered[i];
-                            return RepaintBoundary(
-                              child: FieldCard(
-                                field: field,
-                                isFavorite: favorites.contains(field.id),
-                                onFavoriteToggle: () => ref.read(shellProvider.notifier).toggleFavorite(field.id),
-                                onTap: () => context.goField(field),
-                              ),
-                            );
+                            return _HomeFieldCard(field: field);
                           },
-                          childCount: filtered.length + (ref.read(fieldsListProvider(key).notifier).hasMore ? 1 : 0),
+                          childCount:
+                              filtered.length +
+                              (ref
+                                      .read(fieldsListProvider(key).notifier)
+                                      .hasMore
+                                  ? 1
+                                  : 0),
                         ),
                       ),
                     SliverToBoxAdapter(
@@ -254,10 +281,34 @@ class _HomeTabState extends ConsumerState<HomeTab> with WidgetsBindingObserver {
                         },
                       ),
                     ),
-                    SliverToBoxAdapter(child: SizedBox(height: ShellLayout.bottomInset(context))),
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: ShellLayout.bottomInset(context)),
+                    ),
                   ],
                 ),
               ),
+    );
+  }
+}
+
+class _HomeFieldCard extends ConsumerWidget {
+  const _HomeFieldCard({required this.field});
+
+  final Field field;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(
+      shellProvider.select((shell) => shell.favorites.contains(field.id)),
+    );
+    return RepaintBoundary(
+      child: FieldCard(
+        field: field,
+        isFavorite: isFavorite,
+        onFavoriteToggle:
+            () => ref.read(shellProvider.notifier).toggleFavorite(field.id),
+        onTap: () => context.goField(field),
+      ),
     );
   }
 }

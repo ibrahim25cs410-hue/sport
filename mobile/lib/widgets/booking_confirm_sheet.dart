@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../domain/booking/booking_policy.dart';
 import '../models/field.dart';
 import '../theme/design_tokens.dart';
@@ -82,7 +81,7 @@ Future<bool?> showBookingConfirmSheet({
                           pricePerHour: field.pricePerHour,
                           hours: hours,
                         )),
-                        style: GoogleFonts.cairo(fontWeight: FontWeight.w700, color: c.warning),
+                        style: TextStyle(fontWeight: FontWeight.w700, color: c.warning),
                       ),
                     ],
                   ),

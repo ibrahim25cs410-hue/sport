@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +10,6 @@ import '../theme/app_theme.dart';
 import '../utils/api_logger.dart';
 import '../utils/error_messages.dart';
 import '../utils/validators.dart';
-import '../widgets/api_server_settings_card.dart';
 import '../widgets/auth_entry_app_bar_actions.dart';
 import '../widgets/common.dart';
 import '../widgets/form_fields.dart';
@@ -30,6 +29,7 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
   final _phone = TextEditingController();
   final _pass = TextEditingController();
   String? _imageBase64;
+  Uint8List? _imagePreviewBytes;
 
   @override
   void dispose() {
@@ -41,10 +41,17 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
   }
 
   Future<void> _pickImage() async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 512, imageQuality: 70);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      imageQuality: 70,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
-    setState(() => _imageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}');
+    setState(() {
+      _imagePreviewBytes = bytes;
+      _imageBase64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    });
   }
 
   Future<void> _submit() async {
@@ -103,8 +110,18 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
                     CircleAvatar(
                       radius: 52,
                       backgroundColor: c.primary.withValues(alpha: 0.1),
-                      backgroundImage: _imageBase64 != null ? MemoryImage(base64Decode(_imageBase64!.split(',').last)) : null,
-                      child: _imageBase64 == null ? Icon(Icons.person_rounded, size: 48, color: c.primary) : null,
+                      backgroundImage:
+                          _imagePreviewBytes != null
+                              ? MemoryImage(_imagePreviewBytes!)
+                              : null,
+                      child:
+                          _imagePreviewBytes == null
+                              ? Icon(
+                                Icons.person_rounded,
+                                size: 48,
+                                color: c.primary,
+                              )
+                              : null,
                     ),
                     Positioned(
                       bottom: 0,
@@ -112,7 +129,11 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
                       child: CircleAvatar(
                         radius: 16,
                         backgroundColor: c.primary,
-                        child: Icon(Icons.camera_alt_rounded, size: 16, color: context.colors.onPrimary),
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          size: 16,
+                          color: context.colors.onPrimary,
+                        ),
                       ),
                     ),
                   ],
@@ -120,11 +141,19 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Center(child: Text(l10n.addProfilePhoto, style: Theme.of(context).textTheme.bodyMedium)),
+            Center(
+              child: Text(
+                l10n.addProfilePhoto,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
             const SizedBox(height: 20),
             TextFormField(
               controller: _name,
-              decoration: InputDecoration(labelText: l10n.name, prefixIcon: const Icon(Icons.badge_outlined)),
+              decoration: InputDecoration(
+                labelText: l10n.name,
+                prefixIcon: const Icon(Icons.badge_outlined),
+              ),
               validator: (v) => validateRequired(v, label: l10n.nameShort),
             ),
             const SizedBox(height: 14),
@@ -132,23 +161,36 @@ class _RegisterUserScreenState extends ConsumerState<RegisterUserScreen> {
             const SizedBox(height: 14),
             PhoneFormField(controller: _phone, validator: validateIraqiPhone),
             const SizedBox(height: 14),
-            PasswordFormField(controller: _pass, validator: validatePassword, showStrength: true),
+            PasswordFormField(
+              controller: _pass,
+              validator: validatePassword,
+              showStrength: true,
+            ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: c.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: c.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
                   Icon(Icons.map_outlined, color: c.primary, size: 20),
                   const SizedBox(width: 8),
-                  Text('${l10n.province}: ${l10n.provinceNineveh}', style: Theme.of(context).textTheme.bodyLarge),
+                  Text(
+                    '${l10n.province}: ${l10n.provinceNineveh}',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 28),
-            if (kDebugMode) const ApiServerSettingsCard(),
-            if (kDebugMode) const SizedBox(height: 16),
-            LoadingButton(loading: loading, onPressed: _submit, label: l10n.createAccountLogin, icon: Icons.person_add_rounded),
+            LoadingButton(
+              loading: loading,
+              onPressed: _submit,
+              label: l10n.createAccountLogin,
+              icon: Icons.person_add_rounded,
+            ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => context.goLoginUser(),

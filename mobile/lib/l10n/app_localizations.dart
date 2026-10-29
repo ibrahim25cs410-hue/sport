@@ -2471,10 +2471,34 @@ abstract class AppLocalizations {
   /// **'Next'**
   String get next;
 
+  /// No description provided for @cashOnlyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay cash at the venue'**
   String get cashOnlyTitle;
+
+  /// No description provided for @electronicPaymentsComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Electronic payments are coming soon'**
   String get electronicPaymentsComingSoon;
+
+  /// No description provided for @navigationError.
+  ///
+  /// In en, this message translates to:
+  /// **'This page could not be opened.'**
   String get navigationError;
+
+  /// No description provided for @unexpectedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please restart the app and try again.'**
   String get unexpectedError;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
   String get privacyPolicy;
 }
 

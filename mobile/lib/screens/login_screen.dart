@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,7 +7,6 @@ import '../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
 import '../utils/l10n_extension.dart';
 import '../utils/validators.dart';
-import '../widgets/api_server_settings_card.dart';
 import '../widgets/auth_entry_app_bar_actions.dart';
 import '../widgets/common.dart';
 import '../widgets/form_fields.dart';
@@ -96,8 +94,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 icon: Icons.login_rounded,
               ),
               const SizedBox(height: 16),
-              if (kDebugMode) const ApiServerSettingsCard(),
-              if (kDebugMode) const SizedBox(height: 8),
               TextButton(
                 onPressed: () => _isOwner ? context.goRegisterOwner() : context.goRegisterUser(),
                 child: Text(_isOwner ? l10n.goToOwnerRegister : l10n.goToUserRegister),

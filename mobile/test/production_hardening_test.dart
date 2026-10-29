@@ -1,24 +1,36 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riyada/core/providers/booking_actions_provider.dart';
 import 'package:riyada/config/payment_policy.dart';
 import 'package:riyada/router/app_router.dart';
 import 'package:riyada/router/router_provider.dart';
 import 'package:riyada/services/session_storage.dart';
+import 'package:riyada/services/socket_service.dart';
 import 'package:riyada/services/token_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _MemorySecureStore implements SecureTokenStore {
   String? value;
+  int reads = 0;
+  int writes = 0;
+  int deletes = 0;
 
   @override
-  Future<void> delete({required String key}) async => value = null;
+  Future<void> delete({required String key}) async {
+    deletes++;
+    value = null;
+  }
 
   @override
-  Future<String?> read({required String key}) async => value;
+  Future<String?> read({required String key}) async {
+    reads++;
+    return value;
+  }
 
   @override
   Future<void> write({required String key, required String? value}) async {
+    writes++;
     this.value = value;
   }
 }
@@ -96,6 +108,68 @@ void main() {
       ),
       isFalse,
     );
+  });
+
+  test(
+    'token cache synchronizes concurrent reads, writes, and deletes',
+    () async {
+      final first = _jwtExpiringAt(
+        DateTime.now().add(const Duration(hours: 1)),
+      );
+      final second = _jwtExpiringAt(
+        DateTime.now().add(const Duration(hours: 2)),
+      );
+      final secure = _MemorySecureStore()..value = first;
+      final storage = TokenStorage(store: secure);
+
+      expect(
+        await Future.wait([storage.read(), storage.read(), storage.read()]),
+        [first, first, first],
+      );
+      expect(secure.reads, 1);
+
+      await storage.write(second);
+      expect(await storage.read(), second);
+      expect(secure.reads, 1);
+      expect(secure.writes, 1);
+
+      await storage.delete();
+      expect(await storage.read(), isNull);
+      expect(secure.reads, 1);
+      expect(secure.deletes, 1);
+    },
+  );
+
+  test(
+    'automatic field refresh observes TTL while manual refresh bypasses it',
+    () {
+      var now = DateTime.utc(2030);
+      final freshness = FieldRefreshFreshness(clock: () => now);
+
+      expect(freshness.shouldRefresh(), isTrue);
+      freshness.markRefreshed();
+      expect(freshness.shouldRefresh(), isFalse);
+
+      now = now.add(const Duration(seconds: 44));
+      expect(freshness.shouldRefresh(), isFalse);
+      expect(freshness.shouldRefresh(force: true), isTrue);
+
+      now = now.add(const Duration(seconds: 1));
+      expect(freshness.shouldRefresh(), isTrue);
+    },
+  );
+
+  test('socket connect calls share one in-flight operation', () async {
+    final secure = _MemorySecureStore();
+    final socket = SocketService(tokenStorage: TokenStorage(store: secure));
+    addTearDown(socket.dispose);
+
+    final first = socket.connect();
+    final second = socket.connect();
+
+    expect(identical(first, second), isTrue);
+    await Future.wait([first, second]);
+    expect(secure.reads, 1);
   });
 
   test(

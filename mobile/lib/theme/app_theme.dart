@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import '../utils/error_messages.dart';
 import 'app_colors.dart';
@@ -122,7 +121,7 @@ abstract final class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return GoogleFonts.cairo(
+          return TextStyle(
             fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? tokens.primary : textColor,
@@ -139,7 +138,7 @@ abstract final class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceXl, vertical: DesignTokens.spaceMd),
           shape: shapeMd,
-          textStyle: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 16),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -150,7 +149,7 @@ abstract final class AppTheme {
           shadowColor: tokens.shadow,
           minimumSize: const Size(0, 48),
           shape: shapeMd,
-          textStyle: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 15),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -159,13 +158,13 @@ abstract final class AppTheme {
           minimumSize: const Size(double.infinity, 54),
           side: BorderSide(color: tokens.primary.withValues(alpha: 0.55), width: 1.5),
           shape: shapeMd,
-          textStyle: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 16),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: tokens.primary,
-          textStyle: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 15),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -180,8 +179,8 @@ abstract final class AppTheme {
         elevation: 8,
         shadowColor: tokens.shadowStrong,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusXl)),
-        titleTextStyle: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 18, color: textColor),
-        contentTextStyle: GoogleFonts.cairo(fontSize: 14, height: 1.5, color: textColor),
+        titleTextStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: textColor),
+        contentTextStyle: TextStyle(fontSize: 14, height: 1.5, color: textColor),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: tokens.surfaceElevated,
@@ -212,8 +211,8 @@ abstract final class AppTheme {
         filled: true,
         fillColor: isDark ? tokens.surfaceVariant : tokens.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceLg, vertical: 15),
-        labelStyle: GoogleFonts.cairo(color: textColor, fontWeight: FontWeight.w500),
-        hintStyle: GoogleFonts.cairo(color: textColor),
+        labelStyle: TextStyle(color: textColor, fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(color: textColor),
         prefixIconColor: textColor,
         suffixIconColor: textColor,
       ),
@@ -239,8 +238,8 @@ abstract final class AppTheme {
         selectedColor: tokens.primary,
         disabledColor: tokens.surfaceVariant.withValues(alpha: 0.5),
         checkmarkColor: tokens.onPrimary,
-        labelStyle: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 13, color: textColor),
-        secondaryLabelStyle: GoogleFonts.cairo(fontWeight: FontWeight.w600, color: textColor),
+        labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textColor),
+        secondaryLabelStyle: TextStyle(fontWeight: FontWeight.w600, color: textColor),
         padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spaceSm, vertical: DesignTokens.spaceXs),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
         side: BorderSide(color: tokens.outlineVariant),
@@ -248,14 +247,14 @@ abstract final class AppTheme {
       badgeTheme: BadgeThemeData(
         backgroundColor: tokens.accent,
         textColor: tokens.onAccent,
-        textStyle: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 10),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSm)),
         backgroundColor: isDark ? tokens.surfaceElevated : tokens.primaryDark,
-        contentTextStyle: GoogleFonts.cairo(color: DesignTokens.onInverse, fontWeight: FontWeight.w500),
+        contentTextStyle: const TextStyle(color: DesignTokens.onInverse, fontWeight: FontWeight.w500),
       ),
       dividerTheme: DividerThemeData(color: tokens.outlineVariant, thickness: 1, space: 1),
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -295,7 +294,7 @@ void showAppSnackBar(BuildContext context, Object message, {bool isError = false
         children: [
           Icon(isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded, color: c.onPrimary, size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text(text, style: GoogleFonts.cairo(color: c.onPrimary, fontWeight: FontWeight.w500))),
+          Expanded(child: Text(text, style: TextStyle(color: c.onPrimary, fontWeight: FontWeight.w500))),
         ],
       ),
       backgroundColor: isError ? c.error : c.primaryDark,
@@ -311,7 +310,7 @@ void showAppWarningSnackBar(BuildContext context, String message) {
   final c = context.colors;
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(message, style: GoogleFonts.cairo(color: c.onPrimary, fontWeight: FontWeight.w600)),
+      content: Text(message, style: TextStyle(color: c.onPrimary, fontWeight: FontWeight.w600)),
       backgroundColor: c.warningSurface,
       duration: const Duration(seconds: 4),
       behavior: SnackBarBehavior.floating,
