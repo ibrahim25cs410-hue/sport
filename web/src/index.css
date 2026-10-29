@@ -2,34 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design Tokens — Riyada */
+/* RIYADA design system — shared green / monochrome palette */
 @layer base {
   :root {
-    --color-primary: 13 79 28;
-    --color-primary-light: 27 122 50;
-    --color-primary-dark: 8 52 20;
-    --color-secondary: 0 105 92;
-    --color-accent: 255 179 0;
-    --color-background: 244 247 245;
+    --color-primary: 22 163 74;
+    --color-primary-light: 74 222 128;
+    --color-primary-dark: 8 25 13;
+    --color-secondary: 34 197 94;
+    --color-accent: 74 222 128;
+    --color-background: 248 250 248;
     --color-surface: 255 255 255;
-    --color-surface-variant: 232 239 234;
-    --color-on-surface: 8 52 20;
-    --color-on-surface-variant: 74 86 80;
-    --color-outline: 213 222 216;
-    --color-error: 198 40 40;
-    --color-success: 46 125 50;
-    --color-warning: 191 54 12;
+    --color-surface-variant: 240 245 241;
+    --color-on-surface: 17 24 19;
+    --color-on-surface-variant: 95 105 97;
+    --color-outline: 220 227 221;
+    --color-error: 220 38 38;
+    --color-success: 22 163 74;
+    --color-warning: 180 83 9;
     --color-on-primary: 255 255 255;
     --color-on-inverse-muted: 208 220 212;
   }
 
   .dark {
-    --color-background: 15 20 17;
-    --color-surface: 26 35 28;
-    --color-surface-variant: 36 48 40;
-    --color-on-surface: 232 237 233;
-    --color-on-surface-variant: 176 189 178;
-    --color-outline: 61 74 66;
+    --color-primary: 34 197 94;
+    --color-primary-light: 74 222 128;
+    --color-primary-dark: 5 12 7;
+    --color-secondary: 22 163 74;
+    --color-accent: 74 222 128;
+    --color-background: 8 10 9;
+    --color-surface: 20 23 21;
+    --color-surface-variant: 30 35 31;
+    --color-on-surface: 248 250 248;
+    --color-on-surface-variant: 163 173 165;
+    --color-outline: 55 64 57;
   }
 
   * {
@@ -42,13 +47,28 @@
     outline-offset: 3px;
   }
 
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  html:has(.dark) {
+    color-scheme: dark;
+  }
+
   body {
     @apply text-[rgb(var(--color-on-surface))] bg-[rgb(var(--color-background))];
     overscroll-behavior: none;
+    min-width: 320px;
+    font-feature-settings: "ss01" on;
   }
 
   input, textarea, select {
     @apply outline-none;
+  }
+
+  button, input, textarea, select {
+    font: inherit;
   }
 }
 
@@ -90,7 +110,10 @@
   }
 
   .gradient-hero {
-    background: linear-gradient(135deg, rgb(var(--color-primary-dark)) 0%, rgb(var(--color-primary)) 50%, rgb(var(--color-primary-light)) 100%);
+    background: linear-gradient(135deg,
+      rgb(var(--color-primary-dark)) 0%,
+      rgb(var(--color-primary)) 56%,
+      rgb(var(--color-primary-light)) 100%);
   }
 
   .btn-primary {
@@ -101,15 +124,17 @@
   }
 
   .btn-secondary {
-    @apply w-full py-3.5 px-6 rounded-2xl border-2 font-bold
-           border-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))]
+    @apply w-full py-3.5 px-6 rounded-2xl border font-bold
+           border-[rgb(var(--color-outline))]
+           text-[rgb(var(--color-on-surface))]
+           bg-[rgb(var(--color-surface))]
            active:scale-[0.98] transition-all duration-200
            hover:bg-[rgb(var(--color-surface-variant))];
   }
 
   .btn-danger {
     @apply w-full py-3 px-6 rounded-2xl font-bold
-           bg-[rgb(var(--color-error))] text-[rgb(var(--color-on-primary))]
+           bg-[rgb(var(--color-error))] text-white
            active:scale-[0.98] transition-all shadow-lg;
   }
 
@@ -126,32 +151,34 @@
   .card {
     @apply rounded-2xl p-4 border
            bg-[rgb(var(--color-surface))]
-           border-[rgb(var(--color-outline))]/60
-           shadow-[0_4px_20px_rgba(0,0,0,0.06)];
+           border-[rgb(var(--color-outline))]/70
+           shadow-[0_4px_20px_rgba(0,0,0,0.045)];
   }
 
   .dark .card {
-    @apply shadow-[0_4px_24px_rgba(0,0,0,0.35)];
+    @apply shadow-[0_8px_28px_rgba(0,0,0,0.22)];
   }
 
   .tab-active {
-    @apply font-bold border-b-2 border-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))];
-  }
-
-  .tab-inactive {
-    @apply text-[rgb(var(--color-on-surface-variant))] border-b-2 border-transparent;
-  }
-
-  .slot-available {
-    @apply px-3 py-2 rounded-xl border-2 text-sm font-medium cursor-pointer
-           active:scale-95 transition-all
-           border-[rgb(var(--color-primary-light))]/30
-           bg-[rgb(var(--color-surface-variant))]
+    @apply font-bold border-b-2 border-[rgb(var(--color-primary))]
            text-[rgb(var(--color-primary))];
   }
 
+  .tab-inactive {
+    @apply text-[rgb(var(--color-on-surface-variant))]
+           border-b-2 border-transparent;
+  }
+
+  .slot-available {
+    @apply px-3 py-2 rounded-xl border text-sm font-medium cursor-pointer
+           active:scale-95 transition-all
+           border-[rgb(var(--color-primary-light))]/40
+           bg-[rgb(var(--color-surface-variant))]
+           text-[rgb(var(--color-on-surface))];
+  }
+
   .slot-selected {
-    @apply px-3 py-2 rounded-xl border-2 text-sm font-bold shadow-md text-white
+    @apply px-3 py-2 rounded-xl border text-sm font-bold shadow-md text-white
            border-[rgb(var(--color-primary))] bg-[rgb(var(--color-primary))];
   }
 
@@ -167,4 +194,24 @@
 
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+.customer-hero {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(74, 222, 128, 0.22), transparent 30%),
+    linear-gradient(135deg, #07120a 0%, #102418 58%, #14532d 100%);
+}
+
+.customer-search {
+  color: rgb(var(--color-on-surface));
+  background: rgb(var(--color-surface));
+  border: 1px solid rgb(var(--color-outline));
+}
+
+.customer-search::placeholder {
+  color: rgb(var(--color-on-surface-variant));
+}
+
+.customer-section-title {
+  letter-spacing: -0.025em;
 }
